@@ -18,7 +18,7 @@ class ProductoModel
         try {
             $imagenM=new ImageModel();
             //Consulta SQL
-            $vSQL = "SELECT * FROM productos order by title desc;";
+            $vSQL = "SELECT * FROM productos order by nombre desc;";
             //Ejecutar la consulta
             $vResultado = $this->enlace->ExecuteSQL($vSQL);
             //Incluir imagenes
@@ -50,7 +50,7 @@ class ProductoModel
          //   $genreM=new GenreModel();
            // $actorM=new ActorModel();
             $imagenM=new ImageModel();
-            $vSql = "SELECT * FROM producto
+            $vSql = "SELECT * FROM productos
                     where id=$id;";
 
             //Ejecutar la consulta sql
@@ -139,74 +139,51 @@ class ProductoModel
     */
     /**
      * Crear producto
-     * @param $objeto producto a insertar
-     * @return $this->get($producto) - Objeto producto
+     * @param $objeto producto a Insertinto   * @return $this->get($producto) - Objeto producto
      */
     //
    public function create($objeto)
 {
     try {
-        // 1. Insertar producto
-        $sql = "INSERT INTO productos (nombre, descripcion, precio, cantidad, categoria_id)
-                VALUES ('$objeto->nombre', '$objeto->descripcion', $objeto->precio, $objeto->cantidad, $objeto->categoria_id)";
-        $idProducto = $this->enlace->executeSQL_DML_last($sql); // Obtener ID del producto insertado
-
-        // 2. Insertar imágenes asociadas (si hay)
-        foreach ($objeto->imagenes as $imagen) {
-            $url = $imagen->url_imagen;
-            $desc = $imagen->descripcion_imagen;
-            $principal = $imagen->es_principal ? 'TRUE' : 'FALSE';
-
-            $sql = "INSERT INTO imagenes (producto_id, url_imagen, descripcion_imagen, es_principal)
-                    VALUES ($idProducto, '$url', '$desc', $principal)";
-            $this->enlace->executeSQL_DML($sql);
-        }
+        // 1. Insertaintooducto
+        $sql = "Insert into productos (nombre, descripcion, precio, cantidad, categoria_id)
+        VALUES ('$objeto->nombre', $objeto->descripcion, 
+             $objeto->precio, $objeto->cantidad, $objeto->categoria_id)";
+        $id = $this->enlace->executeSQL_DML_last($sql); // Obtener ID del producto Insertainto        // 2. Insertaintoágenes asociadas (si hay)
 
         // 3. Devolver el producto creado
-        return $this->get($idProducto);
+        return $this->get($id);
     } catch (Exception $e) {
         handleException($e);
     }
 }
+
     /**
      * Actualizar producto
      * @param $objeto producto a actualizar
      * @return $this->get($producto) - Objeto producto
      */
 
+
    public function update($objeto)
-{
-    try {
-        // 1. Actualizar producto
-        $sql = "UPDATE productos SET
-                    nombre = '$objeto->nombre',
-                    descripcion = '$objeto->descripcion',
-                    precio = $objeto->precio,
-                    cantidad = $objeto->cantidad,
-                    categoria_id = $objeto->categoria_id
-                WHERE id = $objeto->id";
-        $this->enlace->executeSQL_DML($sql);
+    {
+        try {
+            //Consulta sql
+            $sql = "Update productos SET nombre ='$objeto->nombre'," .
+              "descripcion = '$objeto->descripcion', precio = $objeto->precio,".
+                    "cantidad = $objeto->cantidad, categoria_id = $objeto->categoria_id".
+                " Where id=$objeto->id";
 
-        // 2. Eliminar imágenes anteriores
-        $sql = "DELETE FROM imagenes WHERE producto_id = $objeto->id";
-        $this->enlace->executeSQL_DML($sql);
+            //Ejecutar la consulta
+            $cResults = $this->enlace->executeSQL_DML($sql);
+    
 
-        // 3. Insertar nuevas imágenes (si hay)
-        foreach ($objeto->imagenes as $imagen) {
-            $url = $imagen->url_imagen;
-            $desc = $imagen->descripcion_imagen;
-            $principal = $imagen->es_principal ? 'TRUE' : 'FALSE';
-
-            $sql = "INSERT INTO imagenes (producto_id, url_imagen, descripcion_imagen, es_principal)
-                    VALUES ($objeto->id, '$url', '$desc', $principal)";
-            $this->enlace->executeSQL_DML($sql);
+            //Retornar pelicula
+            return $this->get($objeto->id);
+        } catch (Exception $e) {
+            handleException($e);
         }
-
-        // 4. Devolver el producto actualizado
-        return $this->get($objeto->id);
-    } catch (Exception $e) {
-        handleException($e);
     }
-}
+
 
 }
