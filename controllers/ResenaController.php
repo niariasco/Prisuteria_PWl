@@ -1,6 +1,6 @@
 <?php
-//class Rental
-class rental
+//class Resena
+class resena
 {
     //Listar en el API
     public function index()
@@ -8,8 +8,8 @@ class rental
         try {
             $response = new Response();
             //Obtener el listado del Modelo
-            $rental = new RentalModel();
-            $result = $rental->all();
+            $Resena = new ResenaModel();
+            $result = $Resena->all();
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
@@ -22,9 +22,9 @@ class rental
         try {
             $response = new Response();
             //Instancia del modelo
-            $rental = new RentalModel();
+            $Resena = new ResenaModel();
             //Acción del modelo a ejecutar
-            $result = $rental->get($param);
+            $result = $Resena->get($param);
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
@@ -41,35 +41,35 @@ class rental
             //Obtener json enviado
             $inputJSON = $request->getJSON();
             //Instancia del modelo
-            $rental = new RentalModel($inputJSON);
+            $Resena = new ResenaModel($inputJSON);
             //Acción del modelo a ejecutar
-            $result = $rental->create($inputJSON);
+            $result = $Resena->create($inputJSON);
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
             handleException($e);
         }
     }
-    public function rentalMonthbyShop()
+    public function ResenaMonthbyShop()
     {
         try {
             $response = new Response();
             //Obtener el listado del Modelo
-            $rental = new RentalModel();
-            $result = $rental->rentalMonthbyShop();
+            $Resena = new ResenaModel();
+            $result = $Resena->ResenaMonthbyShop();
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
             handleException($e);
         }
     }
-    public function rentalbyMovie()
+    public function ResenabyMovie()
     {
         try {
             $response = new Response();
             //Obtener el listado del Modelo
-            $rental = new RentalModel();
-            $result = $rental->rentalbyMovie();
+            $Resena = new ResenaModel();
+            $result = $Resena->ResenabyMovie();
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {

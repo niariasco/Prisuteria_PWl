@@ -141,18 +141,28 @@ class ProductoModel
      * Crear producto
      * @param $objeto producto a Insertinto   * @return $this->get($producto) - Objeto producto
      */
-    //
-   public function create($objeto)
+
+public function create($objeto)
 {
     try {
-        // 1. Insertaintooducto
-        $sql = "Insert into productos (nombre, descripcion, precio, cantidad, categoria_id)
-        VALUES ('$objeto->nombre', $objeto->descripcion, 
-             $objeto->precio, $objeto->cantidad, $objeto->categoria_id)";
-        $id = $this->enlace->executeSQL_DML_last($sql); // Obtener ID del producto Insertainto        // 2. Insertaintoágenes asociadas (si hay)
+        // 1. Insertar producto
+        $sql = "INSERT INTO productos (nombre, descripcion, precio, cantidad, categoria_id)
+                VALUES ($objeto->nombre, $objeto->descripcion, $objeto->precio, $objeto->cantidad, $objeto->categoria_id)";
+        $idProducto = $this->enlace->executeSQL_DML_last($sql); // Obtener ID del producto insertado
+
+        // 2. Insertar imágenes asociadas (si hay)
+        foreach ($objeto->imagenes as $imagen) {
+            $url = $imagen->url_imagen;
+            $desc = $imagen->descripcion_imagen;
+            $principal = $imagen->es_principal ? 'TRUE' : 'FALSE';
+
+            $sql = "INSERT INTO imagenes (producto_id, url_imagen, descripcion_imagen, es_principal)
+                    VALUES ($idProducto, '$url', '$desc', $principal)";
+            $this->enlace->executeSQL_DML($sql);
+        }
 
         // 3. Devolver el producto creado
-        return $this->get($id);
+        return $this->get($idProducto);
     } catch (Exception $e) {
         handleException($e);
     }

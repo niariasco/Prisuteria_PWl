@@ -1,5 +1,6 @@
 <?php
 //localhost:81/apimovie/movie
+//localhost:81/apiprisuteria/producto
 class producto
 {
     //GET listar

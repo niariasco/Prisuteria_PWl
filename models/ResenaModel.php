@@ -1,5 +1,5 @@
 <?php
-class RentalModel{
+class ResenaModel{
     public $enlace;
     public function __construct() {
         
@@ -9,7 +9,7 @@ class RentalModel{
     public function all(){
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM rental order by rental_date asc;";
+			$vSql = "SELECT * FROM resenas order by fecha asc;";
 			
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
@@ -29,8 +29,8 @@ class RentalModel{
     public function get($id){
         $vResultado=null;
         try {
-            $rentalMovieM=new RentalMovieModel();
-            $shopM=new ShopRentalModel();
+         //   $rentalMovieM=new RentalMovieModel();
+         //   $shopM=new ShopRentalModel();
             $userM=new UserModel();
             //Consulta sql
 			$vSql = "SELECT * FROM rental where id=$id";           
@@ -38,13 +38,13 @@ class RentalModel{
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
             if (!empty($vResultado)) {
-                $vResultado=$vResultado[0];
+             //   $vResultado=$vResultado[0];
                 //Tienda
-                $vResultado->shopRental=$shopM->get($vResultado->shop_id);
+               // $vResultado->shopRental=$shopM->get($vResultado->shop_id);
                 //Cliente
                 $vResultado->customer=$userM->get($vResultado->customer_id);
                 //Lista de peliculas
-                $vResultado->movies=$rentalMovieM->getRental($id);
+               // $vResultado->movies=$rentalMovieM->getRental($id);
             }
 			// Retornar el objeto
 			return $vResultado;
@@ -55,27 +55,32 @@ class RentalModel{
     
 	public function create($objeto) {
         try {
-            $fechaReact = $objeto->rental_date;
+            $fechaReact = $objeto->fecha;
             // Crear un objeto DateTime a partir de la cadena de fecha
             // Convertir la fecha al formato deseado para la base de datos
             $fechaBD = date('Y-m-d', strtotime($fechaReact));
             
             //Consulta sql
             
-			$vSql = "INSERT INTO movie_rental.rental
-                (shop_id,
-                customer_id,
-                rental_date,
-                total)
+			$vSql = "INSERT INTO resenas
+                (usuario_id,
+                producto_id,
+                comentario,
+                calificacion,
+                fecha,
+                visible)
                 VALUES
-                ('$objeto->shop_id',
-                '$objeto->customer_id',
+                ('$objeto->usuario_id',
+                '$objeto->producto_id',
+                '$objeto->comentario',
+                '$objeto->calificacion',
                 '$fechaBD',
-                '$objeto->total');";
+                '$objeto->visible');";
 			
             //Ejecutar la consulta
-			$idRental = $this->enlace->executeSQL_DML_last( $vSql);
+			$idResena = $this->enlace->executeSQL_DML_last( $vSql);
             //Insertar peliculas
+            /*
             foreach ($objeto->movies as $item) {
                 $sql="INSERT INTO movie_rental.rental_movie
                     (rental_id,
@@ -91,13 +96,15 @@ class RentalModel{
                     $item->subtotal);";
                 $vResultadoM= $this->enlace->executeSQL_DML($sql);
             }
+                */
 			// Retornar el objeto creado
-            return $this->get($idRental);
+            return $this->get($idResena);
         } catch (Exception $e) {
             handleException($e);
         }
     }
     //Ventas por mes x Tienda
+    /*
     public function rentalMonthbyShop()
     {
         try {
@@ -126,7 +133,8 @@ class RentalModel{
         }
     }
     //cantidad de alquileres por pelicula
-    public function rentalbyMovie()
+    /*
+    public function resenabyMovie()
     {
         try {
             //Consulta sql
@@ -151,4 +159,5 @@ class RentalModel{
             handleException($e);
         }
     }
+        */
 }
