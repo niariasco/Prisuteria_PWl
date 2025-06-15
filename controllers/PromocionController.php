@@ -1,13 +1,13 @@
 <?php
-class actor
+class promocion
 {
     public function index()
     {
         try {
             $response = new Response();
             //Obtener el listado del Modelo
-            $genero = new ActorModel();
-            $result = $genero->all();
+            $promo = new PromocionModel();
+            $result = $promo->all();
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
@@ -18,24 +18,26 @@ class actor
     {
         try {
             $response = new Response();
-            $genero = new ActorModel();
-            $result = $genero->get($param);
+            $promo = new PromocionModel();
+            $result = $promo->get($param);
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
             handleException($e);
         }
     }
+    /*
     public function getActorMovie($id)
     {
         try {
             $response = new Response();
-            $genero = new ActorModel();
-            $result = $genero->getActorMovie($id);
+            $promo = new PromocionModel();
+            $result = $promo->get($id);
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
             handleException($e);
         }
     }
+    */
 }
