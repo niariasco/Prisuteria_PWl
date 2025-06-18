@@ -78,29 +78,27 @@ class ProductoModel
         }
     }
     /**
-     * Obtener las productos por tienda
+     * Obtener las productos por categoria
      * @param $idShopRental identificador de la tienda
      * @return $vresultado - Lista de productos incluyendo el precio
      */
-    //
-    /*    public function moviesByShopRental($idShopRental)
+    
+       public function productosXCategoria($categoriaId)
     {
         try {
             $imagenM=new ImageModel();
             //Consulta SQL
-            $vSQL = "SELECT m.*, i.price
-                    FROM movie m, inventory i
-                    where 
-                    m.id=i.movie_id
-                    and shop_id=$idShopRental
-                    order by m.title desc";
+            $vSQL = "    SELECT p.*, c.nombre AS nombre_categoria
+                FROM productos p
+             JOIN categorias c ON p.categoria_id =$categoriaId
+                ORDER BY c.nombre, p.nombre";
             //Ejecutar la consulta
             $vResultado = $this->enlace->ExecuteSQL($vSQL);
 
             //Incluir imagenes
             if(!empty($vResultado) && is_array($vResultado)){
                 for ($i=0; $i < count($vResultado); $i++) { 
-                    $vResultado[$i]->imagen=$imagenM->getImageMovie(($vResultado[$i]->id));
+                    $vResultado[$i]->imagen=$imagenM->getImageProducto(idProducto: ($vResultado[$i]->id));
                 }
             }
             //Retornar la respuesta
@@ -110,6 +108,48 @@ class ProductoModel
             handleException($e);
         }
     }
+
+       /**
+     * Obtener las productos por categoria
+     * @param $idShopRental identificador de la tienda
+     * @return $vresultado - Lista de productos incluyendo el precio
+     */
+    
+       public function productoXPromocion($idProducto)
+    {
+        try {
+            $imagenM=new ImageModel();
+            //Consulta SQL
+            $vSQL = "    SELECT 
+      p.nombre AS nombre_producto, 
+      c.nombre AS nombre_categoria, 
+      pr.nombre AS nombre_promocion, 
+      pr.descuento
+    FROM productos p
+    JOIN categorias c ON p.categoria_id = c.categoriaId
+    LEFT JOIN promocion_productos pp ON p.productosId = pp.producto_id
+    LEFT JOIN promocion_categorias pc ON c.categoriaId = pc.categoria_id
+    LEFT JOIN promociones pr ON (pr.id = pp.promocion_id OR pr.id = pc.promocion_id)
+    WHERE pr.activo = TRUE
+      AND CURDATE() BETWEEN pr.fecha_inicio AND pr.fecha_fin
+    ORDER BY pr.nombre, c.nombre, p.nombre;";
+            //Ejecutar la consulta
+            $vResultado = $this->enlace->ExecuteSQL($vSQL);
+
+            //Incluir imagenes
+            if(!empty($vResultado) && is_array($vResultado)){
+                for ($i=0; $i < count($vResultado); $i++) { 
+                    $vResultado[$i]->imagen=$imagenM->getImageProducto(idProducto: ($vResultado[$i]->id));
+                }
+            }
+            //Retornar la respuesta
+
+            return $vResultado;
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
     /**
      * Obtener la cantidad de productos por genero
      * @param 

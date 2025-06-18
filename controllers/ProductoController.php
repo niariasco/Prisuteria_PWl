@@ -1,5 +1,5 @@
 <?php
-//localhost:81/apimovie/movie
+//localhost:81/apiproducto/producto
 //localhost:81/apiprisuteria/producto
 class producto
 {
@@ -24,25 +24,24 @@ class producto
         try {
             $response = new Response();
             //Instancia del modelo
-            $movie = new ProductoModel();
+            $producto = new ProductoModel();
             //Acción del modelo a ejecutar
-            $result = $movie->get($id);
+            $result = $producto->get($id);
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
             handleException($e);
         }
     }
-    /*
     //Obtener peliculas por tienda
-    public function moviesByShopRental($idShopRental)
+    public function productosXCategoria($idProductoXCategoria)
     {
         try {
             $response = new Response();
             //Instancia del modelo
-            $movie = new ProductoModel();
+            $producto = new ProductoModel();
             //Acción del modelo a ejecutar
-            $result = $movie->moviesByShopRental($idShopRental);
+            $result = $producto->productosXCategoria($idProductoXCategoria));
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
@@ -51,14 +50,14 @@ class producto
     }
     //Obtener cantidad de peliculas por genero
     
-    public function getCountByGenre($param)
+    public function productosXpromo($param)
     {
         try {
             $response = new Response();
             //Instancia del modelo
-            $movie = new ProductoModel();
+            $producto = new ProductoModel();
             //Acción del modelo a ejecutar
-            $result = $movie->getCountByGenre($param);
+            $result = $producto->productosXpromo($param);
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
@@ -75,9 +74,9 @@ class producto
             //Obtener json enviado
             $inputJSON = $request->getJSON();
             //Instancia del modelo
-            $movie = new ProductoModel();
+            $producto = new ProductoModel();
             //Acción del modelo a ejecutar
-            $result = $movie->create($inputJSON);
+            $result = $producto->create($inputJSON);
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
@@ -93,9 +92,9 @@ class producto
             //Obtener json enviado
             $inputJSON = $request->getJSON();
             //Instancia del modelo
-            $movie = new ProductoModel();
+            $producto = new ProductoModel();
             //Acción del modelo a ejecutar
-            $result = $movie->update($inputJSON);
+            $result = $producto->update($inputJSON);
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
