@@ -41,7 +41,7 @@ class producto
             //Instancia del modelo
             $producto = new ProductoModel();
             //Acción del modelo a ejecutar
-            $result = $producto->productosXCategoria($idProductoXCategoria));
+            $result = $producto->productosXCategoria($idProductoXCategoria);
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
