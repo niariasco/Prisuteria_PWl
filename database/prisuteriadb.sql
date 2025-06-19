@@ -57,6 +57,14 @@ CREATE TABLE etiquetas (
     etiquetaId INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL UNIQUE
 );
+CREATE TABLE producto_etiquetas (
+id INT AUTO_INCREMENT PRIMARY KEY,
+producto_id INT NOT NULL,
+etiqueta_id INT NOT NULL,
+FOREIGN KEY (producto_id) REFERENCES productos(productosId) ON DELETE CASCADE,
+FOREIGN KEY (etiqueta_id) REFERENCES etiquetas(etiquetaId) ON DELETE CASCADE
+);
+
 CREATE TABLE producto_etiqueta (
 	idPT INT AUTO_INCREMENT PRIMARY KEY,
     productoId INT,
@@ -84,8 +92,6 @@ CREATE TABLE ordenes (
     FOREIGN KEY (usuario_id) REFERENCES usuarios(usuarioId),
     FOREIGN KEY (estado_id) REFERENCES estados(estadoId)
 );
-INSERT INTO ordenes (usuario_id, subtotal, total, estado_id, metodo_pago, direccion_envio)
-VALUES (1, 100.00, 110.00, 1, 'tarjeta', 'Calle Falsa 123');
 
 CREATE TABLE orden_detalle (
 orden_detalleId INT AUTO_INCREMENT PRIMARY KEY,
@@ -96,10 +102,51 @@ precio_unitario DECIMAL(10,2),
 FOREIGN KEY (orden_id) REFERENCES ordenes(ordenesId),
 FOREIGN KEY (producto_id) REFERENCES productos(productosId)
 );
-INSERT INTO orden_detalle (orden_id, producto_id, cantidad, precio_unitario)
-VALUES (LAST_INSERT_ID(), 2, 8, 100.00);
 
+DELIMITER $$
 
+CREATE TRIGGER trg_insert_pago_orden
+AFTER INSERT ON ordenes
+FOR EACH ROW
+BEGIN
+  IF NEW.metodo_pago = 'efectivo' THEN
+    INSERT INTO orden_pago_efectivo (orden_id, monto_pagado, cambio)
+    VALUES (NEW.ordenesId, 0.00, 0.00); -- Se actualiza después desde app
+  ELSEIF NEW.metodo_pago = 'tarjeta' THEN
+    INSERT INTO orden_pago_tarjeta (orden_id, numero_tarjeta, fecha_expiracion, cvv, nombre_titular)
+    VALUES (NEW.ordenesId, '', '', '', ''); -- Datos se completan luego desde app
+  END IF;
+END$$
+
+DELIMITER ;
+
+/*traer precio(de la ordern) del precio producto*/
+DELIMITER $$
+
+CREATE TRIGGER antes_insertar_orden_detalle
+BEFORE INSERT ON orden_detalle
+FOR EACH ROW
+BEGIN
+  DECLARE precio_actual DECIMAL(10,2);
+
+  -- Obtener el precio actual del producto desde la tabla de productos
+  SELECT precio INTO precio_actual
+  FROM productos
+  WHERE productosId = NEW.producto_id;
+
+  -- Asignar el precio al campo precio_unitario de la orden
+  SET NEW.precio_unitario = precio_actual;
+END$$
+
+DELIMITER ;
+
+CREATE TABLE orden_pago_efectivo (
+orden_pago_efectivoId INT AUTO_INCREMENT PRIMARY KEY,
+orden_id INT NOT NULL,
+monto_pagado DECIMAL(10,2) NOT NULL,
+cambio DECIMAL(10,2), -- Se calculará en la aplicación
+FOREIGN KEY (orden_id) REFERENCES ordenes(ordenesId)
+);
 CREATE TABLE orden_pago_tarjeta (
 orden_pago_tarjetaId INT AUTO_INCREMENT PRIMARY KEY,
 orden_id INT NOT NULL,
@@ -107,15 +154,6 @@ numero_tarjeta VARCHAR(20),
 fecha_expiracion VARCHAR(7),
 cvv VARCHAR(4),
 nombre_titular VARCHAR(100),
-FOREIGN KEY (orden_id) REFERENCES ordenes(ordenesId)
-);
-
-
-CREATE TABLE orden_pago_efectivo (
-orden_pago_efectivoId INT AUTO_INCREMENT PRIMARY KEY,
-orden_id INT NOT NULL,
-monto_pagado DECIMAL(10,2) NOT NULL,
-cambio DECIMAL(10,2), -- Se calculará en la aplicación
 FOREIGN KEY (orden_id) REFERENCES ordenes(ordenesId)
 );
 
@@ -241,13 +279,7 @@ FOREIGN KEY (resena_id) REFERENCES resenas(id) ON DELETE CASCADE,
 FOREIGN KEY (usuario_id) REFERENCES usuarios(usuarioId) ON DELETE CASCADE
 );
 
-CREATE TABLE producto_etiquetas (
-id INT AUTO_INCREMENT PRIMARY KEY,
-producto_id INT NOT NULL,
-etiqueta_id INT NOT NULL,
-FOREIGN KEY (producto_id) REFERENCES productos(productosId) ON DELETE CASCADE,
-FOREIGN KEY (etiqueta_id) REFERENCES etiquetas(etiquetaId) ON DELETE CASCADE
-);
+
 
 
 CREATE TABLE componentes_personalizables (
@@ -425,6 +457,28 @@ VALUES (
     SHA2('123456', 256),
     1
 );
+-- usuarios (contraseña ejemplo en SHA2-256 en hexadecimal)
+INSERT INTO usuarios (nombre_usuario, correo, contraseña, rol_id) VALUES
+('juanperez', 'juan@gmail.com', SHA2('123456', 256), 2),
+('mariagonzalez', 'maria@gmail.com', SHA2('123456', 256), 2),
+('martina', 'martina@gmail.com', SHA2('123456', 256), 2),
+('rachel', 'rachel@gmail.com', SHA2('123456', 256), 2),
+('kora', 'kora@gmail.com', SHA2('123456', 256), 2),
+('mylene', 'mylene@gmail.com', SHA2('123456', 256), 2);
+INSERT INTO etiquetas (nombre) VALUES
+('Popular'),
+('Recomendado'),
+('Limitado'),
+('Exclusivo');
+
+-- producto_etiqueta (productoId y etiquetaId deben existir)
+INSERT INTO producto_etiqueta (productoId, etiquetaId) VALUES
+(1, 1),
+(1, 2),
+(2, 9),
+(3, 10),
+(4, 11),
+(5, 12);
 
 INSERT INTO orden_pago_tarjeta (orden_id, numero_tarjeta, fecha_expiracion, cvv, nombre_titular)
 VALUES (LAST_INSERT_ID(), '1234123412341234', '12/25', '123', 'Juan Pérez');

@@ -22,7 +22,6 @@ require_once "middleware/AuthMiddleware.php";
 require_once "models/RolModel.php";
 require_once "models/UserModel.php";
 require_once "models/DirectorModel.php";
-require_once "models/ActorModel.php";
 require_once "models/GenreModel.php";
 require_once "models/ProductoModel.php";
 require_once "models/ShopRentalModel.php";

@@ -25,7 +25,7 @@ class ImageModel
                 //Crear un nombre único para el archivo
                 $fileExt = explode('.', $fileName);
                 $fileActExt = strtolower(end($fileExt));
-               // $fileName = "movie-" . uniqid() . "." . $fileActExt;
+               $fileName = "movie-" . uniqid() . "." . $fileActExt;
                 //Validar el tipo de archivo
                 if (in_array($fileActExt, $this->valid_extensions)) {
                     //Validar que no exista

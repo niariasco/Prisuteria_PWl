@@ -26,7 +26,7 @@ class ProductoModel
                 for ($i=0; $i < count($vResultado); $i++) { 
                     $vResultado[$i]=$this->get($vResultado[$i]->id);
 
-                    //$vResultado[$i]->imagen=$imagenM->getImageMovie(($vResultado[$i]->id));
+                    $vResultado[$i]->imagen=$imagenM->getImageProducto(($vResultado[$i]->id));
                 }
             }
 
