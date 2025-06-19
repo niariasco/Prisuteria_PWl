@@ -14,7 +14,7 @@ class UserModel
 	{
 		try {
 			//Consulta sql
-			$vSql = "SELECT * FROM user;";
+			$vSql = "SELECT * FROM usuarios;";
 
 			//Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL($vSql);
@@ -32,7 +32,7 @@ class UserModel
 			$rolM = new RolModel();
 
 			//Consulta sql
-			$vSql = "SELECT * FROM user where id=$id";
+			$vSql = "SELECT * FROM users where usuarioId=$id";
 			//Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL($vSql);
 			if ($vResultado) {
@@ -52,7 +52,7 @@ class UserModel
 	{
 		try {
 			//Consulta sql
-			$vSql = "SELECT * FROM movie_rental.user
+			$vSql = "SELECT * FROM usuarios
 					where rol_id=2;";
 
 			//Ejecutar la consulta
@@ -64,6 +64,7 @@ class UserModel
 			die($e->getMessage());
 		}
 	}
+	/*
 	public function customerbyShopRental($idShopRental)
 	{
 		try {
@@ -80,11 +81,13 @@ class UserModel
 			die($e->getMessage());
 		}
 	}
+		*/
+
 	public function login($objeto)
 	{
 		try {
 
-			$vSql = "SELECT * from User where email='$objeto->email'";
+			$vSql = "SELECT * from usuarios where correo='$objeto->email'";
 
 			//Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL($vSql);
@@ -124,7 +127,7 @@ class UserModel
 				$objeto->password = $crypt;
 			}
 			//Consulta sql            
-			$vSql = "Insert into user (name,email,password,rol_id)" .
+			$vSql = "Insert into usuarios (nombre_usuario, correo, contraseña, rol_id)" .
 				" Values ('$objeto->name','$objeto->email','$objeto->password',$objeto->rol_id)";
 
 			//Ejecutar la consulta
