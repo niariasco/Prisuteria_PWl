@@ -52,7 +52,7 @@ require_once "controllers/ProductoController.php";
 require_once "controllers/CarritoController.php";
 require_once "controllers/EstadoController.php";
 require_once "controllers/OrdenController.php";
-require_once "controllers/ProductPersonalizadoController.php";
+require_once "controllers/ProductoPersonalizadoController.php";
 require_once "controllers/PromocionController.php";
 require_once "controllers/ResenaController.php";
 
