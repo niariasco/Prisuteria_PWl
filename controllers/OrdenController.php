@@ -1,5 +1,5 @@
 <?php
-class director
+class OrdenController
 {
     public function index()
     {

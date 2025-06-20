@@ -24,9 +24,9 @@ class ProductoModel
             //Incluir imagenes
             if(!empty($vResultado) && is_array($vResultado)){
                 for ($i=0; $i < count($vResultado); $i++) { 
-                    $vResultado[$i]=$this->get($vResultado[$i]->id);
+                    $vResultado[$i]=$this->get($vResultado[$i]->productosId);
 
-                    $vResultado[$i]->imagen=$imagenM->getImageProducto(($vResultado[$i]->id));
+                    $vResultado[$i]->imagen=$imagenM->getImageProducto(($vResultado[$i]->productosId));
                 }
             }
 
@@ -51,14 +51,14 @@ class ProductoModel
            // $actorM=new ActorModel();
             $imagenM=new ImageModel();
             $vSql = "SELECT * FROM productos
-                    where id=$id;";
+                    where productosId=$id;";
 
             //Ejecutar la consulta sql
             $vResultado = $this->enlace->executeSQL($vSql);
             if(!empty($vResultado)){
                 $vResultado=$vResultado[0];
                 //Imagenes
-                $vResultado->imagen=$imagenM->getImageProducto(idProducto:($vResultado->id));
+                $vResultado->imagen=$imagenM->getImageProducto(idProducto:($vResultado->productosId));
                 //Director
               //  $director=$directorM->get($vResultado->director_id);
              //   $vResultado->director=$director;
@@ -229,7 +229,7 @@ public function create($objeto)
     
 
             //Retornar pelicula
-            return $this->get($objeto->id);
+            return $this->get($objeto->productosId);
         } catch (Exception $e) {
             handleException($e);
         }

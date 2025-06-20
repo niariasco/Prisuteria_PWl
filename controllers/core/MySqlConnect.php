@@ -14,10 +14,10 @@ class MySqlConnect {
 	
 	public function __construct() {
 		// Parametros de conexión
-		$this->username = Config::get('root');
-		$this->password = Config::get('123456');
-		$this->host = Config::get('localhost');
-		$this->dbname = Config::get('prisuteriadb');
+		$this->username = Config::get('DB_USERNAME');
+		$this->password = Config::get('DB_PASSWORD');
+		$this->host = Config::get('DB_HOST');
+		$this->dbname = Config::get('DB_DBNAME');
 		//Instancia Log
 		$this->log = new Logger();
 	}

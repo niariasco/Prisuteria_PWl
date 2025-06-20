@@ -1,5 +1,5 @@
 <?php
-class DirectorModel
+class OrdenModel
 {
     public $enlace;
     public function __construct()
