@@ -35,6 +35,7 @@ class user
         //Dar respuesta
         $response->toJSON($result);
     }
+    /*
     public function customerbyShopRental($idShopRental)
     {
         $response = new Response();
@@ -44,6 +45,7 @@ class user
         //Dar respuesta
         $response->toJSON($result);
     }
+        */
     public function login()
     {
         $response = new Response();

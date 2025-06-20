@@ -22,12 +22,12 @@ export function Footer() {
         <Grid container rowSpacing={1}> 
           <Grid size={12}> 
             <Typography align="center" color="white" variant="subtitle1"> 
-              ISW-613 
+© 2025 Proyecto UTN. Todos los derechos reservados.
             </Typography> 
           </Grid> 
           <Grid size={12}> 
-            <Typography align="center" color="secondary.main" variant="body1"> 
-              {`${new Date().getFullYear()}`} 
+            <Typography align="center" color="#FFFFFF" variant="body1"> 
+              Diseñado por Priscilla & Nicole
             </Typography> 
           </Grid> 
         </Grid> 

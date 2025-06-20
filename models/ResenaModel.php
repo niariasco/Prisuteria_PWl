@@ -33,7 +33,7 @@ class ResenaModel{
          //   $shopM=new ShopRentalModel();
             $userM=new UserModel();
             //Consulta sql
-			$vSql = "SELECT * FROM rental where id=$id";           
+			$vSql = "SELECT * FROM resenas where id=$id";           
 			
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
@@ -42,7 +42,7 @@ class ResenaModel{
                 //Tienda
                // $vResultado->shopRental=$shopM->get($vResultado->shop_id);
                 //Cliente
-                $vResultado->customer=$userM->get($vResultado->customer_id);
+              //  $vResultado->usuario=$userM->get($vResultado->usuario_id);
                 //Lista de peliculas
                // $vResultado->movies=$rentalMovieM->getRental($id);
             }

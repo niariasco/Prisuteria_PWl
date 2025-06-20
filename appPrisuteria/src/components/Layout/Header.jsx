@@ -13,7 +13,8 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import AccountCircle from "@mui/icons-material/AccountCircle";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import MoreIcon from "@mui/icons-material/MoreVert";
-import LiveTvIcon from "@mui/icons-material/LiveTv";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHouse } from '@fortawesome/free-solid-svg-icons';
 import Tooltip from "@mui/material/Tooltip";
 import { useCart } from "../../hooks/useCart";
 import { UserContext } from "../../context/UserContext";
@@ -66,11 +67,20 @@ export default function Header() {
   ];
   //Lista enlaces menu principal
   const navItems = [
-    { name: "Productos", link: "/producto",roles:null },
-    { name: "Cátalogo de Productos", link: "/producto/", roles:null },
+    { name: "Productos", link: "/productos",roles:null },
+    { name: "Cátalogo de Productos", link: "/productos/", roles:null },
     { name: "Filtrar Productos", link: "/movie/filter", roles:null },
     { name: "Mantenimiento Productos", link: "/movie-table/", roles:['Administrador'] },
   ];
+ /*
+  //Lista enlaces menu principal
+  const navItems = [
+    { name: "Peliculas", link: "/productos",roles:null },
+    { name: "Cátalogo de Peliculas", link: "/catalog-movies/", roles:null },
+    { name: "Filtrar Peliculas", link: "/movie/filter", roles:null },
+    { name: "Mantenimiento Peliculas", link: "/movie-table/", roles:['Administrador'] },
+  ];
+  */
   //Identificador menu principal
   const menuIdPrincipal = "menu-appbar";
   //Menu Principal
@@ -87,7 +97,7 @@ export default function Header() {
               key={index}
               component={Link}
               to={item.link}
-              color="secondary"
+              color="#FFFFFF"
             >
               <Typography textAlign="center">{item.name}</Typography>
             </Button>)
@@ -99,7 +109,7 @@ export default function Header() {
               key={index}
               component={Link}
               to={item.link}
-              color="secondary"
+              color="#FFFFFF"
             >
               <Typography textAlign="center">{item.name}</Typography>
             </Button>)
@@ -197,10 +207,10 @@ export default function Header() {
       onClose={handleOpcionesMenuClose}
     >
       <MenuItem>
-        <IconButton size="large" color="inherit">
+        <IconButton size="large" color="#FFFFFF">
           <Badge
             badgeContent={getCountItems(cart)}
-            color="primary"
+            color="#FFFFFF"
             component={Link}
             to="/rental/crear/"
           >
@@ -257,23 +267,24 @@ export default function Header() {
             {menuPrincipalMobile}
           </Menu>
           {/* Enlace página inicio */}
-          <Tooltip title="Compra de nuestros Productos">
+          <Tooltip title="Compra nuestros Productos">
             <IconButton
-              size="large"
+              size="medium"
               edge="end"
               component="a"
               href="/"
-              aria-label="Compra de nuestros Productos"
-              color="primary"
+              aria-label="Compra nuestros Productos"
+              color="#FFFFFF"
             >
-              <LiveTvIcon />
+<FontAwesomeIcon icon={faHouse} />
+
             </IconButton>
           </Tooltip>
           {/* Enlace página inicio */}
           {menuPrincipal}
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ display: { xs: "none", md: "flex" } }}>
-            <IconButton size="large" color="inherit">
+            <IconButton size="large" color="#FFFFFF">
               <Badge
                 badgeContent={getCountItems(cart)}
                 color="primary"
@@ -284,7 +295,7 @@ export default function Header() {
               </Badge>
             </IconButton>
             <IconButton size="large" color="inherit">
-              <Badge badgeContent={17} color="primary">
+              <Badge badgeContent={17} color="FFFFFF">
                 <NotificationsIcon />
               </Badge>
             </IconButton>
@@ -297,7 +308,7 @@ export default function Header() {
               aria-controls={menuOpcionesId}
               aria-haspopup="true"
               onClick={handleOpcionesMenuOpen}
-              color="inherit"
+              color="#FFFFFF"
             >
               <MoreIcon />
             </IconButton>

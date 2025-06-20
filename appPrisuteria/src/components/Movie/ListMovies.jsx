@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+/*import React, { useEffect } from 'react';*/
+import { useEffect } from 'react';
 import { useState } from 'react';
 import MovieService from '../../services/MovieService';
 import { ListCardMovies } from './ListCardMovies';

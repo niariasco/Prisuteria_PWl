@@ -50,6 +50,7 @@ class resena
             handleException($e);
         }
     }
+    /*
     public function ResenaMonthbyShop()
     {
         try {
@@ -76,4 +77,5 @@ class resena
             handleException($e);
         }
     }
+        */
 }

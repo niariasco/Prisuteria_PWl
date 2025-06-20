@@ -6,7 +6,6 @@ import { createBrowserRouter } from "react-router-dom";
 import { Home } from "./components/Home/Home";
 import { RouterProvider } from "react-router";
 import { PageNotFound } from "./components/Home/PageNotFound";
-import { ListMovies } from "./components/Movie/ListMovies";
 import { DetailMovie } from "./components/Movie/DetailMovie";
 import ListRentals from "./components/Rental/ListRentals";
 import DetailRental from "./components/Rental/DetailRental";
@@ -23,6 +22,8 @@ import { Login } from "./components/User/Login";
 import { Logout } from "./components/User/Logout";
 import { Signup } from "./components/User/Signup";
 import { Auth } from "./components/User/Auth";
+import { ListaProductos } from "./components/Productos/ListaProductos";
+import { ListMovies } from "./components/Movie/ListMovies";
 const rutas=createBrowserRouter(
   [
     {
@@ -108,7 +109,13 @@ const rutas=createBrowserRouter(
         {
           path: '/user/create',
           element: <Signup />
-        }
+        },
+
+      // Aquí agrego la ruta nueva para ListaProductos
+{  path: '/productos',
+element: <ListaProductos />
+
+}
       ]
     }
   ]

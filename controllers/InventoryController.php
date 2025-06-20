@@ -1,7 +1,7 @@
 <?php
 //class Inventory
 class inventory{
-
+/*
     //Listar en el API
     public function index(){
         $response = new Response();
@@ -33,4 +33,5 @@ class inventory{
         //Dar respuesta
         $response->toJSON($result);
     }
+        */
 }
