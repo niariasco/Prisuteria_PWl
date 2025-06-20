@@ -64,7 +64,7 @@ class producto
             handleException($e);
         }
     }
-    */
+    
     //POST Crear
     public function create()
     {
