@@ -10,35 +10,31 @@ class ImageModel
         $this->enlace = new MySqlConnect();
     }
     //Subir imagen de una pelicula registrada
-    public function uploadFile($object)
+      public function uploadFile($object)
     {
         try {
             $file = $object['file'];
             $product_id = $object['product_id'];
-            //Obtener la información del archivo
+
             $fileName = $file['name'];
             $tempPath = $file['tmp_name'];
             $fileSize = $file['size'];
             $fileError = $file['error'];
 
             if (!empty($fileName)) {
-                //Crear un nombre único para el archivo
                 $fileExt = explode('.', $fileName);
                 $fileActExt = strtolower(end($fileExt));
-               $fileName = "movie-" . uniqid() . "." . $fileActExt;
-                //Validar el tipo de archivo
+                $newFileName = uniqid() . "." . $fileActExt;
+
                 if (in_array($fileActExt, $this->valid_extensions)) {
-                    //Validar que no exista
-                    if (!file_exists($this->upload_path . $fileName)) {
-                        //Validar que no sobrepase el tamaño
+                    if (!file_exists($this->upload_path . $newFileName)) {
                         if ($fileSize < 2000000 && $fileError == 0) {
-                            //Moverlo a la carpeta del servidor del API
-                            if (move_uploaded_file($tempPath, $this->upload_path . $fileName)) {
-                                //Guardarlo en la BD
-                                $sql = "INSERT INTO image (produtc_id,image) VALUES ($product_id, '$fileName')";
+                            if (move_uploaded_file($tempPath, $this->upload_path . $newFileName)) {
+                                $sql = "INSERT INTO imagenes (producto_id, image) VALUES ($product_id, '$newFileName')";
                                 $vResultado = $this->enlace->executeSQL_DML($sql);
                                 if ($vResultado > 0) {
-                                    return 'Imagen creada';
+                                    // Retornamos el nombre del archivo para frontend
+                                    return $newFileName;
                                 }
                                 return false;
                             }
@@ -50,22 +46,24 @@ class ImageModel
             handleException($e);
         }
     }
-    //Obtener una imagen de una pelicula
+
+    // Obtener el nombre de la imagen de un producto
     public function getImageProducto($idProducto)
     {
         try {
-            
-            //Consulta sql
-            $vSql = "SELECT * FROM imagenes where producto_id=$idProducto";
+            $vSql = "
+                SELECT image 
+                FROM imagenes 
+                WHERE producto_id = $idProducto 
+                ORDER BY imagenId ASC 
+                LIMIT 1
+            ";
 
-            //Ejecutar la consulta
             $vResultado = $this->enlace->ExecuteSQL($vSql);
             if (!empty($vResultado)) {
-                // Retornar el objeto
-                return $vResultado[0];
-                
+                return $vResultado[0]['image']; // Solo el nombre del archivo
             }
-            return $vResultado;
+            return null;
         } catch (Exception $e) {
             handleException($e);
         }

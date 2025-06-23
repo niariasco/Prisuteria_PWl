@@ -18,7 +18,19 @@ class ProductoModel
         try {
             $imagenM=new ImageModel();
             //Consulta SQL
-            $vSQL = "SELECT * FROM productos order by nombre desc;";
+             $vSQL = "
+            SELECT p.*, 
+                (
+                    SELECT url_imagen 
+                    FROM imagenes 
+                    WHERE producto_id = p.productosId 
+                    ORDER BY imagenId ASC 
+                    LIMIT 1
+                ) AS imagen
+            FROM productos p
+            WHERE p.activo = 1
+            ORDER BY p.nombre DESC
+        ";
             //Ejecutar la consulta
             $vResultado = $this->enlace->ExecuteSQL($vSQL);
             //Incluir imagenes
