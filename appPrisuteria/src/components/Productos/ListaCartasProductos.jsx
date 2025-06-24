@@ -44,14 +44,14 @@ export function ListaCartasProductos({ data, isShopping }) {
                   }}
                   style={{ textAlign: 'center' }}
                   title={item.nombre}
-                  subheader={item.categoria || 'Producto'}
+                  subheader={item.categoria || ''}
                 />
                 <CardMedia
-                  component="img"
-                  height="200"
-                  image={`${BASE_URL}/${item.imagen || 'default.jpg'}`}
-                  alt={item.nombre}
-                />
+                 component="img"
+                  height="150"
+                 image={`${BASE_URL}/${item.imagen || 'default.jpg'}`}
+                alt={item.nombre}
+                />              
                 <CardContent>
                   <Typography variant="body2" color="text.secondary">
                     {item.descripcion}
@@ -95,7 +95,7 @@ export function ListaCartasProductos({ data, isShopping }) {
                 >
                   <IconButton
                     component={Link}
-                    to={`/producto/${item.id}`}
+                    to={`/productos/${item.id}`}
                     aria-label="Detalle"
                     sx={{ ml: 'auto' }}
                   >
@@ -117,3 +117,10 @@ export function ListaCartasProductos({ data, isShopping }) {
     </Grid>
   );
 }
+
+/*                <CardMedia
+                  component="img"
+                  height="200"
+                  image={`${BASE_URL}/${item.imagen || 'default.jpg'}`}
+                  alt={item.nombre}
+                />*/

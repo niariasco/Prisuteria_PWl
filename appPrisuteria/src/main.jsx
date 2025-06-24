@@ -114,8 +114,9 @@ const rutas=createBrowserRouter(
       // Aquí agrego la ruta nueva para ListaProductos
 {  path: '/productos',
 element: <ListaProductos />
+},
 
-}
+
       ]
     }
   ]

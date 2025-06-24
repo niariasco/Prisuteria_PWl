@@ -13,13 +13,20 @@ class ProductoModel
      * @param 
      * @return $vResultado - Lista de objetos
      */
+
     public function all()
     {
         try {
             $imagenM=new ImageModel();
             //Consulta SQL
-            $vSQL = "SELECT * FROM productos order by nombre desc;";
-            //Ejecutar la consulta
+           // $vSQL = "SELECT * FROM productos order by nombre desc;";
+              //Consulta SQL con JOIN para obtener las imágenes directamente
+            $vSQL = "SELECT p.*, i.url_imagen as imagen 
+                    FROM productos p 
+                    LEFT JOIN imagenes i ON p.productosId = i.producto_id 
+                    ORDER BY p.nombre DESC";
+           
+           //Ejecutar la consulta
             $vResultado = $this->enlace->ExecuteSQL($vSQL);
             //Incluir imagenes
             if(!empty($vResultado) && is_array($vResultado)){
@@ -49,16 +56,42 @@ class ProductoModel
            // $directorM=new DirectorModel();
          //   $genreM=new GenreModel();
            // $actorM=new ActorModel();
-            $imagenM=new ImageModel();
-            $vSql = "SELECT * FROM productos
-                    where productosId=$id;";
+          //  $imagenM=new ImageModel();
+                      //Consulta SQL con JOIN para obtener la imagen
+            $vSql = "SELECT p.*, i.url_imagen as imagen 
+                    FROM productos p 
+                    LEFT JOIN imagenes i ON p.productosId = i.producto_id 
+                    WHERE p.productosId = $id";
+            
+           
+            //Ejecutar la consulta
+            $vResultado = $this->enlace->ExecuteSQL($vSql);
+            
+            if (!empty($vResultado)) {
+                // Si no tiene imagen, asignar imagen por defecto
+                if (empty($vResultado[0]->imagen)) {
+                    $vResultado[0]->imagen = 'default.jpg';
+                }
+                // Asegurar que el ID sea consistente para el frontend
+                $vResultado[0]->id = $vResultado[0]->productosId;
+                return $vResultado[0];
+            }
+            
+            return null;
+        } catch (Exception $e) {
+            handleException($e);
+            return null;
+        }
+    }  
+            //  $vSql = "SELECT * FROM productos
+          //          where productosId=$id;";
 
             //Ejecutar la consulta sql
-            $vResultado = $this->enlace->executeSQL($vSql);
-            if(!empty($vResultado)){
-                $vResultado=$vResultado[0];
+         //   $vResultado = $this->enlace->executeSQL($vSql);
+         //   if(!empty($vResultado)){
+             //   $vResultado=$vResultado[0];
                 //Imagenes
-                $vResultado->imagen=$imagenM->getImageProducto(idProducto:($vResultado->productosId));
+       //         $vResultado->imagen=$imagenM->getImageProducto(idProducto:($vResultado->productosId));
                 //Director
               //  $director=$directorM->get($vResultado->director_id);
              //   $vResultado->director=$director;
@@ -68,15 +101,14 @@ class ProductoModel
                 //Actores --actors
               //  $listaActores=$actorM->getActorMovie($id);
               //  $vResultado->actors=$listaActores;
-            }
-
+        
             
             //Retornar la respuesta
-            return $vResultado;
-        } catch (Exception $e) {
-            handleException($e);
-        }
-    }
+        //    return $vResultado;
+      //  } catch (Exception $e) {
+     //       handleException($e);
+       // }
+   // }
     /**
      * Obtener las productos por categoria
      * @param $idShopRental identificador de la tienda
