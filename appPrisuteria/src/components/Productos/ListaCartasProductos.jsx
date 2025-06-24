@@ -49,7 +49,7 @@ export function ListaCartasProductos({ data, isShopping }) {
                 <CardMedia
                   component="img"
                   height="200"
-                  image={`${BASE_URL}/${typeof item.imagen === 'object' ? item.imagen?.filename : item.imagen || 'default.jpg'}`}
+                  image={`${BASE_URL}/${item.imagen || 'default.jpg'}`}
                   alt={item.nombre}
                 />
                 <CardContent>
