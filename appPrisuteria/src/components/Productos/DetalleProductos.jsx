@@ -12,9 +12,9 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import Grid from '@mui/material/Grid2';
 //import ticket from '../../assets/ticket.jpg';
-import MovieService from '../../services/MovieService';
+import ProductoService from '../../services/ProductoService';
 
-export function DetailMovie() {
+export function DetalleProductos() {
   const routeParams = useParams();
   console.log(routeParams);
   //Url para acceder a la imagenes guardadas en el API
@@ -26,8 +26,8 @@ export function DetailMovie() {
   //Booleano para establecer sí se ha recibido respuesta
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    //Llamar al API y obtener una pelicula
-    MovieService.getMovieById(routeParams.id)
+    //Llamar al API y obtener una Producto
+    ProductoService.getProductoById(routeParams.id)
       .then((response) => {
         setData(response.data);
         console.log(response.data);
@@ -55,22 +55,22 @@ export function DetailMovie() {
                 maxWidth: '100%',
                 height: 'auto',
               }}
-              alt="Ticket pelicula"
+              alt="Ticket Producto"
               src={`${BASE_URL}/${data.imagen?.image}`}
             />
           </Grid>
           <Grid size={7}>
             <Typography variant="h4" component="h1" gutterBottom>
-              {/* Título pelicula */}
+              {/* Título Producto */}
               {data.title}
             </Typography>
             <Typography variant="subtitle1" component="h1" gutterBottom>
-              {/* Año pelicula */}
+              {/* Año Producto */}
               {data.year}
             </Typography>
             <Typography component="span" variant="subtitle1" display="block">
               <Box fontWeight="bold" display="inline">
-                {/* Duración o Tiempo pelicula */}
+                {/* Duración o Tiempo Producto */}
                 {data.time} 
               </Box>{' '}
               minutos
@@ -79,7 +79,7 @@ export function DetailMovie() {
               <Box fontWeight="bold" display="inline">
                 Idioma:
               </Box>{' '}
-              {/* Idioma pelicula */}
+              {/* Idioma Producto */}
               {data.language}
             </Typography>
             <Typography component="span" variant="subtitle1" display="block">
@@ -98,7 +98,7 @@ export function DetailMovie() {
                   bgcolor: 'background.paper',
                 }}
               >
-                {/* Lista de generos de la pelicula */}
+                {/* Lista de generos de la Producto */}
               
                   <ListItemButton >
                     <ListItemIcon>
@@ -118,7 +118,7 @@ export function DetailMovie() {
                   bgcolor: 'background.paper',
                 }}
               >
-                {/* Lista de actores de la pelicula */}
+                {/* Lista de actores de la Producto */}
                 {data.actors.map((item)=>( 
                   <ListItemButton key={item.id}>
                     <ListItemIcon>
