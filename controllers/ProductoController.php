@@ -19,7 +19,7 @@ class producto
         }
     }
     //GET Obtener 
-    public function get($id)
+   /* public function get($id)
     {
         try {
             $response = new Response();
@@ -32,8 +32,20 @@ class producto
         } catch (Exception $e) {
             handleException($e);
         }
+    }*/
+    public function get($id)
+{
+    $response = new Response();
+    $model = new ProductoModel();
+    $producto = $model->get($id);
+
+    if ($producto) {
+        $imagenModel = new ImageModel();
+        $producto->imagen = $imagenModel->getImageProducto($producto->productosId);
     }
-    //Obtener peliculas por tienda
+
+    $response->toJSON($producto);
+}
     public function productosXCategoria($idProductoXCategoria)
     {
         try {

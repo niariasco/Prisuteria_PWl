@@ -120,8 +120,8 @@ class ImageModel
         try {
             $vSql = "SELECT * FROM imagenes WHERE producto_id = $idProducto";
             $vResultado = $this->enlace->ExecuteSQL($vSql);
-            
-            return $vResultado ?: [];
+            return $vResultado[0];
+            /*return $vResultado ?: [];*/
         } catch (Exception $e) {
             handleException($e);
             return [];

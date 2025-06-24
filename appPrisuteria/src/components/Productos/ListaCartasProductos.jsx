@@ -95,7 +95,7 @@ export function ListaCartasProductos({ data, isShopping }) {
                 >
                   <IconButton
                     component={Link}
-                    to={`/productos/${item.id}`}
+                    to={`/producto/${item.id}`}
                     aria-label="Detalle"
                     sx={{ ml: 'auto' }}
                   >

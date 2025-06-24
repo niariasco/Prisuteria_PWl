@@ -2,14 +2,8 @@
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import List from '@mui/material/List';
-import ListItemText from '@mui/material/ListItemText';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import StarIcon from '@mui/icons-material/Star';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemButton from '@mui/material/ListItemButton';
-import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import Grid from '@mui/material/Grid2';
 //import ticket from '../../assets/ticket.jpg';
 import ProductoService from '../../services/ProductoService';
@@ -44,94 +38,37 @@ export function DetalleProductos() {
   if (!loaded) return <p>Cargando...</p>;
   if (error) return <p>Error: {error.message}</p>;
   return (
-    <Container component="main" sx={{ mt: 8, mb: 2 }}>
-      {data && 
-        <Grid container spacing={2}>
-          <Grid size={5}>
+   <Container component="main" sx={{ mt: 8, mb: 2 }}>
+      {data && (
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={5}>
             <Box
               component="img"
               sx={{
-                borderRadius: '4%',
-                maxWidth: '100%',
+                borderRadius: 2,
+                maxWidth: '40%',
                 height: 'auto',
               }}
-              alt="Ticket Producto"
-              src={`${BASE_URL}/${data.imagen?.image}`}
+              alt={data.nombre}
+              src={`${BASE_URL}/${data.imagen || 'default.jpg'}`}
             />
           </Grid>
-          <Grid size={7}>
-            <Typography variant="h4" component="h1" gutterBottom>
-              {/* Título Producto */}
-              {data.title}
+
+          <Grid item xs={12} md={7}>
+            <Typography variant="h4" gutterBottom>
+              {data.nombre}
             </Typography>
-            <Typography variant="subtitle1" component="h1" gutterBottom>
-              {/* Año Producto */}
-              {data.year}
+
+            <Typography variant="subtitle1" gutterBottom>
+              Categoría: {data.categoria || 'N/A'}
             </Typography>
-            <Typography component="span" variant="subtitle1" display="block">
-              <Box fontWeight="bold" display="inline">
-                {/* Duración o Tiempo Producto */}
-                {data.time} 
-              </Box>{' '}
-              minutos
-            </Typography>
-            <Typography component="span" variant="subtitle1" display="block">
-              <Box fontWeight="bold" display="inline">
-                Idioma:
-              </Box>{' '}
-              {/* Idioma Producto */}
-              {data.language}
-            </Typography>
-            <Typography component="span" variant="subtitle1" display="block">
-              <Box fontWeight="bold" display="inline">
-                Director:
-              </Box>{' '}
-              {/* Nombre completo Director */}
-              {data.director.fname}  {data.director.lname}
-            </Typography>
-            <Typography component="span" variant="subtitle1">
-              <Box fontWeight="bold">Generos:</Box>
-              <List
-                sx={{
-                  width: '100%',
-                  maxWidth: 360,
-                  bgcolor: 'background.paper',
-                }}
-              >
-                {/* Lista de generos de la Producto */}
-              
-                  <ListItemButton >
-                    <ListItemIcon>
-                      <ArrowRightIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Nombre Genero" />
-                  </ListItemButton>
-               
-              </List>
-            </Typography>
-            <Typography component="span" variant="subtitle1">
-              <Box fontWeight="bold">Actores:</Box>
-              <List
-                sx={{
-                  width: '100%',
-                  maxWidth: 360,
-                  bgcolor: 'background.paper',
-                }}
-              >
-                {/* Lista de actores de la Producto */}
-                {data.actors.map((item)=>( 
-                  <ListItemButton key={item.id}>
-                    <ListItemIcon>
-                      <StarIcon />
-                    </ListItemIcon>
-                    <ListItemText primary={`${item.fname} ${item.lname}`} />
-                  </ListItemButton>
-               ))}
-              </List>
+
+            <Typography variant="body1" gutterBottom>
+              {data.descripcion}
             </Typography>
           </Grid>
         </Grid>
-      }
+      )}
     </Container>
   );
 }
