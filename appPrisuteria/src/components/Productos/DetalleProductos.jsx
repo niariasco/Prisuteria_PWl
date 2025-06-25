@@ -104,7 +104,16 @@ import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
               </IconButton>
             </Box>
           )}
-
+         <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
+          
+            <strong>Retiro disponible en Retiro en Heredia</strong> 
+          
+          </Typography>
+  <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
+          
+             <strong>Normalmente está listo en 24 horas</strong> 
+          
+          </Typography>
 
         </Grid>
       </Grid>
