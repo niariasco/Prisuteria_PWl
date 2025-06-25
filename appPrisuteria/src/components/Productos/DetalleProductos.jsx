@@ -6,7 +6,7 @@ import { useParams } from 'react-router-dom';
 import Grid from '@mui/material/Grid';
 import ProductoService from '../../services/ProductoService';
 import PropTypes from 'prop-types';
-import { Divider, IconButton } from '@mui/material';
+import {  IconButton } from '@mui/material';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 
   export function DetalleProductos({ isShopping, addItem }) {
@@ -80,7 +80,7 @@ import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
           </Typography>
 
           <Typography variant="body1" gutterBottom>
-            Valoración promedio: {data.promedio_valoracion ?? 'Sin valoraciones'}{' '}
+            Valoración promedio: 
             {data.promedio_valoracion &&
               '⭐'.repeat(Math.round(data.promedio_valoracion))}
           </Typography>
@@ -105,17 +105,7 @@ import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
             </Box>
           )}
 
-          <Box sx={{ mt: 4 }}>
-            <Divider sx={{ mb: 2 }} />
-            <Typography variant="subtitle1" gutterBottom>
-              <strong>Material:</strong>
-            </Typography>
 
-            <Typography variant="subtitle1" gutterBottom>
-              <strong>Detalles:</strong>
-            </Typography>
-
-          </Box>
         </Grid>
       </Grid>
     </Container>
@@ -132,3 +122,28 @@ DetalleProductos.propTypes = {
             </Button>*/
             /*export function DetalleProductos() {
   const routeParams = useParams();*/
+
+  /*
+  import { Divider } from '@mui/material';
+            <Box sx={{ mt: 4 }}>
+            <Divider sx={{ mb: 2 }} />
+            <Typography variant="subtitle1" gutterBottom>
+              <strong>Material:</strong>
+            </Typography>
+
+            <Typography variant="subtitle1" gutterBottom>
+              <strong>Detalles:</strong>
+            </Typography>
+
+          </Box>
+  */
+
+          /*
+          
+                 <Typography variant="body1" gutterBottom>
+            Valoración promedio: {data.promedio_valoracion ?? 'Sin valoraciones'}{' '}
+            {data.promedio_valoracion &&
+              '⭐'.repeat(Math.round(data.promedio_valoracion))}
+          </Typography>
+
+          */
