@@ -29,6 +29,9 @@ useEffect(() => {
 }, []);
 
 
+
+
+
 if(!loaded) return <p>Cargando..</p>
 if(error) return <p>Error: {error.message}</p>
 return <>{data && <ListaCartasProductos data={data} isShopping={true} />}</> 

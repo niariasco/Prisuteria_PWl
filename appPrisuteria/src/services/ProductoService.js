@@ -6,9 +6,11 @@ class ProductoService {
 
   //Listas peliculas
   //localhost:81/apiProducto/Producto
+  
   getAllProductos() {
     return axios.get(BASE_URL);
   }
+  
   //Obtener pelicula
   //localhost:81/apiProducto/Producto/1
   getProductoById(ProductoId){
@@ -31,5 +33,7 @@ class ProductoService {
 
     })
   }
+  
 }
+
 export default new ProductoService();
