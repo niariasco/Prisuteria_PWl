@@ -9,7 +9,7 @@ import PropTypes from 'prop-types';
 import {  IconButton } from '@mui/material';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 
-  export function DetalleProductos({ isShopping, addItem }) {
+  export function DetalleProductos({ isShopping, addItem , item }) {
   const routeParams = useParams();
   
   //console.log(routeParams);
@@ -17,7 +17,7 @@ import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
   const BASE_URL = import.meta.env.VITE_BASE_URL+'uploads'
   //Resultado de consumo del API, respuesta
   const [data, setData] = useState(null);
-  //Error del API
+  //Error del APIs
   const [error, setError] = useState('');
   //Booleano para establecer sí se ha recibido respuesta
   const [loaded, setLoaded] = useState(false);
@@ -80,41 +80,26 @@ import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
           </Typography>
 
           <Typography variant="body1" gutterBottom>
-            Valoración promedio: 
+             <strong> Valoración promedio: </strong>
             {data.promedio_valoracion &&
               '⭐'.repeat(Math.round(data.promedio_valoracion))}
           </Typography>
 
-  {/* Botón de agregar al carrito */}
-          {isShopping && (
-            <Box sx={{ mt: 3, mb: 3 }}>
-              <IconButton
-                aria-label="Agregar al carrito"
-                onClick={() => addItem(data)}
-                sx={{ 
-                  backgroundColor: '#d83b6a',
-                  color: 'black',
-                  padding: 2,
-                  '&:hover': {
-                    backgroundColor: '#c23456'
-                  }
-                }}
-              >
-                <AddShoppingCartIcon />
-              </IconButton>
-            </Box>
-          )}
+  {isShopping && (
+                  <IconButton
+                    aria-label="Comprar"
+                    sx={{ ml: 'auto' }}
+                    onClick={()=>addItem(item)}
+                  >
+                    <AddShoppingCartIcon />
+                  </IconButton>
+                )}
          <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
-          
-            <strong>Retiro disponible en Retiro en Heredia</strong> 
-          
+            {'Retiro disponible en Retiro en Heredia'}
           </Typography>
-  <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
-          
-             <strong>Normalmente está listo en 24 horas</strong> 
-          
+           <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
+               {'Normalmente está listo en 24 horas'}
           </Typography>
-
         </Grid>
       </Grid>
     </Container>
