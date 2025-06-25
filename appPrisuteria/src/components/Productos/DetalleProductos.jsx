@@ -58,14 +58,24 @@ export function DetalleProductos() {
             <Typography variant="h4" gutterBottom>
               {data.nombre}
             </Typography>
-
-            <Typography variant="subtitle1" gutterBottom>
-              Categoría: {data.categoria || 'N/A'}
-            </Typography>
-
-            <Typography variant="body1" gutterBottom>
+                        <Typography variant="body1" gutterBottom>
               {data.descripcion}
             </Typography>
+
+<Typography variant="subtitle1" gutterBottom>
+  Categoría: {data.nombreSCategoria}
+</Typography>
+
+<Typography variant="subtitle1" gutterBottom>
+  Precio: ₡{data.precio}
+</Typography>
+
+<Typography variant="subtitle1" gutterBottom>
+  Valoración promedio: {data.promedio_valoracion ?? 'Sin valoraciones'}
+    {data.promedio_valoracion && '⭐'.repeat(Math.round(data.promedio_valoracion))}
+</Typography>
+
+
           </Grid>
         </Grid>
       )}

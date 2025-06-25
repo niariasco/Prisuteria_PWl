@@ -58,11 +58,22 @@ class ProductoModel
            // $actorM=new ActorModel();
           //  $imagenM=new ImageModel();
                       //Consulta SQL con JOIN para obtener la imagen
-            $vSql = "SELECT p.*, i.url_imagen as imagen 
-                    FROM productos p 
-                    LEFT JOIN imagenes i ON p.productosId = i.producto_id 
-                    WHERE p.productosId = $id";
+           // $vSql = "SELECT p.*, i.url_imagen as imagen 
+             //       FROM productos p 
+              //      LEFT JOIN imagenes i ON p.productosId = i.producto_id 
+                //    WHERE p.productosId = $id";
             
+              $vSql =" SELECT 
+                p.*, 
+                i.url_imagen AS imagen,
+                 c.nombreSCategoria AS nombreSCategoria,
+                ROUND(AVG(r.calificacion), 2) AS promedio_valoracion
+            FROM productos p
+            LEFT JOIN imagenes i ON p.productosId = i.producto_id
+            LEFT JOIN categorias c ON p.categoria_id = c.categoriaId
+            LEFT JOIN resenas r ON p.productosId = r.producto_id
+            WHERE p.productosId =$id
+            GROUP BY p.productosId";
            
             //Ejecutar la consulta
             $vResultado = $this->enlace->ExecuteSQL($vSql);
