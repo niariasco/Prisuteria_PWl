@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
 import { useParams } from 'react-router-dom';
 import Grid from '@mui/material/Grid';
 import ProductoService from '../../services/ProductoService';
 import PropTypes from 'prop-types';
 import {  IconButton } from '@mui/material';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
+import { Chip } from '@mui/material';
+import Slider from 'react-slick';
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
 
   export function DetalleProductos({ isShopping, addItem , item }) {
   const routeParams = useParams();
@@ -43,19 +46,49 @@ import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
     <Container maxWidth="md" sx={{ mt: 6, mb: 6 }}>
       <Grid container spacing={4}>
         {/* Imagen del producto */}
-        <Grid item xs={12} md={6}>
-          <Box
-            component="img"
-            sx={{
-              width: '60%',
-              borderRadius: 2,
-              objectFit: 'cover',
-              boxShadow: 3,
-            }}
-            alt={data.nombre}
-            src={`${BASE_URL}/${data.imagen || 'default.jpg'}`}
-          />
-        </Grid>
+<Grid item xs={12} md={6}>
+  {data.imagenes && data.imagenes.length > 0 ? (
+    data.imagenes.length === 1 ? (
+      <img
+        src={`${BASE_URL}/${data.imagenes[0]}`}
+        alt="producto"
+        style={{
+          width: '100%',
+          maxHeight: 400,
+          objectFit: 'contain',
+          borderRadius: 10
+        }}
+      />
+    ) : (
+      <Slider
+        dots={true}
+        infinite={true}
+        speed={500}
+        slidesToShow={1}
+        slidesToScroll={1}
+        arrows
+      >
+        {data.imagenes.map((img, index) => (
+          <div key={index}>
+            <img
+              src={`${BASE_URL}/${img}`}
+              alt={`img-${index}`}
+              style={{
+                width: '100%',
+                maxHeight: 400,
+                objectFit: 'contain',
+                borderRadius: 10
+              }}
+            />
+          </div>
+        ))}
+      </Slider>
+    )
+  ) : (
+    <Typography variant="body2">Sin imágenes disponibles</Typography>
+  )}
+</Grid>
+
 
         {/* Detalles del producto */}
         <Grid item xs={12} md={6}>
@@ -79,6 +112,19 @@ import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
             <strong>Categoría:</strong> {data.nombreSCategoria}
           </Typography>
 
+
+{data.etiquetas
+  ? data.etiquetas.split(', ').map((etiqueta, index) => (
+      <Chip
+        key={index}
+        label={etiqueta}
+        variant="outlined"
+        color="primary"
+        sx={{ mr: 1, mb: 1 }}
+      />
+    ))
+  : <Typography variant="body2"></Typography>}
+
           <Typography variant="body1" gutterBottom>
              <strong> Valoración promedio: </strong>
             {data.promedio_valoracion &&
@@ -94,6 +140,9 @@ import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
                     <AddShoppingCartIcon />
                   </IconButton>
                 )}
+             <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
+            {'_________________________________________________'}
+          </Typography>
          <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
             {'Retiro disponible en Retiro en Heredia'}
           </Typography>

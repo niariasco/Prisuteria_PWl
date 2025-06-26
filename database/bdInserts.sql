@@ -146,3 +146,42 @@ INSERT INTO usuarios (nombre_usuario, correo, contraseña, rol_id) VALUES
 
 INSERT INTO imagenes (producto_id, url_imagen) VALUES
 (1, 'movie-Arete1Perla.jpg');
+
+/*cambios en BD 25-06-2025*/
+ALTER TABLE etiquetas CHANGE nombre nombrEtiquetas VARCHAR(50) NOT NULL UNIQUE;
+
+CREATE TABLE productoEtiqueta (
+    producto_id INT NOT NULL,
+    etiqueta_id INT NOT NULL,
+    FOREIGN KEY (producto_id) REFERENCES productos(productosId) ON DELETE CASCADE,
+    FOREIGN KEY (etiqueta_id) REFERENCES etiquetas(etiquetaId) ON DELETE CASCADE
+);
+
+
+INSERT INTO productoEtiqueta (producto_id, etiqueta_id) VALUES (5, 1);
+INSERT INTO productoEtiqueta (producto_id, etiqueta_id) VALUES (1, 13);
+INSERT INTO productoEtiqueta (producto_id, etiqueta_id) VALUES (2, 11);
+INSERT INTO productoEtiqueta (producto_id, etiqueta_id) VALUES (3, 10);
+INSERT INTO productoEtiqueta (producto_id, etiqueta_id) VALUES (2, 12);
+INSERT INTO productoEtiqueta (producto_id, etiqueta_id) VALUES (4, 9);
+INSERT INTO productoEtiqueta (producto_id, etiqueta_id) VALUES (7, 9);
+INSERT INTO productoEtiqueta (producto_id, etiqueta_id) VALUES (8, 9);
+INSERT INTO productoEtiqueta (producto_id, etiqueta_id) VALUES (6, 9);
+
+    SELECT * FROM productoetiqueta WHERE producto_id = 1;
+    
+    SHOW CREATE TABLE productos
+	SHOW CREATE TABLE imagenes
+	SHOW CREATE TABLE productoEtiqueta
+
+DELETE FROM productos
+WHERE productosId = 1;
+
+INSERT INTO imagenes (producto_id, url_imagen) VALUES
+(2, 'CollarFlor.jpg');
+    
+    
+
+
+
+    

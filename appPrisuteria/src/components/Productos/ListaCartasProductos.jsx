@@ -58,22 +58,22 @@ export function ListaCartasProductos({ data, isShopping }) {
                   </Typography>
 
                   {isShopping && (
-                    <Typography variant="h6" align="right" gutterBottom>
-                      {tienePromo ? (
-                        <>
-                          <Typography
-                            variant="body2"
-                            sx={{ textDecoration: 'line-through', color: 'gray', display: 'inline', mr: 1 }}
-                          >
-                            &cent;{item.precio}
-                          </Typography>
-                          <Typography variant="h6" color="error" display="inline">
-                            &cent;{precioConDescuento.toFixed(2)}
-                          </Typography>
-                        </>
-                      ) : (
-                        <>&cent;{item.precio}</>
-                      )}
+                <Typography variant="h6" align="right" gutterBottom>
+                  {tienePromo ? (
+                    <>
+                    <Typography
+                      variant="body2"
+                      sx={{ textDecoration: 'line-through', color: 'gray', display: 'inline', mr: 1 }}
+                    >
+                         ₡{Number(item.precio).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} CRC
+                     </Typography>
+                     <Typography variant="h6" color="error" display="inline">
+                         ₡{Number(precioConDescuento).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}CRC
+                    </Typography>
+                     </>
+                    ) : (
+                       <> ₡{Number(item.precio).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} CRC </>
+                     )}
                     </Typography>
                   )}
                 </CardContent>

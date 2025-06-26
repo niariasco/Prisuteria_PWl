@@ -117,16 +117,15 @@ class ImageModel
      */
     public function getImagenesProducto($idProducto)
     {
-        try {
-            $vSql = "SELECT * FROM imagenes WHERE producto_id = $idProducto";
-            $vResultado = $this->enlace->ExecuteSQL($vSql);
-            return $vResultado[0];
-            /*return $vResultado ?: [];*/
-        } catch (Exception $e) {
-            handleException($e);
-            return [];
-        }
+    try {
+        $vSql = "SELECT url_imagen FROM imagenes WHERE producto_id = $idProducto";
+        $vResultado = $this->enlace->ExecuteSQL($vSql);
+        return $vResultado ?: [];
+    } catch (Exception $e) {
+        handleException($e);
+        return [];
     }
+}
 
     /**
      * Eliminar imagen de un producto
