@@ -32,7 +32,7 @@ class UserModel
 			$rolM = new RolModel();
 
 			//Consulta sql
-			$vSql = "SELECT * FROM users where usuarioId=$id";
+			$vSql = "SELECT * FROM usuarios where usuarioId=$id";
 			//Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL($vSql);
 			if ($vResultado) {

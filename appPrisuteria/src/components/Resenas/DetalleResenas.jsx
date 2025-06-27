@@ -38,10 +38,10 @@ export function DetalleResenas() {
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Typography variant="h6" gutterBottom>
-            <strong>Usuario:</strong> {data.usuario?.nombre}
+            <strong>Usuario:</strong>
           </Typography>
           <Typography variant="h6" gutterBottom>
-            <strong>Producto:</strong> {data.producto?.nombre}
+            <strong>Producto:</strong> 
           </Typography>
           <Typography variant="h6" gutterBottom>
             <strong>Fecha:</strong> {new Date(data.fecha).toLocaleDateString()}

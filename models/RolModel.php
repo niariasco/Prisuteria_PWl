@@ -9,7 +9,7 @@ class RolModel{
     public function all(){
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM rol;";
+			$vSql = "SELECT * FROM roles;";
 			
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
@@ -24,7 +24,7 @@ class RolModel{
     public function get($id){
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM rol where id=$id";
+			$vSql = "SELECT * FROM roles where rolesId=$id";
 			
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
@@ -37,9 +37,10 @@ class RolModel{
     public function getRolUser($idUser){
         try {
             //Consulta sql
-			$vSql = "SELECT r.id,r.name
-            FROM rol r,user u 
-            where r.id=u.rol_id and u.id=$idUser";
+			$vSql = "SELECT r.rolesId, r.nombre
+FROM usuarios u
+INNER JOIN roles r ON r.rolesId = u.rol_id
+WHERE u.usuarioId = $idUser;";
 			
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ( $vSql);

@@ -60,7 +60,33 @@ ORDER BY
 			die ( $e->getMessage () );
 		}
     }
-    
+    /*
+    public function get($id){
+        try {
+         //   $rentalMovieM=new RentalMovieModel();
+           $productoM=new ProductoModel();
+           $userM=new UserModel();
+            //Consulta sql
+			$vSql = "SELECT * FROM resenas where resenasId=$id";           
+			
+            //Ejecutar la consulta
+			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
+            if (!empty($vResultado)) {
+             $vResultado=$vResultado[0];
+             
+                //Cliente
+                $user=$userM->get($vResultado->usuario_id);
+                $vResultado->usuario=$user;
+                //Lista de peliculas
+                $producto=$productoM->get($vResultado->producto_id);
+                $vResultado->producto=$producto;
+            }
+			// Retornar el objeto
+			return $vResultado;
+		} catch ( Exception $e ) {
+			die ( $e->getMessage () );
+		}
+    } */
 	public function create($objeto) {
         try {
             $fechaReact = $objeto->fecha;
