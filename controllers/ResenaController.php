@@ -50,6 +50,21 @@ class resena
             handleException($e);
         }
     }
+
+    public function porProducto($productoId) {
+   
+        try {
+            $response = new Response();
+            //Instancia del modelo
+            $movie = new ResenaModel();
+            //Acción del modelo a ejecutar
+            $result = $movie->getByProducto($productoId);
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+}
     /*
     public function ResenaMonthbyShop()
     {

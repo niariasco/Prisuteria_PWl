@@ -14,7 +14,7 @@ export function DetalleResenas() {
   useEffect(() => {
     ResenaService.getId(id)
       .then((response) => {
-        setData(response.data[0]); // si la API devuelve un array
+        setData(response.data[0]); 
         setLoaded(true);
       })
       .catch((error) => {
@@ -41,7 +41,7 @@ export function DetalleResenas() {
             <strong>Usuario:</strong>
           </Typography>
           <Typography variant="h6" gutterBottom>
-            <strong>Producto:</strong> 
+            <strong>Producto:</strong> {data.nombre_usuario}
           </Typography>
           <Typography variant="h6" gutterBottom>
             <strong>Fecha:</strong> {new Date(data.fecha).toLocaleDateString()}

@@ -21,7 +21,6 @@ export function ListaCartasResenas({ data }) {
           <Card>
             <CardHeader
               title={`Usuario: ${resena.nombre_usuario}`}
-              subheader={`${resena.nombre}`}
               sx={{
                 backgroundColor: '#d83b6a',
                 color: 'white',
@@ -29,11 +28,14 @@ export function ListaCartasResenas({ data }) {
               }}
             />
             <CardContent>
+                <Typography variant="body1" gutterBottom>
+                <strong>Producto : </strong>{resena.nombre}
+              </Typography>
               <Typography variant="body1" gutterBottom>
-                <strong>Fecha de la reseña:</strong> {new Date(resena.fecha).toLocaleDateString()}
+                <strong>Comentario:</strong>
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                <strong>Comentario:</strong> {resena.comentario || 'Sin comentario'}
+                {resena.comentario}
               </Typography>
               <Typography variant="body2" gutterBottom>
                 <strong>Valoración:</strong>

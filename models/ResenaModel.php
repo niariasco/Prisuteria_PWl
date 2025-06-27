@@ -60,8 +60,8 @@ ORDER BY
 			die ( $e->getMessage () );
 		}
     }
-    /*
-    public function get($id){
+ 
+    public function getId($id){
         try {
          //   $rentalMovieM=new RentalMovieModel();
            $productoM=new ProductoModel();
@@ -86,7 +86,26 @@ ORDER BY
 		} catch ( Exception $e ) {
 			die ( $e->getMessage () );
 		}
-    } */
+    } 
+
+    public function getByProducto($productoId){
+    try {
+      //  $userM = new UserModel();
+        $vSql = "SELECT * FROM resenas WHERE producto_id = $productoId ORDER BY fecha DESC";
+        $vResultado = $this->enlace->ExecuteSQL($vSql);
+      /*  
+        if (!empty($vResultado)) {
+            foreach ($vResultado as $resena) {
+                $resena->usuario = $userM->get($resena->usuario_id);
+            }
+        }*/
+            $vResultado = $this->enlace->ExecuteSQL($vSql);
+
+            return $vResultado;
+        } catch (Exception $e) {
+            handleException($e);
+        }
+}
 	public function create($objeto) {
         try {
             $fechaReact = $objeto->fecha;

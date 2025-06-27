@@ -70,12 +70,14 @@ ORDER BY p.nombre DESC;
             //       FROM productos p 
             //      LEFT JOIN imagenes i ON p.productosId = i.producto_id 
             //    WHERE p.productosId = $id";
-            $vSql = "    SELECT 
+            $vSql = "      SELECT 
         p.*, 
         i.url_imagen AS imagen,
         c.nombreSCategoria AS nombreSCategoria,
         ROUND(AVG(r.calificacion), 2) AS promedio_valoracion,
-        GROUP_CONCAT(DISTINCT e.nombrEtiquetas SEPARATOR ', ') AS etiquetas
+        GROUP_CONCAT(DISTINCT e.nombrEtiquetas SEPARATOR ', ') AS etiquetas,
+        GROUP_CONCAT(DISTINCT CONCAT( '  ',r.comentario) SEPARATOR  '\n') AS comentarios_resenas
+
     FROM productos p
     LEFT JOIN imagenes i ON p.productosId = i.producto_id
     LEFT JOIN categorias c ON p.categoria_id = c.categoriaId

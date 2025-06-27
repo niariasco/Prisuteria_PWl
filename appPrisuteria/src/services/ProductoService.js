@@ -24,7 +24,7 @@ class ProductoService {
   createProducto(Producto) {
     return axios.post(BASE_URL, JSON.stringify(Producto));
   }
-  
+
   updateProducto(Producto) {
     return axios({
       method: 'put',

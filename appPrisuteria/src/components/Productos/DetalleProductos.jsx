@@ -14,7 +14,6 @@ import 'slick-carousel/slick/slick-theme.css';
 
   export function DetalleProductos({ /*isShopping,*/ addItem  }) {
   const routeParams = useParams();
-  
   //console.log(routeParams);
   //Url para acceder a la imagenes guardadas en el API
   const BASE_URL = import.meta.env.VITE_BASE_URL+'uploads'
@@ -33,12 +32,12 @@ import 'slick-carousel/slick/slick-theme.css';
         setError(response.error);
         setLoaded(true);
       })
-      .catch((error) => {
-        console.log(error);
-        setError(error);
-        throw new Error('Respuesta no válida del servidor');
-      });
-  }, [routeParams.id]);
+
+    .catch((error) => {
+      console.error("Error cargando reseñas", error);
+    });
+}, [routeParams.id]);
+
 
   if (!loaded) return <p>Cargando...</p>;
   if (error) return <p>Error: {error.message}</p>;
@@ -163,6 +162,17 @@ import 'slick-carousel/slick/slick-theme.css';
           </Typography>
         </Grid>
       </Grid>
+<Typography
+  variant="body1"
+  gutterBottom
+  sx={{ color: '#d83b6a', whiteSpace: 'pre-line' }}
+>
+  
+      {'\n'} {'\n'}
+  <strong>Reseñas:</strong> {data.comentarios_resenas}
+</Typography>
+
+    
     </Container>
   );
 }
