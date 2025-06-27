@@ -12,11 +12,11 @@ class PromocionModel
             //Consulta sql
 			$sql = "SELECT p.*, 
                     CASE 
-                        WHEN CURDATE() BETWEEN p.fecha_inicio AND p.fecha_fin THEN 
+                        WHEN CURDATE() BETWEEN p.fecha_inicio AND p.fecha_fin THEN 'Vigente'
                         WHEN CURDATE() < p.fecha_inicio THEN 'Pendiente'
                         ELSE 'Aplicado'
                     END AS tipo 
-                    FROM promociones p;";
+                FROM promociones p;";
 
 			
             //Ejecutar la consulta
