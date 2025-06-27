@@ -184,4 +184,6 @@ INSERT INTO imagenes (producto_id, url_imagen) VALUES
 
 
 
-    
+    /*actualizacion 6/26/2025*/
+ 
+   ALTER TABLE resenas CHANGE id resenasId INT; 

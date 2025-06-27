@@ -87,35 +87,51 @@ ORDER BY p.nombre DESC;
     WHERE p.productosId = $id
     GROUP BY p.productosId
 ";
-            // Ejecutar la consulta del producto
-            $vResultado = $this->enlace->ExecuteSQL($vSql);
+          
+        // Ejecutar la consulta del producto
+        $vResultado = $this->enlace->ExecuteSQL($vSql);
 
-            if (!empty($vResultado)) {
-                $producto = $vResultado[0];
+        if (!empty($vResultado)) {
+            $producto = $vResultado[0];
+            $producto->id = $producto->productosId;
 
-                $producto->id = $producto->productosId;
-
-                $imagenes = $imagenM->getImagenesProducto($id);
-
-                if (isset($imagenes->url_imagen)) {
-                    $producto->imagenes = [$imagenes->url_imagen];
-                } else if (is_array($imagenes)) {
-                    $producto->imagenes = array_map(function ($img) {
-                        return $img->url_imagen;
-                    }, $imagenes);
-                } else {
-                    $producto->imagenes = ['default.jpg'];
-                }
-
-                return $producto;
+            // Imágenes
+            $imagenes = $imagenM->getImagenesProducto($id);
+            if (isset($imagenes->url_imagen)) {
+                $producto->imagenes = [$imagenes->url_imagen];
+            } else if (is_array($imagenes)) {
+                $producto->imagenes = array_map(function ($img) {
+                    return $img->url_imagen;
+                }, $imagenes);
+            } else {
+                $producto->imagenes = ['default.jpg'];
             }
 
-            return null;
-        } catch (Exception $e) {
-            handleException($e);
-            return null;
+            // Reseñas completas con usuario
+            $sqlResenas = "
+                SELECT 
+                    r.resenasId,
+                    u.nombre_usuario AS nombre,
+                    r.comentario,
+                    r.calificacion,
+                    r.fecha
+                FROM resenas r
+                JOIN usuarios u ON r.usuario_id = u.usuarioId
+                WHERE r.producto_id = $id
+                ORDER BY r.fecha DESC
+            ";
+            $resenas = $this->enlace->ExecuteSQL($sqlResenas);
+            $producto->resenas = $resenas;
+
+            return $producto;
         }
+
+        return null;
+    } catch (Exception $e) {
+        handleException($e);
+        return null;
     }
+}
     //  $vSql = "SELECT * FROM productos
     //          where productosId=$id;";
 
@@ -152,9 +168,16 @@ ORDER BY p.nombre DESC;
     {
         try {
 
-            $vSQL = "SELECT r.resenasId, r.usuario_id, r.comentario, r.producto_id, r.fecha, r.calificacion
-                    FROM resenas r
-                WHERE r.producto_id $id";
+            $vSQL = "SELECT 
+    r.resenasId, 
+    u.nombre_usuario AS nombre_usuario, 
+    r.comentario, 
+    r.fecha, 
+    r.calificacion
+FROM resenas r
+JOIN usuarios u ON r.usuario_id = u.usuarioId
+JOIN productos p ON r.producto_id = p.productosId
+WHERE r.producto_id = $id";
 
             $vResultado = $this->enlace->ExecuteSQL($vSQL);
 

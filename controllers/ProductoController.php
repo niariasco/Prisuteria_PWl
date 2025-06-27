@@ -61,7 +61,20 @@ class producto
         }
     }
     //Obtener cantidad de peliculas por genero
-    
+    public function productosXResena($idproductosXResena)
+    {
+        try {
+            $response = new Response();
+            //Instancia del modelo
+            $producto = new ProductoModel();
+            //Acción del modelo a ejecutar
+            $result = $producto->productXresenas($idproductosXResena);
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
     public function productosXpromo($param)
     {
         try {

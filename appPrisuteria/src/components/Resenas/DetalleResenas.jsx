@@ -4,12 +4,15 @@ import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import ResenaService from '../../services/ResenaService';
+import { useNavigate } from 'react-router-dom';
+import Button from '@mui/material/Button';
 
 export function DetalleResenas() {
   const { id } = useParams();
   const [data, setData] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     ResenaService.getId(id)
@@ -30,28 +33,31 @@ export function DetalleResenas() {
   const estrellas = '⭐'.repeat(Math.round(data.calificacion));
 
   return (
-    <Container maxWidth="md" sx={{ mt: 6, mb: 6 }}>
+      <Container maxWidth="md" sx={{ mt: 6, mb: 6 }}>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#d83b6a' }}>
         Detalle de Reseña
       </Typography>
 
       <Grid container spacing={3}>
         <Grid item xs={12}>
-          <Typography variant="h6" gutterBottom>
-            <strong>Usuario:</strong>
-          </Typography>
-          <Typography variant="h6" gutterBottom>
-            <strong>Producto:</strong> {data.nombre_usuario}
-          </Typography>
-          <Typography variant="h6" gutterBottom>
-            <strong>Fecha:</strong> {new Date(data.fecha).toLocaleDateString()}
-          </Typography>
-          <Typography variant="h6" gutterBottom>
-            <strong>Comentario:</strong> {data.comentario}
-          </Typography>
-          <Typography variant="h6" gutterBottom>
+          <Typography variant="h6"><strong>Usuario:</strong> {data.nombre_usuario}</Typography>
+          <Typography variant="h6"><strong>Producto:</strong> {data.nombre_producto}</Typography>
+          <Typography variant="h6"><strong>Fecha:</strong> {new Date(data.fecha).toLocaleDateString()}</Typography>
+          <Typography variant="h6"><strong>Comentario:</strong> {data.comentario}</Typography>
+          <Typography variant="h6">
             <strong>Calificación:</strong> {estrellas} ({data.calificacion}/5)
           </Typography>
+        </Grid>
+
+        <Grid item xs={12}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={() => navigate(-1)}
+            sx={{ mt: 2 }}
+          >
+            ← Volver
+          </Button>
         </Grid>
       </Grid>
     </Container>

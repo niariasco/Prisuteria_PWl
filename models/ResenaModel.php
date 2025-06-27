@@ -39,9 +39,19 @@ ORDER BY
         try {
          //   $rentalMovieM=new RentalMovieModel();
          //   $shopM=new ShopRentalModel();
-            $userM=new UserModel();
             //Consulta sql
-			$vSql = "SELECT * FROM resenas where resenasId=$id";           
+			$vSql =   "   SELECT 
+                r.resenasId,
+                r.comentario,
+                r.fecha,
+                r.calificacion,
+                u.usuarioId,
+                u.nombre_usuario,
+                p.nombre AS nombre_producto
+            FROM resenas r
+            JOIN usuarios u ON r.usuario_id = u.usuarioId
+            JOIN productos p ON r.producto_id = p.productosId
+            WHERE r.resenasId = $id ";           
 			
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
@@ -61,37 +71,13 @@ ORDER BY
 		}
     }
  
-    public function getId($id){
-        try {
-         //   $rentalMovieM=new RentalMovieModel();
-           $productoM=new ProductoModel();
-           $userM=new UserModel();
-            //Consulta sql
-			$vSql = "SELECT * FROM resenas where resenasId=$id";           
-			
-            //Ejecutar la consulta
-			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
-            if (!empty($vResultado)) {
-             $vResultado=$vResultado[0];
-             
-                //Cliente
-                $user=$userM->get($vResultado->usuario_id);
-                $vResultado->usuario=$user;
-                //Lista de peliculas
-                $producto=$productoM->get($vResultado->producto_id);
-                $vResultado->producto=$producto;
-            }
-			// Retornar el objeto
-			return $vResultado;
-		} catch ( Exception $e ) {
-			die ( $e->getMessage () );
-		}
-    } 
 
     public function getByProducto($productoId){
     try {
       //  $userM = new UserModel();
-        $vSql = "SELECT * FROM resenas WHERE producto_id = $productoId ORDER BY fecha DESC";
+     $vSql = "SELECT * FROM resenas WHERE producto_id = $productoId ORDER BY fecha DESC";
+
+       
         $vResultado = $this->enlace->ExecuteSQL($vSql);
       /*  
         if (!empty($vResultado)) {

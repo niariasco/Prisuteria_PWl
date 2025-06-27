@@ -11,10 +11,11 @@ import { Chip } from '@mui/material';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+import { useNavigate } from 'react-router-dom';
+import Button from '@mui/material/Button';
 
   export function DetalleProductos({ /*isShopping,*/ addItem  }) {
   const routeParams = useParams();
-  //console.log(routeParams);
   //Url para acceder a la imagenes guardadas en el API
   const BASE_URL = import.meta.env.VITE_BASE_URL+'uploads'
   //Resultado de consumo del API, respuesta
@@ -23,6 +24,7 @@ import 'slick-carousel/slick/slick-theme.css';
   const [error, setError] = useState('');
   //Booleano para establecer sí se ha recibido respuesta
   const [loaded, setLoaded] = useState(false);
+    const navigate = useNavigate();
   useEffect(() => {
     //Llamar al API y obtener una Producto
     ProductoService.getProductoById(routeParams.id)
@@ -34,9 +36,10 @@ import 'slick-carousel/slick/slick-theme.css';
       })
 
     .catch((error) => {
-      console.error("Error cargando reseñas", error);
+      console.error('Error al cargar reseñas:', error);
     });
 }, [routeParams.id]);
+
 
 
   if (!loaded) return <p>Cargando...</p>;
@@ -162,16 +165,43 @@ import 'slick-carousel/slick/slick-theme.css';
           </Typography>
         </Grid>
       </Grid>
-<Typography
-  variant="body1"
-  gutterBottom
-  sx={{ color: '#d83b6a', whiteSpace: 'pre-line' }}
->
-  
-      {'\n'} {'\n'}
-  <strong>Reseñas:</strong> {data.comentarios_resenas}
-</Typography>
 
+        <Grid item xs={12}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={() => navigate(-1)}
+            sx={{ mt: 2 }}
+          >
+            ← Volver
+          </Button>
+        </Grid>
+
+<Grid item xs={12}>
+  <Typography variant="h5" gutterBottom sx={{ mt: 4, color: '#d83b6a' }}>
+    Reseñas
+  </Typography>
+
+ {data.resenas?.length === 0 ? (
+  <Typography>No hay reseñas para este producto.</Typography>
+) : (
+  data.resenas.map((resena, index) => (
+    <Grid item xs={12} 
+    key={index} 
+    sx={{ mb: 2, 
+    borderBottom: '1px solid #d83b6a ', //linea separadora
+    pb: 2}}> 
+      <Typography variant="subtitle1">
+        <strong>{resena.nombre}</strong> - {new Date(resena.fecha).toLocaleDateString()}
+      </Typography>
+      <Typography variant="body2">{resena.comentario}</Typography>
+      <Typography variant="body2">
+        {'⭐'.repeat(resena.calificacion)} ({resena.calificacion}/5)
+      </Typography>
+    </Grid>
+  ))
+)}
+</Grid>
     
     </Container>
   );
