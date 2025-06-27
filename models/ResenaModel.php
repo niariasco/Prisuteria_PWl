@@ -8,17 +8,25 @@ class ResenaModel{
     }
     public function all(){
         try {
-            //Consulta sql
-			$vSql = "SELECT * FROM resenas order by fecha asc;";
+			$vSql = "SELECT 
+    r.resenasId,
+    r.comentario,
+    r.calificacion,
+    r.fecha,
+    u.nombre_usuario AS nombre_usuario,
+    p.nombre AS nombre
+FROM 
+    resenas r
+JOIN 
+    usuarios u ON r.usuario_id = u.usuarioId
+JOIN 
+    productos p ON r.producto_id = p.productosId
+ORDER BY 
+    r.fecha ASC;";
 			
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
-            if(!empty($vResultado) && is_array($vResultado)){
-                for ($i=0; $i <= count($vResultado)-1; $i++) { 
-                    $vResultado[$i]=$this->get($vResultado[$i]->id);
-                }
-                
-            }
+
 			// Retornar el objeto
 			return $vResultado;
 		} catch ( Exception $e ) {
@@ -33,7 +41,7 @@ class ResenaModel{
          //   $shopM=new ShopRentalModel();
             $userM=new UserModel();
             //Consulta sql
-			$vSql = "SELECT * FROM resenas where id=$id";           
+			$vSql = "SELECT * FROM resenas where resenasId=$id";           
 			
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ( $vSql);

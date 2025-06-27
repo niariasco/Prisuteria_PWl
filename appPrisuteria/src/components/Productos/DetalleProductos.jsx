@@ -12,7 +12,7 @@ import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 
-  export function DetalleProductos({ isShopping, addItem , item }) {
+  export function DetalleProductos({ /*isShopping,*/ addItem  }) {
   const routeParams = useParams();
   
   //console.log(routeParams);
@@ -131,15 +131,27 @@ import 'slick-carousel/slick/slick-theme.css';
               '⭐'.repeat(Math.round(data.promedio_valoracion))}
           </Typography>
 
-  {isShopping && (
-                  <IconButton
-                    aria-label="Comprar"
-                    sx={{ ml: 'auto' }}
-                    onClick={()=>addItem(item)}
-                  >
-                    <AddShoppingCartIcon />
-                  </IconButton>
-                )}
+   
+          <IconButton
+            aria-label="Comprar"
+            sx={{ 
+              ml: 'auto',
+              backgroundColor: '#d83b6a',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: '#b03052',
+              },
+              padding: '12px',
+              borderRadius: '8px'
+            }}
+            onClick={() => addItem(data)}
+          >
+            <AddShoppingCartIcon sx={{ mr: 1 }} />
+            <Typography component="span" variant="body1">
+              Agregar al carrito
+            </Typography>
+          </IconButton>
+
              <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
             {'_________________________________________________'}
           </Typography>
@@ -154,12 +166,16 @@ import 'slick-carousel/slick/slick-theme.css';
     </Container>
   );
 }
-
-DetalleProductos.propTypes = {
+/*después de la declaración del componente para que funcione correctamente.*/
+  DetalleProductos.propTypes = { /*propiedades correctas en el formato esperado*/
   isShopping: PropTypes.bool.isRequired,
   addItem: PropTypes.func.isRequired,
   item: PropTypes.object.isRequired,
 };
+  
+
+/* {isShopping && (  )}*/
+
 /*            <Button variant="contained" size="large" sx={{ backgroundColor: '#d83b6a', textTransform: 'none' }}>
               Comprar ahora
             </Button>*/

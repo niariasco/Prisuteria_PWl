@@ -24,7 +24,8 @@ import { Signup } from "./components/User/Signup";
 import { Auth } from "./components/User/Auth";
 import { ListaProductos } from "./components/Productos/ListaProductos";
 import { DetalleProductos } from "./components/Productos/DetalleProductos";
-/*import { ListMovies } from "./components/Movie/ListMovies";*/
+import { ListaResenas } from "./components/Resenas/ListaResenas";
+import { DetalleResenas } from "./components/Resenas/DetalleResenas";
 const rutas = createBrowserRouter([
   {
     element: <App />,
@@ -50,6 +51,10 @@ const rutas = createBrowserRouter([
       // Rutas de productos
       { path: '/productos', element: <ListaProductos /> },
       { path: '/producto/:id', element: <DetalleProductos /> },
+
+        // Rutas de resenas
+      { path: '/resena', element: <ListaResenas /> },
+      { path: '/resena/:id', element: <DetalleResenas /> },
     ]
   }
 ]);

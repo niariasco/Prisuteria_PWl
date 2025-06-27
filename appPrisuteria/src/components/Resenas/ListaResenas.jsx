@@ -1,10 +1,10 @@
 /*import React, { useEffect } from 'react';*/
 import { useEffect } from 'react';
 import { useState } from 'react';
-import ProductoService from '../../services/ProductoService';
-import { ListaCartasProductos } from './ListaCartasProductos';
+import ResenaService from '../../services/ResenaService';
+import { ListaCartasResenas } from './ListaCartasResenas'; 
 
-export function ListaProductos() {
+export function ListaResenas() {
   //Resultado de consumo del API, respuesta
   const [data, setData] = useState(null);
   //Error del API
@@ -12,7 +12,7 @@ export function ListaProductos() {
   //Booleano para establecer sí se ha recibido respuesta
   const [loaded, setLoaded] = useState(false);
 useEffect(() => {
-    ProductoService.getAllProductos()
+    ResenaService.getAll()
     .then((response) => {
       console.log(response);
       setData(response.data);
@@ -32,8 +32,9 @@ useEffect(() => {
 
 
 
+
 if(!loaded) return <p>Cargando..</p>
 if(error) return <p>Error: {error.message}</p>
-return <>{data && <ListaCartasProductos data={data} isShopping={true} />}</> 
+  return <ListaCartasResenas data={data} isShopping={false} />;
 
 }

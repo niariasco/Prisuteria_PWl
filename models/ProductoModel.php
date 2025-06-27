@@ -146,6 +146,26 @@ ORDER BY p.nombre DESC;
      * @return $vresultado - Lista de productos incluyendo el precio
      */
 
+    public function productXresenas($id)
+    {
+        try {
+
+            $vSQL = "SELECT r.resenasId, r.usuario_id, r.comentario, r.producto_id, r.fecha, r.calificacion
+                    FROM resenas r
+                WHERE r.producto_id $id";
+
+            $vResultado = $this->enlace->ExecuteSQL($vSQL);
+
+
+            //Retornar la respuesta
+
+            return $vResultado;
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+
     public function productosXCategoria($categoriaId)
     {
         try {

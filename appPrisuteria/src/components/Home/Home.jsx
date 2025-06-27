@@ -6,8 +6,8 @@ import Box from '@mui/material/Box';
 import calidadImg from '/xampp/htdocs/prisuteriapwl/uploads/AretesGummies.png';
 import contactoImg from '/xampp/htdocs/prisuteriapwl/uploads/CollarHappyFace.jpg';
 import garantiaImg from '/xampp/htdocs/prisuteriapwl/uploads/collargirasol.png';
-
-
+import { Button } from '@mui/material';
+import { Link } from 'react-router-dom';
 
 export function Home() { 
   return ( 
@@ -25,7 +25,7 @@ export function Home() {
       </Typography> 
 
     <Grid container spacing={4} sx={{ mt: 4}}>
-        {/* Calidad */}
+     
         <Grid item xs={12} sm={4}>
           <Box sx={{ textAlign: 'center' }}>
             <img src={calidadImg} alt="Calidad" style={{ width: '100%', borderRadius: 10 }} />
@@ -36,7 +36,7 @@ export function Home() {
           </Box>
         </Grid>
 
-        {/* Contacto */}
+      
         <Grid item xs={12} sm={4}>
           <Box sx={{ textAlign: 'center' }}>
             <img src={contactoImg} alt="Contacto" style={{ width: '100%', borderRadius: 10 }} />
@@ -47,7 +47,7 @@ export function Home() {
           </Box>
         </Grid>
 
-        {/* Garantía */}
+       
         <Grid item xs={12} sm={4}>
           <Box sx={{ textAlign: 'center' }}>
             <img src={garantiaImg} alt="Garantía" style={{ width: '100%', borderRadius: 10 }} />
@@ -58,6 +58,25 @@ export function Home() {
           </Box>
         </Grid>
       </Grid>
+
+
+      
+<Button
+  component={Link}
+  to="/resena"
+  variant="contained"
+  sx={{
+    backgroundColor: '#d83b6a',
+    textTransform: 'none',
+    fontSize: '1rem',
+    mt: 2,
+    '&:hover': {
+      backgroundColor: '#b03052',
+    },
+  }}
+>
+  Lo que opinan Nuestros Clientes
+</Button>
 
 
     </Container> 
