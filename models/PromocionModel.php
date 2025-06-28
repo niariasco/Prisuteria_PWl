@@ -7,49 +7,46 @@ class PromocionModel
         $this->enlace = new MySqlConnect();
     }
     /*Listar */
-    public function all()
-    {
-        try {
-            // Consulta SQL
-            $sql = "SELECT p.*, 
-                        CASE 
-                            WHEN CURDATE() BETWEEN p.fecha_inicio AND p.fecha_fin THEN 'Vigente'
-                            WHEN CURDATE() < p.fecha_inicio THEN 'Pendiente'
-                            ELSE 'Aplicado'
-                        END AS tipo 
-                    FROM promociones p;";
+   public function all()
+{
+    try {
+        $sql = "SELECT p.*, 
+                    CASE 
+                        WHEN CURDATE() BETWEEN p.fecha_inicio AND p.fecha_fin THEN 'Vigente'
+                        WHEN CURDATE() < p.fecha_inicio THEN 'Pendiente'
+                        ELSE 'Aplicado'
+                    END AS tipo 
+                FROM promociones p";
 
-            // Ejecutar la consulta
-            $vResultado = $this->enlace->ExecuteSQL($sql);
+        $vResultado = $this->enlace->ExecuteSQL($sql);
 
-            // Validar que sea un arreglo iterable
-            if (is_array($vResultado)) {
-                foreach ($vResultado as &$promo) {
-                    switch ($promo['tipo']) {
-                        case 'Vigente':
-                            $promo['color_estado'] = '#FF4D4D'; // rojo
-                            break;
-                        case 'Pendiente':
-                            $promo['color_estado'] = '#ADD8E6'; // azul claro
-                            break;
-                        case 'Aplicado':
-                            $promo['color_estado'] = '#D3D3D3'; // gris
-                            break;
-                        default:
-                            $promo['color_estado'] = '#FFFFFF'; // blanco por defecto
-                            break;
-                    }
+        if (is_array($vResultado)) {
+            foreach ($vResultado as &$promo) {
+                switch ($promo->tipo) {
+                    case 'Vigente':
+                        $promo->color_estado = '#FF4D4D';
+                        break;
+                    case 'Pendiente':
+                        $promo->color_estado = '#ADD8E6';
+                        break;
+                    case 'Aplicado':
+                        $promo->color_estado = '#D3D3D3';
+                        break;
+                    default:
+                        $promo->color_estado = '#FFFFFF';
+                        break;
                 }
-            } else {
-                // Si no es un arreglo, lanzar excepción
-                throw new Exception("No se pudo obtener el listado de promociones.");
             }
-
-            return $vResultado;
-        } catch (Exception $e) {
-            handleException($e);
+        } else {
+            throw new Exception("No se pudo obtener el listado de promociones.");
         }
+
+        return $vResultado;
+    } catch (Exception $e) {
+        handleException($e);
     }
+}
+
 
     /*Obtener */
     public function get($id)
