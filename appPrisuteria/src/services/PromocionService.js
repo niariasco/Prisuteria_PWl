@@ -15,7 +15,11 @@ class PromocionService{
     return axios.get(BASE_URL + '/' + PromocionId);
 }
 
-  //promocion por producto
+  //Obtener promocion por producto
+
+  getPromocionPorProducto(idProducto) {
+    return axios.get(`${BASE_URL}/producto/${idProducto}`);
+  }
 
 
 //Crear promocion
@@ -23,5 +27,14 @@ class PromocionService{
 createPromocion(Promocion) {
     return axios.post(BASE_URL, JSON.stringify(Promocion));
 }
+updateMovie(Promocion) {
+    return axios({
+      method: 'put',
+      url: BASE_URL,
+      data: JSON.stringify(Promocion)
+
+    })
+  }
 
 }
+export default new PromocionService();
