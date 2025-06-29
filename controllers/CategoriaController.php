@@ -1,5 +1,5 @@
 <?php
-class categoria
+class categorias
 {
     public function index()
     {

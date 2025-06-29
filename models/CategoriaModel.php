@@ -9,7 +9,7 @@ class CategoriaModel {
     // Obtener todas las categorías
     public function all() {
         try {
-            $vSql = "SELECT * FROM categoria;";
+            $vSql = "SELECT * FROM categorias;";
             $vResultado = $this->enlace->ExecuteSQL($vSql);
             return $vResultado;
         } catch (Exception $e) {
