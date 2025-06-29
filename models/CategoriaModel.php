@@ -20,7 +20,7 @@ class CategoriaModel {
     // Obtener una categoría por su ID
     public function get($id) {
         try {
-            $vSql = "SELECT * FROM categoria WHERE id = $id";
+            $vSql = "SELECT * FROM categorias WHERE id = $id";
             $vResultado = $this->enlace->ExecuteSQL($vSql);
             return $vResultado[0];
         } catch (Exception $e) {
@@ -32,7 +32,7 @@ class CategoriaModel {
     public function getCategoriaProducto($idProducto) {
         try {
             $vSql = "SELECT c.id, c.nombre 
-                     FROM categoria c, producto_categoria pc 
+                     FROM categorias c, producto_categoria pc 
                      WHERE pc.categoria_id = c.id AND pc.producto_id = $idProducto";
             $vResultado = $this->enlace->ExecuteSQL($vSql);
             return $vResultado;
@@ -60,7 +60,7 @@ class CategoriaModel {
     // Crear nueva categoría
     public function create($objeto) {
         try {
-            $vSql = "INSERT INTO categoria (nombre) VALUES ('$objeto->nombre')";
+            $vSql = "INSERT INTO categorias (nombre) VALUES ('$objeto->nombre')";
             $vResultado = $this->enlace->executeSQL_DML_last($vSql);
             return $this->get($vResultado);
         } catch (Exception $e) {
@@ -71,7 +71,7 @@ class CategoriaModel {
     // Actualizar categoría
     public function update($objeto) {
         try {
-            $vSql = "UPDATE categoria SET nombre = '$objeto->nombre' WHERE id = $objeto->id";
+            $vSql = "UPDATE categorias SET nombre = '$objeto->nombre' WHERE id = $objeto->id";
             $this->enlace->executeSQL_DML($vSql);
             return $this->get($objeto->id);
         } catch (Exception $e) {
