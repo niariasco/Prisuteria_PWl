@@ -15,7 +15,7 @@ class PromocionModel
                         WHEN CURDATE() BETWEEN p.fecha_inicio AND p.fecha_fin THEN 'Vigente'
                         WHEN CURDATE() < p.fecha_inicio THEN 'Pendiente'
                         ELSE 'Aplicado'
-                    END AS tipo 
+                    END AS Estado 
                 FROM promociones p";
 
         $vResultado = $this->enlace->ExecuteSQL($sql);
