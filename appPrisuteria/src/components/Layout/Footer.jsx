@@ -74,7 +74,7 @@ export function Footer() {
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
               ENLACES RÁPIDOS
             </Typography>
-            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ mt: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Link href="/" color="inherit" underline="hover">Inicio</Link>
               <Link href="/nosotros" color="inherit" underline="hover">Acerca de Nosotros</Link>
               <Link href="/productos" color="inherit" underline="hover">Productos</Link>
@@ -83,20 +83,14 @@ export function Footer() {
             </Box>
           </Grid>
 
-          {/* Columna 3: Agradecimiento */}
-          <Grid item xs={12} md={4}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              ¡GRACIAS!
-            </Typography>
-            <Typography variant="body2" sx={{ mt: 2 }}>
-              Gracias por ser parte de nuestra historia y por elegirnos como tu tienda de moda.
-            </Typography>
-          </Grid>
 
         </Grid>
 
         <Box sx={{ mt: 4, textAlign: 'center', fontSize: 14 }}>
           © 2025 <strong>Proyecto UTN</strong>. Todos los derechos reservados.<br />
+            <Typography variant="h6">
+             Nicole Arias & Priscilla Sanchez
+            </Typography>
         </Box>
       </Container>
     </Box>
