@@ -5,7 +5,7 @@ import PromocionService from '../../services/PromocionService';
 import { ListaCartasPromocion } from './ListaCartasPromocion';
 
 
-export function ListMovies() {
+export function ListaPromociones() {
   //Resultado de consumo del API, respuesta
   const [data, setData] = useState(null);
   //Error del API

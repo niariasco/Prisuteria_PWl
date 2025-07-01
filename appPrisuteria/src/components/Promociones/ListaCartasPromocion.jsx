@@ -1,7 +1,9 @@
-import React from 'react';
+/*import React from 'react';*/
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
+import { useEffect } from 'react';
+import CategoriaService from '../../services/CategoriaService';
 
 // MUI Components
 import Typography from '@mui/material/Typography';
@@ -24,55 +26,27 @@ import SearchIcon from '@mui/icons-material/Search';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import { Info } from '@mui/icons-material';
 import FilterIcon from '@mui/icons-material/FilterList';
-import CategoriaService from '../../services/CategoriaService';
+
+
 
 ListaCartasPromocion.propTypes = {
   data: PropTypes.array,
   isShopping: PropTypes.bool.isRequired,
 };
 
-export function CarruselPromociones({ data, isShopping }) {
-
-  
-
+export function ListaCartasPromocion({data, isShopping }) {
 
   const { addItem } =useCart()
     //Url para acceder a la imagenes guardadas en el API
     const BASE_URL = import.meta.env.VITE_BASE_URL + 'uploads';
 
-    //Resultado de consumo del API, respuesta
-      const [data, setData] = useState(null);
-      //Error del API
-      const [error, setError] = useState('');
-      //Booleano para establecer sí se ha recibido respuesta
-      const [loaded, setLoaded] = useState(false);
       
     //Filtro Cargeoria
 
-  const FiltroCategoria = ({ filtroCategoria, setFiltroCategoria }) => {
-  const [categorias, setCategorias] = useState([]);
+  /*const FiltroCategoria = ({ filtroCategoria, setFiltroCategoria }) => {
+  const [categorias, setCategorias] = useState([]);*/
 
-   useEffect(() => {
-      CategoriaService.getCategoria()
-        .then((response) => {
-          console.log(response);
-          setData(response.data);
-          setError(response.error);
-          setLoaded(true);       
-        })
-        .catch((error) => {
-          console.log(error);
-          if (error instanceof SyntaxError) {
-            setError(error);
-            setLoaded(false);
-          }
-        });
-    }, []);
-
-
-  const handleChange = (event) => {
-    setFiltroCategoria(event.target.value);
-  };
+  
 
 
     return(
@@ -82,36 +56,16 @@ export function CarruselPromociones({ data, isShopping }) {
         Promociones Prisutería Accesorios
       </Typography>
 
-      {/* Filtro de Categorías */}
-        <div className="relative">
-      <FilterIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
-      <FormControl fullWidth sx={{ pl: 4 }}>
-        <InputLabel id="categoria-label">Categoría</InputLabel>
-        <Select
-          labelId="categoria-label"
-          id="categoria-select"
-          value={filtroCategoria}
-          label="Categoría"
-          onChange={handleChange}
-        >
-          <MenuItem value="">Todas las categorías</MenuItem>
-          {categorias.map((cat) => (
-            <MenuItem key={cat.id} value={cat.id}>
-              {cat.nombre}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-    </div>
+     
     </>
   );
 }
 
 
-}
+//}
 
 
-const calculateStatus = (fechaInicio, fechaFin) => {
+/*const calculateStatus = (fechaInicio, fechaFin) => {
     const today = new Date();
     const startDate = new Date(fechaInicio);
     const endDate = new Date(fechaFin);
@@ -139,5 +93,5 @@ const calculateStatus = (fechaInicio, fechaFin) => {
         textColor: '#0066CC'
       };
     }
-  };
+  };*/
   // Cambio automático del banner cada 4 segundos
