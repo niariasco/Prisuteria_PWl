@@ -11,6 +11,10 @@ export const appTheme = createTheme({
     primaryLight: {
       main: '#EC407A', // rosado suave
       contrastText: '#FFFFFF', // blanco
+    },
+     promocionVigente: {
+      main: '#FF4D4D', // rosado suave
+      contrastText: '#FFFFFF', // blanco
     }
   },
 });
