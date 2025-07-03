@@ -12,6 +12,9 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
 import Divider from '@mui/material/Divider';
+import ProductoService from '../../services/ProductoService';
+import  { useState } from 'react';
+
 
 
 
@@ -135,30 +138,30 @@ const formatearFecha = (fechaString) => {
 
 
 export function ListaCartasPromocion({data, isShopping }) {
+   const [productos, setProductos] = useState([]);
+    const [error, setError] = useState(null);
+   const [loading, setLoading] = useState(true);
+
 //Se obtiene el método addItem para agregar Producto al carrito
   const { addItem } =useCart()
     //Url para acceder a la imagenes guardadas en el API
-  const BASE_URL = import.meta.env.VITE_BASE_URL + 'uploads';
-  
-  // Estado para las categorías
- /* const [categorias, setCategorias] = useState([]);
-  const [loadingCategorias, setLoadingCategorias] = useState(false);
-  // Estado para la categoría seleccionada
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
+  const BASE_IMG = import.meta.env.VITE_BASE_URL + 'uploads';
 
-  useEffect(() => {
-    setLoadingCategorias(true);
-    CategoriaService.getCategoria()
-      .then((response) => {
-        // Asumiendo que la respuesta es un array de categorías
-        setCategorias(response.data);
-      })
-      .catch((error) => {
-        console.error('Error al cargar categorías:', error);
-      })
-      .finally(() => setLoadingCategorias(false));
-  }, []);*/
-  // Configuración de slider (react-slick)
+   useEffect(() => {
+  ProductoService.getAllProductosConPromociones(true)
+    .then(response => {
+      setProductos(response.data);
+      setLoading(false);
+    })
+    .catch(error => {
+      console.error("Error cargando productos con promociones:", error);
+      setError("Error al cargar promociones");
+      setLoading(false);
+    });
+}, []);
+
+  
+ 
  const settings = {
     dots: true,
     infinite: true,
@@ -181,21 +184,7 @@ export function ListaCartasPromocion({data, isShopping }) {
       },
     ],
   };
-   /*const promocionesFiltradas = categoriaSeleccionada
-    ? data.filter((item) => item.categoriaId === categoriaSeleccionada.id)
-    : data;*/
-
-
-
-  /*const [filtroCategoria, setFiltroCategoria] = useState('');
-  const [busqueda, setBusqueda] = useState('');
-  const [soloPromociones, setSoloPromociones] = useState(false);*/
-
-      
-    //Filtro Cargeoria
-
-  /*const FiltroCategoria = ({ filtroCategoria, setFiltroCategoria }) => {
-  const [categorias, setCategorias] = useState([]);*/
+   
 
      return (
     <>
@@ -270,9 +259,7 @@ export function ListaCartasPromocion({data, isShopping }) {
                   <Typography variant="body1" sx={{ fontSize: '1.5rem', color: 'green', fontWeight: 'bold', mb: 1 }}>
                      -{item.descuento}% 
                   </Typography>
-                  <Typography variant="body1" sx={{ fontSize: '1.1rem', mb: 1 }}>
-                     Aplicado a:
-                  </Typography>
+                
                   <Typography
                     variant="body1"
                     sx={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}
@@ -303,42 +290,66 @@ export function ListaCartasPromocion({data, isShopping }) {
             </Box>
           ))}
       </Slider>
+       <Typography component="h2" variant="h4" align="center" color="#d83b6a" gutterBottom>
+        Productos con promociones
+      </Typography>
+      {loading ? (
+        <CircularProgress sx={{ display: 'block', mx: 'auto', my: 4 }} />
+      ) : error ? (
+        <Typography color="error" align="center" sx={{ mt: 4 }}>
+          {error}
+        </Typography>
+      ) : (
+        <Slider {...settings}>
+          {productos.map((prod) => (
+            <Box key={prod.id} sx={{ p: 1 }}>
+              <Card>
+                {prod.imagen && (
+                  <CardMedia
+                    component="img"
+                    height="160"
+                    image={`${BASE_IMG}${prod.imagen}`}
+                    alt={prod.nombre}
+                  />
+                )}
+                <CardHeader
+                  title={prod.nombre}
+                  subheader={`Estado: ${prod.estado_promocion}`}
+                  sx={{
+                    backgroundColor: '#d83b6a',
+                    color: '#fff',
+                    textAlign: 'center',
+                  }}
+                />
+                <CardContent>
+                  <Typography variant="body2">Categoría: {prod.categoria}</Typography>
+                  <Typography variant="body1" sx={{ mt: 1 }}>
+                    <s>₡{prod.precio_original}</s>
+                  </Typography>
+                  <Typography variant="h6" sx={{ color: 'green', fontWeight: 'bold' }}>
+                    ₡{prod.precio_con_descuento}
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Ahorro: ₡{prod.ahorro} ({prod.porcentaje_descuento}%)
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <IconButton onClick={() => addItem(prod)}>
+                    <AddShoppingCartIcon />
+                  </IconButton>
+                  <IconButton component={Link} to={`/producto/${prod.id}`} sx={{ ml: 'auto' }}>
+                    <Info />
+                  </IconButton>
+                </CardActions>
+              </Card>
+            </Box>
+          ))}
+        </Slider>
+      )}
+      
       
     </>
   );
 }
 
 
-//}
-
-
-/*const calculateStatus = (fechaInicio, fechaFin) => {
-    const today = new Date();
-    const startDate = new Date(fechaInicio);
-    const endDate = new Date(fechaFin);
-    
-    today.setHours(0, 0, 0, 0);
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(0, 0, 0, 0);
-
-    if (today >= startDate && today <= endDate) {
-      return {
-        status: 'Vigente',
-        color: '#FF4D4D',
-        textColor: '#FFFFFF'
-      };
-    } else if (today > endDate) {
-      return {
-        status: 'Aplicado',
-        color: '#D3D3D3',
-        textColor: '#666666'
-      };
-    } else {
-      return {
-        status: 'Pendiente',
-        color: '#ADD8E6',
-        textColor: '#0066CC'
-      };
-    }
-  };*/
-  // Cambio automático del banner cada 4 segundos

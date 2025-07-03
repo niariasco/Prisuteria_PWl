@@ -16,11 +16,18 @@ class ProductoService {
   getProductoById(ProductoId){
     return axios.get(BASE_URL+'/'+ProductoId);
   }
+ getAllProductosConPromociones(soloPromociones = false) {
+  const url = soloPromociones ? `${BASE_URL}?promos=true` : BASE_URL;
+  return axios.get(url);
+}
+
+
   //Obtener peliculas por tienda
   //localhost:81/apiProducto/Producto/ProductosByShopRental/1
  // getProductoByShopRental(ShopRentalId){
  //   return axios.get(BASE_URL+'/ProductosByShopRental/'+ShopRentalId);
  // }
+
   createProducto(Producto) {
     return axios.post(BASE_URL, JSON.stringify(Producto));
   }

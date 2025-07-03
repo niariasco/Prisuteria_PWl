@@ -115,8 +115,14 @@ export function DetallePromociones({ addItem }) {
             </Typography>
 
             <Typography variant="body1" sx={{ mb: 1 }}>
-              <strong>Aplicado en:</strong> {data.tipo}
-            </Typography>
+  <strong>Aplicado en:</strong>{' '}
+  {data.tipo === 'Categoria' && data.nombre_categoria
+    ? data.nombre_categoria
+    : data.tipo === 'Producto' && data.nombre_producto
+    ? data.nombre_producto
+    : 'N/A'}
+</Typography>
+
 
             <Typography
               variant="h5"

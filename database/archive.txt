@@ -31,3 +31,8 @@ INSERT INTO promociones (
 (4, 'Rebaja de Enero', 'Producto', 25.00, '2026-01-01 00:00:00', '2026-01-31 23:59:59', TRUE, 4, NULL),
 (5, 'Promo Fin de Semana', 'Categoria', 5.00, '2025-06-14 00:00:00', '2025-06-16 23:59:59', TRUE, NULL, 3),
 (6, 'Liquidación Final', 'Producto', 30.00, '2025-06-01 00:00:00', '2025-06-30 23:59:59', TRUE, 3, NULL);
+
+UPDATE promociones
+SET fecha_inicio = '2025-07-01 00:00:00',
+    fecha_fin = '2025-07-31 23:59:59'
+WHERE id = 2;

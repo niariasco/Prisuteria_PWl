@@ -3,6 +3,9 @@
 //localhost:81/apiprisuteria/producto
 class producto
 {
+     private $modelo;
+
+   
     //GET listar
     public function index()
     {
@@ -89,7 +92,28 @@ class producto
             handleException($e);
         }
     }
-    
+public function obtenerProductosPromocion()
+{
+    try {
+        $productoModel = new ProductoModel();
+
+        // VERIFICA ESTO:
+        $soloConPromociones = isset($_GET['promos']) && $_GET['promos'] === 'true';
+
+        $productos = $soloConPromociones
+            ? $productoModel->todosConPromocionesVigentes()
+            : $productoModel->all();
+
+        $response = new Response();
+        $response->toJSON($productos);
+    } catch (Exception $e) {
+        handleException($e);
+    }
+}
+
+
+
+
     //POST Crear
     public function create()
     {
