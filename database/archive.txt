@@ -1,3 +1,33 @@
 Instalacion axios  28/06/24 Priscilla
 npm i axios
 
+Cambios Bases 02/07/24 Priscilla
+
+drop table promocion_categorias;
+drop table promocion_productos;
+DROP TABLE IF EXISTS `promociones`;
+
+CREATE TABLE `promociones` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nombre` VARCHAR(100) NOT NULL,
+  `tipo` ENUM('Producto', 'Categoria') NOT NULL,
+  `descuento` DECIMAL(5,2) NOT NULL,
+  `fecha_inicio` DATETIME NOT NULL,
+  `fecha_fin` DATETIME NOT NULL,
+  activo BOOLEAN DEFAULT TRUE,
+  `ProductoID` INT DEFAULT NULL,
+  `CategoriaID` INT DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`ProductoID`) REFERENCES `productos` (`productosId`) ON DELETE SET NULL,
+  FOREIGN KEY (`CategoriaID`) REFERENCES `categorias` (`categoriaId`) ON DELETE SET NULL
+);
+
+INSERT INTO promociones (
+  id, nombre, tipo, descuento, fecha_inicio, fecha_fin, activo, ProductoID, CategoriaID
+) VALUES
+(1, 'Promo Verano', 'Categoria', 10.00, '2025-06-01 00:00:00', '2025-08-31 23:59:59', TRUE, NULL, 1),
+(2, 'Oferta Especial', 'Producto', 15.00, '2025-06-10 00:00:00', '2025-06-30 23:59:59', TRUE, 2, NULL),
+(3, 'Descuento Invierno', 'Categoria', 20.00, '2025-12-01 00:00:00', '2026-02-28 23:59:59', TRUE, NULL, 2),
+(4, 'Rebaja de Enero', 'Producto', 25.00, '2026-01-01 00:00:00', '2026-01-31 23:59:59', TRUE, 4, NULL),
+(5, 'Promo Fin de Semana', 'Categoria', 5.00, '2025-06-14 00:00:00', '2025-06-16 23:59:59', TRUE, NULL, 3),
+(6, 'Liquidación Final', 'Producto', 30.00, '2025-06-01 00:00:00', '2025-06-30 23:59:59', TRUE, 3, NULL);

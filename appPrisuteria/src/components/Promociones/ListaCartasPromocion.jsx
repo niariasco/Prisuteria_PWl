@@ -11,6 +11,7 @@ import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
+import Divider from '@mui/material/Divider';
 
 
 
@@ -42,6 +43,7 @@ import { Info } from '@mui/icons-material';
 import { Cart } from '../Rental/Cart';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import StarIcon from '@mui/icons-material/Star';
 //import FilterIcon from '@mui/icons-material/FilterList';
 
 // Flechas personalizadas para react-slick
@@ -197,9 +199,49 @@ export function ListaCartasPromocion({data, isShopping }) {
 
      return (
     <>
-      <Typography component="h2" variant="h4" align="center" color="#d83b6a" gutterBottom>
-        Promociones Prisutería Accesorios
-      </Typography>
+      {/* Encabezado decorativo */}
+        <Box sx={{ textAlign: 'center', mb: 6 }}>
+          <Box sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 2,
+            mb: 2,
+            px: 3,
+            py: 1.5,
+            backgroundColor: 'rgba(216, 59, 106, 0.1)',
+            borderRadius: '50px',
+            border: '2px solid rgba(216, 59, 106, 0.2)',
+          }}>
+            <StarIcon sx={{ color: '#d83b6a', fontSize: 30 }} />
+            <Typography
+              variant="h3"
+              sx={{
+                fontWeight: 'bold',
+                background: 'linear-gradient(45deg, #d83b6a, #ff6b9d)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              }}
+            >
+              Promociones Prisutería Accesorios
+            </Typography>
+            <StarIcon sx={{ color: '#d83b6a', fontSize: 30 }} />
+          </Box>
+
+          <Typography variant="h5" sx={{ color: '#6c757d', fontWeight: 'medium', mb: 3 }}>
+            Descubre nuestras mejores ofertas y promociones especiales
+          </Typography>
+
+          <Divider sx={{
+            maxWidth: 200,
+            mx: 'auto',
+            borderWidth: 2,
+            borderColor: '#d83b6a',
+            borderRadius: 2,
+          }} />
+        </Box>
+      
       <Typography component="h2" variant="h4" align="center" color="#d83b6a" gutterBottom>
         Listado Promociones Prisuteria
       </Typography>
@@ -226,7 +268,7 @@ export function ListaCartasPromocion({data, isShopping }) {
                     {item.tipo}
                   </Typography>
                   <Typography variant="body1" sx={{ fontSize: '1.5rem', color: 'green', fontWeight: 'bold', mb: 1 }}>
-                     -{item.descuento}% OFF
+                     -{item.descuento}% 
                   </Typography>
                   <Typography variant="body1" sx={{ fontSize: '1.1rem', mb: 1 }}>
                      Aplicado a:
@@ -249,9 +291,9 @@ export function ListaCartasPromocion({data, isShopping }) {
                 >
                   <IconButton
                     component={Link}
-                    to={`/movie/${item.id}`}
+                    to={`/promocion/${item.id}`}
                     color="blue"
-                    aria-label="Ver Detalle"
+                    aria-label="Detalle"
                     sx={{ ml: 'auto' }}
                   >
                     <Info />
