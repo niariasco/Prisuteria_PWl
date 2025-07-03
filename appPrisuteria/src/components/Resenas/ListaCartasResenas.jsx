@@ -20,7 +20,7 @@ export function ListaCartasResenas({ data }) {
         <Grid item xs={12} sm={6} md={4} key={resena.resenasId}>
           <Card>
             <CardHeader
-              title={`Usuario: ${resena.nombre_usuario}`}
+              title={`${resena.nombre_usuario}`}
               sx={{
                 backgroundColor: '#d83b6a',
                 color: 'white',
@@ -29,7 +29,10 @@ export function ListaCartasResenas({ data }) {
             />
             <CardContent>
                 <Typography variant="body1" gutterBottom>
-                <strong>Producto : </strong>{resena.nombre}
+                <strong>Producto : </strong> 
+              </Typography>
+         <Typography variant="body2" color="text.secondary" gutterBottom>
+                {resena.nombre}
               </Typography>
               <Typography variant="body1" gutterBottom>
                 <strong>Comentario:</strong>
@@ -46,14 +49,17 @@ export function ListaCartasResenas({ data }) {
                 precision={1}
                 readOnly
               />
-              <IconButton
-             component={Link}
-              to={`/resena/${resena.resenasId}`}
-               aria-label="Detalle"
-                sx={{ ml: 'auto' }}
-                 >
-                 <Info />
-           </IconButton>
+<Grid container justifyContent="flex-end">
+  <Grid item>
+    <IconButton
+      component={Link}
+      to={`/resena/${resena.resenasId}`}
+      aria-label="Detalle"
+    >
+      <Info />
+    </IconButton>
+  </Grid>
+</Grid>
             </CardContent>
           </Card>
         </Grid>

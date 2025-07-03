@@ -103,7 +103,7 @@ import Button from '@mui/material/Button';
           </Typography>
 
           <Typography variant="h5" gutterBottom sx={{ color: '#444' }}>
-            ₡{Number(data.precio).toLocaleString()} CRC
+            ₡{Number(data.precio).toLocaleString()}
           </Typography>
 
           <Typography variant="subtitle1" gutterBottom color="text.secondary">

@@ -39,8 +39,8 @@ export function ListaCartasProductos({ data, isShopping }) {
                 <CardHeader
                   sx={{
                     p: 0,
-                    backgroundColor: (theme) => theme.palette.secondary.main,
-                    color: (theme) => theme.palette.common.white,
+                    backgroundColor:'#ce9fc4',
+                    color: 'white',
                   }}
                   style={{ textAlign: 'center' }}
                   title={item.nombre}
@@ -65,14 +65,14 @@ export function ListaCartasProductos({ data, isShopping }) {
                       variant="body2"
                       sx={{ textDecoration: 'line-through', color: 'gray', display: 'inline', mr: 1 }}
                     >
-                         ₡{Number(item.precio).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} CRC
+                         ₡{Number(item.precio).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} 
                      </Typography>
                      <Typography variant="h6" color="error" display="inline">
-                         ₡{Number(precioConDescuento).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}CRC
+                         ₡{Number(precioConDescuento).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </Typography>
                      </>
                     ) : (
-                       <> ₡{Number(item.precio).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} CRC </>
+                       <> ₡{Number(item.precio).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}  </>
                      )}
                     </Typography>
                   )}
@@ -89,7 +89,7 @@ export function ListaCartasProductos({ data, isShopping }) {
                 <CardActions
                   disableSpacing
                   sx={{
-                    backgroundColor: (theme) => theme.palette.action.focus,
+                    backgroundColor:'#ce9fc4',
                     color: (theme) => theme.palette.common.white,
                   }}
                 >
