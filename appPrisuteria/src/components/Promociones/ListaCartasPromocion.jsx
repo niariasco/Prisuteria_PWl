@@ -98,6 +98,31 @@ function PrevArrow(props) {
     </IconButton>
   );
 }
+//Calcula el precio del producto despues de la promo
+function calcularPromocion(producto) {
+  const precioOriginal = parseFloat(producto.precio_original || producto.precio);
+  const descuento = parseFloat(producto.descuento || 0);
+
+  if (isNaN(precioOriginal) || isNaN(descuento)) {
+    return {
+      ...producto,
+      precio_con_descuento: precioOriginal,
+      ahorro: 0,
+      porcentaje_descuento: 0,
+    };
+  }
+
+  const ahorro = +(precioOriginal * descuento / 100).toFixed(2);
+  const precio_con_descuento = +(precioOriginal - ahorro).toFixed(2);
+
+  return {
+    ...producto,
+    precio_con_descuento,
+    ahorro,
+    porcentaje_descuento: descuento,
+  };
+}
+
 
 
 
@@ -147,43 +172,46 @@ export function ListaCartasPromocion({data, isShopping }) {
     //Url para acceder a la imagenes guardadas en el API
   const BASE_IMG = import.meta.env.VITE_BASE_URL + 'uploads';
 
-   useEffect(() => {
-  ProductoService.getAllProductosConPromociones(true)
-    .then(response => {
-      setProductos(response.data);
-      setLoading(false);
-    })
-    .catch(error => {
-      console.error("Error cargando productos con promociones:", error);
-      setError("Error al cargar promociones");
-      setLoading(false);
-    });
-}, []);
+  useEffect(() => {
+    ProductoService.obtenerProductosConPromociones()
+      .then(data => {
+        const productosConCalculos = data.map(calcularPromocion);
+        setProductos(productosConCalculos);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setError('Error al cargar productos con promociones.');
+        setLoading(false);
+      });
+  }, []);
+
 
   
  
  const settings = {
-    dots: true,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 3,
-    slidesToScroll: 1,
-    arrows: true,
-    autoplay: true,          // Autoplay activado
-    autoplaySpeed: 3000,     // Cambia slide cada 3 segundos
-    nextArrow: <NextArrow />,
-    prevArrow: <PrevArrow />,
-    responsive: [
-      {
-        breakpoint: 1024,
-        settings: { slidesToShow: 2 },
-      },
-      {
-        breakpoint: 600,
-        settings: { slidesToShow: 1 },
-      },
-    ],
-  };
+  dots: true,
+  infinite: true,        // Aquí el loop infinito
+  speed: 500,
+  slidesToShow: 3,
+  slidesToScroll: 1,
+  arrows: true,
+  autoplay: true,
+  autoplaySpeed: 3000,
+  nextArrow: <NextArrow />,
+  prevArrow: <PrevArrow />,
+  responsive: [
+    {
+      breakpoint: 1024,
+      settings: { slidesToShow: 2 },
+    },
+    {
+      breakpoint: 600,
+      settings: { slidesToShow: 1 },
+    },
+  ],
+};
+
    
 
      return (

@@ -226,61 +226,42 @@ WHERE r.producto_id = $id";
      * @return $vresultado - Lista de productos incluyendo el precio
      */
 
-public function todosConPromocionesVigentes()
+public function obtenerConPromocionesVigentes()
 {
-    try {
-        $vSQL = "
-            SELECT
-    pr.productosId AS id,
-    pr.nombre,
-    pr.precio,
-    c.nombreSCategoria AS categoria,
-    pr.descripcion,
-    pr.inventario AS stock,
-    p.id AS promocion_id,
-    p.nombre AS nombre_promocion,
-    p.descuento,
-    p.tipo AS tipo_promocion,
-    p.fecha_inicio,
-    p.fecha_fin,
-    ROUND(pr.precio - (pr.precio * p.descuento / 100), 2) AS precio_final,
-    'Vigente' AS estado_promocion
-FROM productos pr
-INNER JOIN categorias c ON pr.categoria_id = c.categoriaId
-INNER JOIN promociones p ON (
-    p.activo = TRUE
-    AND CURDATE() BETWEEN p.fecha_inicio AND p.fecha_fin
-    AND (
-        (p.tipo = 'Producto' AND p.ProductoID = pr.productosId)
-        OR
-        (p.tipo = 'Categoria' AND p.CategoriaID = pr.categoria_id)
-    )
-)
-ORDER BY pr.nombre
-        ";
+    $sql = "
+        SELECT
+            pr.productosId AS id,
+            pr.nombre,
+            pr.precio AS precio_original,
+            c.nombreSCategoria AS categoria,
+            pr.descripcion,
+            pr.inventario AS stock,
+            p.id AS promocion_id,
+            p.nombre AS nombre_promocion,
+            p.descuento,
+            p.tipo AS tipo_promocion,
+            p.fecha_inicio,
+            p.fecha_fin,
+            ROUND(pr.precio - (pr.precio * p.descuento / 100), 2) AS precio_final
+        FROM productos pr
+        INNER JOIN categorias c ON pr.categoria_id = c.categoriaId
+        INNER JOIN promociones p ON (
+            p.activo = 1
+            AND CURDATE() BETWEEN p.fecha_inicio AND p.fecha_fin
+            AND (
+                (p.tipo = 'Producto' AND p.ProductoID = pr.productosId)
+                OR
+                (p.tipo = 'Categoria' AND p.CategoriaID = pr.categoria_id)
+            )
+        )
+        ORDER BY pr.nombre
+    ";
 
-        $vResultado = $this->enlace->ExecuteSQL($vSQL);
-
-        // Agregar propiedades adicionales desde PHP (opcional)
-        if (is_array($vResultado)) {
-            foreach ($vResultado as &$producto) {
-                $producto->tiene_promocion = true;
-                $producto->ahorro = $producto->precio_original - $producto->precio_con_descuento;
-                $producto->porcentaje_descuento = $producto->descuento;
-
-                // Opcional: colores si son usados por el frontend
-                $producto->color_precio_original = '#888888';
-                $producto->color_precio_promocion = '#FF4444';
-                $producto->color_badge = '#28a745';
-            }
-        }
-
-        return $vResultado;
-    } catch (Exception $e) {
-        handleException($e);
-        return [];
-    }
+    return $this->enlace->ExecuteSQL($sql);
 }
+
+
+
 
 
 

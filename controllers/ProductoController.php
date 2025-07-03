@@ -92,24 +92,23 @@ class producto
             handleException($e);
         }
     }
-public function obtenerProductosPromocion()
+public function obtenerProductosPromocion() 
 {
     try {
         $productoModel = new ProductoModel();
-
-        // VERIFICA ESTO:
-        $soloConPromociones = isset($_GET['promos']) && $_GET['promos'] === 'true';
-
-        $productos = $soloConPromociones
-            ? $productoModel->todosConPromocionesVigentes()
-            : $productoModel->all();
-
         $response = new Response();
-        $response->toJSON($productos);
+
+        $productos = $productoModel->obtenerConPromocionesVigentes();
+
+        $response->toJSON([
+            'success' => true,
+            'data' => $productos
+        ]);
     } catch (Exception $e) {
         handleException($e);
     }
 }
+
 
 
 

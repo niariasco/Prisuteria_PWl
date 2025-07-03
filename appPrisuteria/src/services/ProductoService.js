@@ -16,10 +16,18 @@ class ProductoService {
   getProductoById(ProductoId){
     return axios.get(BASE_URL+'/'+ProductoId);
   }
- getAllProductosConPromociones(soloPromociones = false) {
-  const url = soloPromociones ? `${BASE_URL}?promos=true` : BASE_URL;
-  return axios.get(url);
-}
+ obtenerProductosConPromociones() {
+    return axios
+      .get(`${BASE_URL}/obtenerProductosPromocion`)
+      .then(response => {
+        if (response.data.success) {
+          return response.data.data;
+        } else {
+          throw new Error(response.data.message || 'Error al obtener promociones');
+        }
+      });
+  }
+
 
 
   //Obtener peliculas por tienda
