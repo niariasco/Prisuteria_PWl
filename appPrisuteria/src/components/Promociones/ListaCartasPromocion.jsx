@@ -226,7 +226,7 @@ export function ListaCartasPromocion({data, isShopping }) {
                     {item.tipo}
                   </Typography>
                   <Typography variant="body1" sx={{ fontSize: '1.5rem', color: 'green', fontWeight: 'bold', mb: 1 }}>
-                     -{item.descuento}% OFF
+                     -{item.descuento}% descuento
                   </Typography>
                   <Typography variant="body1" sx={{ fontSize: '1.1rem', mb: 1 }}>
                      Aplicado a:

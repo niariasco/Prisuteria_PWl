@@ -1,96 +1,60 @@
 // eslint-disable-next-line no-unused-vars
-import React from "react"; 
-import { Container, Typography } from "@mui/material"; 
-import Grid from "@mui/material/Grid2"; 
-import { Link, IconButton } from '@mui/material';
+import React from "react";
+import { Container, Typography, Grid, IconButton, Link, Box } from "@mui/material";
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
-import MusicNoteIcon from '@mui/icons-material/MusicNote'; // para TikTok (alternativa)
-import { Box } from '@mui/system';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
 
 export function Footer() {
   return (
-    <Box sx={{ backgroundColor: '#ce9fc4', color: 'white', mt: 6, pt: 4, pb: 2 }}>
-      <Container>
-        <Grid container spacing={4}>
-
-          {/* Columna 1: Información de contacto */}
-          <Grid item xs={12} md={4}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+    <Box sx={{ backgroundColor: '#ce9fc4', color: 'white', mt: 4, pt: 2, pb: 1 }}>
+      <Container maxWidth="md">
+        <Grid container spacing={1} justifyContent="space-between" alignItems="flex-start">
+          
+          {/* Columna 1 */}
+          <Grid item xs={12} sm={6}>
+            <Typography variant="body1" fontWeight="bold">
               PRISUTERÍA ACCESORIOS
             </Typography>
-            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 2 }}>
-              Atención al cliente:
+            <Typography variant="caption">
+              Lunes a sábado: 9:00am - 6:00pm
             </Typography>
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              Nuestro equipo está disponible de lunes a sábado de 9:00am a 6:00pm.
-            </Typography>
-            <Box sx={{ mt: 2 }}>
-              <IconButton
-                color="inherit"
-                component="a"
-                href="https://www.facebook.com/prisuteriaaccesorioscr"
-                target="_blank"
-                rel="noopener"
-              >
-                <FacebookIcon />
+            <Box sx={{ mt: 1 }}>
+              <IconButton size="small" color="inherit" href="https://www.facebook.com/prisuteriaaccesorioscr" target="_blank">
+                <FacebookIcon fontSize="small" />
               </IconButton>
-
-              <IconButton
-                color="inherit"
-                component="a"
-                href="https://www.instagram.com/prisuteria_accesorioscr/"
-                target="_blank"
-                rel="noopener"
-              >
-                <InstagramIcon />
+              <IconButton size="small" color="inherit" href="https://www.instagram.com/prisuteria_accesorioscr/" target="_blank">
+                <InstagramIcon fontSize="small" />
               </IconButton>
-
-              <IconButton
-                color="inherit"
-                component="a"
-                href="https://www.tiktok.com/@prisuteria_accesorioscr"
-                target="_blank"
-                rel="noopener"
-              >
-                <MusicNoteIcon />
+              <IconButton size="small" color="inherit" href="https://www.tiktok.com/@prisuteria_accesorioscr" target="_blank">
+                <MusicNoteIcon fontSize="small" />
               </IconButton>
-
-              <IconButton
-                color="inherit"
-                component="a"
-                href="https://api.whatsapp.com/send/?phone=50671914947&text&type=phone_number&app_absent=0"
-                target="_blank"
-                rel="noopener"
-              >
-                <WhatsAppIcon />
+              <IconButton size="small" color="inherit" href="https://api.whatsapp.com/send/?phone=50671914947" target="_blank">
+                <WhatsAppIcon fontSize="small" />
               </IconButton>
             </Box>
           </Grid>
 
-          {/* Columna 2: Enlaces rápidos */}
-          <Grid item xs={12} md={4}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              ENLACES RÁPIDOS
+          {/* Columna 2 */}
+          <Grid item xs={12} sm={5}>
+            <Typography variant="body1" fontWeight="bold">
+              ENLACES
             </Typography>
-            <Box sx={{ mt: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Link href="/" color="inherit" underline="hover">Inicio</Link>
-              <Link href="/nosotros" color="inherit" underline="hover">Acerca de Nosotros</Link>
-              <Link href="/productos" color="inherit" underline="hover">Productos</Link>
-              <Link href="/contacto" color="inherit" underline="hover">Contáctanos</Link>
-              <Link href="/autores" color="inherit" underline="hover">Autores</Link>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3, mt: 0.5 }}>
+              <Link href="/" color="inherit" underline="hover" variant="caption">Inicio</Link>
+              <Link href="/nosotros" color="inherit" underline="hover" variant="caption">Nosotros</Link>
+              <Link href="/productos" color="inherit" underline="hover" variant="caption">Productos</Link>
+              <Link href="/contacto" color="inherit" underline="hover" variant="caption">Contacto</Link>
             </Box>
           </Grid>
-
 
         </Grid>
 
-        <Box sx={{ mt: 4, textAlign: 'center', fontSize: 14 }}>
+        {/* Créditos */}
+        <Box sx={{ mt: 2, textAlign: 'center', fontSize: 12 }}>
           © 2025 <strong>Proyecto UTN</strong>. Todos los derechos reservados.<br />
-            <Typography variant="h6">
-             Nicole Arias & Priscilla Sanchez
-            </Typography>
+          <Typography variant="caption">Nicole Arias & Priscilla Sanchez</Typography>
         </Box>
       </Container>
     </Box>
