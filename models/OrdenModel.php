@@ -21,6 +21,38 @@ class OrdenModel
             handleException($e);
         }
     }
+    /*
+    public function get($id)
+    {
+        try {
+            $query = "SELECT 
+                        o.ordenesId,
+                        o.usuario_id,
+                        u.nombre AS nombre_usuario, -- si quieres el nombre del usuario
+                        o.subtotal,
+                        o.total,
+                        o.estado_id,
+                        e.descripcion AS estado, -- si quieres el nombre del estado
+                        o.metodo_pago,
+                        o.direccion_envio,
+                        o.fecha
+                      FROM ordenes o
+                      INNER JOIN usuarios u ON o.usuario_id = u.usuarioId
+                      INNER JOIN estados e ON o.estado_id = e.estadoId
+                      WHERE o.ordenesId = :id";
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $orden = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $orden ?: null;
+        } catch (PDOException $e) {
+            // Puedes manejar errores de forma personalizada
+            throw new Exception("Error al obtener la orden por ID: " . $e->getMessage());
+        }
+    }
+    */
     
 public function get($id) {
     $vResultado = null;
