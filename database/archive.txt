@@ -36,3 +36,20 @@ UPDATE promociones
 SET fecha_inicio = '2025-07-01 00:00:00',
     fecha_fin = '2025-07-31 23:59:59'
 WHERE id = 2;
+
+___________________________
+INSERT en Base Datos FECHA 7/3/2025 - NICOLE
+
+DELETE FROM imagenes WHERE imagenId = 2;
+
+INSERT INTO imagenes (producto_id, url_imagen)
+VALUES 
+  (1, 'Aretes4Perlas.jpg'),
+  (2, 'collargirasol.png'),
+  (3, 'aretestrebolnegro.png'),
+  (4, 'AretesPlataMono.jpg'),
+  (5, 'CollarCorazon.jpg'),
+  (6, 'aretestrebolrojo.png'),
+  (7, 'AretesNegro.jpg'),
+  (8, 'pulseratrebol.png');
+
