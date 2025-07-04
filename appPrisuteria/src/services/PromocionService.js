@@ -20,6 +20,21 @@ class PromocionService{
   getPromocionPorProducto(idProducto) {
     return axios.get(`${BASE_URL}/producto/${idProducto}`);
   }
+  getTodasLasPromocionesConNombreAplicado() {
+  return axios.get(`${BASE_URL}/todasLasPromocionesConNombre`)
+    .then(response => {
+      if (response.data.status === 'success') {
+        return response.data.data; // ← Aquí están las promociones
+      } else {
+        throw new Error(response.data.message || 'Error al obtener promociones');
+      }
+    })
+    .catch(error => {
+      console.error('Error al obtener promociones con nombre aplicado:', error);
+      throw error;
+    });
+}
+
 
 
 //Crear promocion

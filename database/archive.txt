@@ -285,6 +285,17 @@ WHERE resenasId = 8;
 UPDATE ordenes
 SET direccion_envio = 'Sarchi Norte,20121'
 WHERE ordenesId = 1;
+
+
+ -- Cambiar estado de cada orden con un valor diferente
+UPDATE ordenes SET estado = 'enviado' WHERE ordenesId = 1;
+UPDATE ordenes SET estado = 'procesando'       WHERE ordenesId = 2;
+UPDATE ordenes SET estado = 'procesando'       WHERE ordenesId = 3;
+UPDATE ordenes SET estado = 'procesando'  WHERE ordenesId = 4;
+UPDATE ordenes SET estado = 'cancelado'       WHERE ordenesId = 5;
+UPDATE ordenes SET estado = 'entregado'       WHERE ordenesId = 6;
+UPDATE ordenes SET estado = 'pendiente'       WHERE ordenesId = 7;
+
 _________________________________
 Priscilla
 Cambios 03/07/24 Priscilla 

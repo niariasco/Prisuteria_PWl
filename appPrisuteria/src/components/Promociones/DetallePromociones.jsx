@@ -10,6 +10,7 @@ import StarIcon from '@mui/icons-material/Star';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import DiscountIcon from '@mui/icons-material/Discount';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+
 import PromocionService from '../../services/PromocionService';
 
 export function DetallePromociones({ addItem }) {

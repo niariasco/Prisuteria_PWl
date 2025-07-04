@@ -26,6 +26,23 @@ class promocion
             handleException($e);
         }
     }
+    public function todasLasPromocionesConNombre()
+{
+    try {
+         $promo = new PromocionModel();
+        $resultado = $promo->getTodasLasPromocionesConNombreAplicado();
+
+        echo json_encode([
+            'status' => 'success',
+            'data' => $resultado
+        ]);
+    } catch (Exception $e) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ]);
+    }
+}
     /*
     public function getActorMovie($id)
     {
