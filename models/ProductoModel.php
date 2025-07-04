@@ -70,22 +70,52 @@ ORDER BY p.nombre DESC;
             //       FROM productos p 
             //      LEFT JOIN imagenes i ON p.productosId = i.producto_id 
             //    WHERE p.productosId = $id";
-            $vSql = "      SELECT 
-        p.*, 
-        i.url_imagen AS imagen,
-        c.nombreSCategoria AS nombreSCategoria,
-        ROUND(AVG(r.calificacion), 2) AS promedio_valoracion,
-        GROUP_CONCAT(DISTINCT e.nombrEtiquetas SEPARATOR ', ') AS etiquetas,
-        GROUP_CONCAT(DISTINCT CONCAT( '  ',r.comentario) SEPARATOR  '\n') AS comentarios_resenas
+            $vSql = "   SELECT 
+    p.*, 
+    i.url_imagen AS imagen,
+    c.nombreSCategoria AS nombreSCategoria,
+    ROUND(AVG(r.calificacion), 2) AS promedio_valoracion,
+    GROUP_CONCAT(DISTINCT e.nombrEtiquetas SEPARATOR ', ') AS etiquetas,
+    GROUP_CONCAT(DISTINCT CONCAT('  ', r.comentario) SEPARATOR '\n') AS comentarios_resenas,
 
-    FROM productos p
-    LEFT JOIN imagenes i ON p.productosId = i.producto_id
-    LEFT JOIN categorias c ON p.categoria_id = c.categoriaId
-    LEFT JOIN resenas r ON p.productosId = r.producto_id
-    LEFT JOIN productoetiqueta pe ON p.productosId = pe.producto_id
-    LEFT JOIN etiquetas e ON pe.etiqueta_id = e.etiquetaId
-    WHERE p.productosId = $id
-    GROUP BY p.productosId
+    -- Promociones separadas
+    promop.nombre AS nombre_promocion_producto,
+    promop.descuento AS descuento_producto,
+    promoc.nombre AS nombre_promocion_categoria,
+    promoc.descuento AS descuento_categoria,
+
+    -- Descuento combinado acumulativo
+    ROUND(
+      p.precio 
+      * IF(promop.descuento IS NOT NULL, 1 - promop.descuento / 100, 1)
+      * IF(promoc.descuento IS NOT NULL, 1 - promoc.descuento / 100, 1)
+    , 2) AS precio_con_descuento
+
+FROM productos p
+LEFT JOIN imagenes i ON p.productosId = i.producto_id
+LEFT JOIN categorias c ON p.categoria_id = c.categoriaId
+LEFT JOIN resenas r ON p.productosId = r.producto_id
+LEFT JOIN productoetiqueta pe ON p.productosId = pe.producto_id
+LEFT JOIN etiquetas e ON pe.etiqueta_id = e.etiquetaId
+
+-- PROMOCIÓN por producto
+LEFT JOIN promociones promop
+  ON promop.ProductoID = p.productosId
+  AND promop.tipo = 'Producto'
+  AND promop.activo = 1
+  AND NOW() BETWEEN promop.fecha_inicio AND promop.fecha_fin
+
+-- PROMOCIÓN por categoría
+LEFT JOIN promociones promoc
+  ON promoc.CategoriaID = p.categoria_id
+  AND promoc.tipo = 'Categoria'
+  AND promoc.activo = 1
+  AND NOW() BETWEEN promoc.fecha_inicio AND promoc.fecha_fin
+
+WHERE p.productosId = $id
+GROUP BY p.productosId;
+
+  
 ";
           
         // Ejecutar la consulta del producto

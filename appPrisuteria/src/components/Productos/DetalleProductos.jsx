@@ -101,10 +101,32 @@ import Button from '@mui/material/Button';
           >
             {data.nombre}
           </Typography>
+{data.precio_con_descuento ? (
+  <>
+    <Typography sx={{ textDecoration: 'line-through', color: 'gray' }}>
+      ₡{Number(data.precio).toLocaleString()}
+    </Typography>
+<Typography variant="h5" color={data.precio_con_descuento < data.precio_base ? 'error' : 'inherit'} fontWeight="bold">
+  ₡{data.precio_con_descuento.toLocaleString()}
+</Typography>
 
-          <Typography variant="h5" gutterBottom sx={{ color: '#444' }}>
-            ₡{Number(data.precio).toLocaleString()} CRC
-          </Typography>
+{(data.descuento_producto || data.descuento_categoria) && (
+  <Typography variant="caption" color="primary">
+    {data.nombre_promocion_producto && `Promo producto: ${data.nombre_promocion_producto} `}
+    {data.nombre_promocion_categoria && `Promo categoría: ${data.nombre_promocion_categoria}`}
+  </Typography>
+)}
+
+    <Typography variant="caption" color="primary">
+      {data.nombre_promocion} (-{data.descuento}%)
+    </Typography>
+  </>
+) : (
+  <Typography variant="h5">
+    ₡{Number(data.precio).toLocaleString()}
+  </Typography>
+)}
+
 
           <Typography variant="subtitle1" gutterBottom color="text.secondary">
             {data.descripcion}

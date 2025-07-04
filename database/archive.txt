@@ -57,7 +57,122 @@ ALTER TABLE ordenes
   ADD COLUMN impuestos DECIMAL(10,2) DEFAULT NULL AFTER subtotal,
 MODIFY  COLUMN fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER usuario_id;
 
+(
+
+CREATE TABLE `ordenes` (
+   `ordenesId` int(11) NOT NULL AUTO_INCREMENT,
+   `usuario_id` int(11) DEFAULT NULL,
+   `fecha` timestamp NOT NULL DEFAULT current_timestamp(),
+   `subtotal` decimal(10,2) DEFAULT NULL,
+   `impuestos` decimal(10,2) DEFAULT NULL,
+   `total` decimal(10,2) DEFAULT NULL,
+   `estado` enum('pendiente','procesando','enviado','entregado','cancelado') NOT NULL,
+   `metodo_pago` enum('efectivo','tarjeta') NOT NULL,
+   `direccion_envio` text NOT NULL,
+   PRIMARY KEY (`ordenesId`),
+   KEY `usuario_id` (`usuario_id`),
+   CONSTRAINT `ordenes_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`usuarioId`)
+ ) 
+
+
+
+)
+
+
 drop table orden_detalle
+
+
+
+DELIMITER //
+
+CREATE FUNCTION obtener_precio_final(productoId INT)
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+BEGIN
+  DECLARE precio_base DECIMAL(10,2);
+  DECLARE descuento_producto DECIMAL(5,2);
+  DECLARE descuento_categoria DECIMAL(5,2);
+  DECLARE descuento_aplicado DECIMAL(5,2);
+  DECLARE categoriaId INT;
+
+  -- Obtener precio base y categoría
+  SELECT precio, categoria_id INTO precio_base, categoriaId
+  FROM productos
+  WHERE productosId = productoId;
+
+  -- Descuento por producto (solo si está activo y en fecha)
+  SELECT descuento INTO descuento_producto
+  FROM promociones
+  WHERE tipo = 'Producto'
+    AND ProductoID = productoId
+    AND activo = 1
+    AND NOW() BETWEEN fecha_inicio AND fecha_fin
+  ORDER BY descuento DESC
+  LIMIT 1;
+
+  -- Descuento por categoría (si aplica)
+  SELECT descuento INTO descuento_categoria
+  FROM promociones
+  WHERE tipo = 'Categoria'
+    AND CategoriaID = categoriaId
+    AND activo = 1
+    AND NOW() BETWEEN fecha_inicio AND fecha_fin
+  ORDER BY descuento DESC
+  LIMIT 1;
+
+  -- Elegir el mayor descuento si existen ambos
+  SET descuento_aplicado = GREATEST(COALESCE(descuento_producto, 0), COALESCE(descuento_categoria, 0));
+
+  -- Aplicar descuento
+  RETURN ROUND(precio_base * (1 - (descuento_aplicado / 100)), 2);
+END;
+//
+
+DELIMITER ;
+
+
+DELIMITER //
+
+CREATE TRIGGER tr_precio_detalle_orden
+BEFORE INSERT ON detalle_orden
+FOR EACH ROW
+BEGIN
+  DECLARE precio_final DECIMAL(10,2);
+  SET precio_final = obtener_precio_final(NEW.producto_id);
+  SET NEW.precio_unitario = precio_final;
+  SET NEW.subtotal = precio_final * NEW.cantidad;
+END;
+//
+
+DELIMITER ;
+
+
+DELIMITER //
+
+CREATE TRIGGER tr_total_orden
+AFTER INSERT ON orden_detalle
+FOR EACH ROW
+BEGIN
+  UPDATE ordenes
+  SET total = (
+    SELECT SUM(subtotal)
+    FROM detalle_orden
+    WHERE orden_id = NEW.orden_id
+  )
+  WHERE ordenesId = NEW.orden_id;
+END;
+//
+
+DELIMITER ;
+
+INSERT INTO ordenes (usuario_id, fecha, direccion_envio, estado, total)
+VALUES (1, NOW(),'San Pedro de Montes de Oca, San José' ,'Pendiente', 0);
+
+
+INSERT INTO detalle_orden (orden_id, producto_id, cantidad)
+VALUES
+(1, 2, 1),
+(2, 4, 2);
 
 CREATE TABLE detalle_orden (
     detalleId INT(11) NOT NULL AUTO_INCREMENT,
@@ -72,47 +187,104 @@ CREATE TABLE detalle_orden (
     CONSTRAINT detalle_orden_fk_orden FOREIGN KEY (orden_id) REFERENCES ordenes (ordenesId) ON DELETE CASCADE,
     CONSTRAINT detalle_orden_fk_producto FOREIGN KEY (producto_id) REFERENCES productos (productosId)
 ) 
-INSERT INTO ordenes (usuario_id, subtotal, total, estado, metodo_pago, direccion_envio) VALUES
-(1, 15000.00, 15000.00, 'pendiente', 'tarjeta', 'San José, San Pedro, 100 metros norte de la UCR'),
-(4, 23000.50, 23000.50, 'pendiente', 'efectivo', 'Alajuela, Centro, Calle Principal #45'),
-(3, 12500.00, 12500.00, 'procesando', 'tarjeta', 'Heredia, Santo Domingo, 200 metros sur del parque'),
-(1, 9800.75, 9800.75, 'enviado', 'efectivo', 'Cartago, Barrio Oriental, Casa #12'),
-(5, 17500.00, 17500.00, 'entregado', 'tarjeta', 'Limón, Puerto Viejo, Frente a la escuela'),
-(3, 11000.00, 11000.00, 'cancelado', 'efectivo', 'Puntarenas, Playa Hermosa, Apartado 123');
 
+
+
+
+UPDATE detalle_orden d
+JOIN productos p ON d.producto_id = p.productosId
+LEFT JOIN promociones pr ON pr.ProductoID = p.productosId
+  AND pr.activo = 1
+  AND NOW() BETWEEN pr.fecha_inicio AND pr.fecha_fin
+SET 
+  d.precio_unitario = COALESCE(p.precio * (1 - pr.descuento / 100), p.precio),
+  d.subtotal = d.cantidad * COALESCE(p.precio * (1 - pr.descuento / 100), p.precio)
+WHERE d.precio_unitario = 0 OR d.subtotal = 0;
+
+UPDATE ordenes o
+JOIN (
+  SELECT orden_id, 
+         COALESCE(SUM(subtotal), 0) AS suma_subtotal
+  FROM detalle_orden
+  GROUP BY orden_id
+) dsum ON o.ordenesId = dsum.orden_id
+SET 
+  o.subtotal = dsum.suma_subtotal,
+  o.impuestos = ROUND(dsum.suma_subtotal * 0.13, 2),
+  o.total = ROUND(dsum.suma_subtotal * 1.13, 2);
+
+
+
+
+
+
+
+  
+INSERT INTO ordenes (ordenesId, fecha, usuario_id, direccion_envio, subtotal, impuestos, total, metodo_pago)
+VALUES
+(7, NOW(), '3', 'Calle 123, San José', 0, 0, 0, 'Tarjeta'),
+(3, NOW(), '4', 'Avenida Central, Heredia', 0, 0, 0, 'Efectivo'),
+(4, NOW(), '9', 'Barrio Escalante, San José', 0, 0, 0, 'Tarjeta'),
+(5, NOW(), '8', 'Santa Ana, San José', 0, 0, 0, 'Tarjeta'),
+(6, NOW(), '7', 'Curridabat, San José', 0, 0, 0, 'Efectivo');
+
+
+
+
+INSERT INTO detalle_orden (orden_id, producto_id, cantidad, precio_unitario, subtotal)
+VALUES
+(7, 1, 2, 4500.00, 9000.00),
+(7, 2, 1, 8500.00, 8500.00),
+
+(3, 3, 3, 5600.00, 16800.00),
+(3, 4, 4, 6000.00, 24000.00),
+
+(4, 5, 1, 7000.00, 7000.00),
+(4, 6, 2, 5600.00, 11200.00),
+
+(5, 1, 1, 4500.00, 4500.00),
+(5, 3, 2, 5600.00, 11200.00),
+
+(6, 2, 3, 8500.00, 25500.00),
+(6, 4, 1, 6000.00, 6000.00);
+
+/*
+ejecutar el UPDATE para recalcular totales en la tabla ordenes:
+
+*/
+UPDATE ordenes o
+JOIN (
+  SELECT orden_id, 
+         COALESCE(SUM(subtotal), 0) AS suma_subtotal
+  FROM detalle_orden
+  GROUP BY orden_id
+) dsum ON o.ordenesId = dsum.orden_id
+SET 
+  o.subtotal = dsum.suma_subtotal,
+  o.impuestos = ROUND(dsum.suma_subtotal * 0.13, 2),
+  o.total = ROUND(dsum.suma_subtotal * 1.13, 2);
+
+
+
+UPDATE promociones
+SET activo = CASE 
+    WHEN NOW() BETWEEN fecha_inicio AND fecha_fin THEN 1
+    ELSE 0
+END;
+
+
+
+UPDATE resenas
+SET usuario_id = 7
+WHERE resenasId = 5;
+
+UPDATE resenas
+SET usuario_id = 7
+WHERE resenasId = 8;
 
 UPDATE ordenes
-SET impuestos = 2800.00,
-    total = subtotal + 2800.00
-WHERE ordenesId IN (7,8,9,10,11,12,20,21,22,23,24,25);
-
-UPDATE ordenes
-SET impuestos = 2800.00,
-    total = subtotal + 2800.00
-WHERE ordenesId IN (13,14,15,16,17,18,19);
-
-
-  INSERT INTO detalle_orden (orden_id, producto_id, cantidad, precio_unitario, subtotal) VALUES
-(7, 1, 2, 150.00, 300.00),
-(8, 2, 1, 200.00, 200.00),
-(9, 3, 3, 350.00, 1050.00),
-(10, 4, 1, 500.00, 500.00),
-(11, 5, 5, 80.00, 400.00),
-(12, 6, 2, 120.00, 240.00),
-(13, 7, 1, 100.00, 100.00),
-(14, 1, 4, 110.00, 440.00),
-(15, 2, 3, 90.00, 270.00),
-(16, 3, 2, 130.00, 260.00),
-(17, 4, 1, 160.00, 160.00),
-(18, 5, 3, 70.00, 210.00),
-(19, 6, 2, 95.00, 190.00),
-(20, 7, 1, 15000.00, 15000.00),
-(21, 1, 2, 11500.25, 23000.50),
-(22, 2, 1, 12500.00, 12500.00),
-(23, 3, 2, 4900.375, 9800.75),
-(24, 4, 1, 17500.00, 17500.00),
-(25, 5, 4, 2750.00, 11000.00);
-
+SET direccion_envio = 'Sarchi Norte,20121'
+WHERE ordenesId = 1;
 _________________________________
 Priscilla
 Cambios 03/07/24 Priscilla 
