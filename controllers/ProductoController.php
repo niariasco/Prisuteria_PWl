@@ -89,7 +89,26 @@ class producto
             handleException($e);
         }
     }
-    
+
+    public function obtenerProductosPromocion() 
+{
+    try {
+        $productoModel = new ProductoModel();
+        $response = new Response();
+
+        $productos = $productoModel->obtenerConPromocionesVigentes();
+
+        $response->toJSON([
+            'success' => true,
+            'data' => $productos
+        ]);
+    } catch (Exception $e) {
+        handleException($e);
+    }
+}
+
+
+
     //POST Crear
     public function create()
     {

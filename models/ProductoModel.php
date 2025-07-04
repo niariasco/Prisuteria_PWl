@@ -253,40 +253,98 @@ WHERE r.producto_id = $id";
      * @return $vresultado - Lista de productos incluyendo el precio
      */
 
-    public function productoXPromocion($idProducto)
-    {
-        try {
-            $imagenM = new ImageModel();
-            //Consulta SQL
-            $vSQL = "    SELECT 
-      p.nombre AS nombre_producto, 
-      c.nombre AS nombre_categoria, 
-      pr.nombre AS nombre_promocion, 
-      pr.descuento
-    FROM productos p
-    JOIN categorias c ON p.categoria_id = c.categoriaId
-    LEFT JOIN promocion_productos pp ON p.productosId = pp.producto_id
-    LEFT JOIN promocion_categorias pc ON c.categoriaId = pc.categoria_id
-    LEFT JOIN promociones pr ON (pr.id = pp.promocion_id OR pr.id = pc.promocion_id)
-    WHERE pr.activo = TRUE
-      AND CURDATE() BETWEEN pr.fecha_inicio AND pr.fecha_fin
-    ORDER BY pr.nombre, c.nombre, p.nombre;";
-            //Ejecutar la consulta
-            $vResultado = $this->enlace->ExecuteSQL($vSQL);
 
-            //Incluir imagenes
-            if (!empty($vResultado) && is_array($vResultado)) {
-                for ($i = 0; $i < count($vResultado); $i++) {
-                    $vResultado[$i]->imagen = $imagenM->getImageProducto(idProducto: ($vResultado[$i]->id));
+public function obtenerConPromocionesVigentes()
+{
+    $sql = "        SELECT
+            pr.productosId AS id,
+            pr.nombre,
+            pr.precio AS precio_original,
+            c.nombreSCategoria AS categoria,
+            pr.descripcion,
+            pr.inventario AS stock,
+            p.id AS promocion_id,
+            p.nombre AS nombre_promocion,
+            p.descuento,
+            p.tipo AS tipo_promocion,
+            p.fecha_inicio,
+            p.fecha_fin,
+            ROUND(pr.precio - (pr.precio * p.descuento / 100), 2) AS precio_final
+        FROM productos pr
+        INNER JOIN categorias c ON pr.categoria_id = c.categoriaId
+        INNER JOIN promociones p ON (
+            p.activo = 1
+            AND CURDATE() BETWEEN p.fecha_inicio AND p.fecha_fin
+            AND (
+                (p.tipo = 'Producto' AND p.ProductoID = pr.productosId)
+                OR
+                (p.tipo = 'Categoria' AND p.CategoriaID = pr.categoria_id)
+            )
+        )
+        ORDER BY pr.nombre
+    ";
+
+    return $this->enlace->ExecuteSQL($sql);
+}
+
+
+
+
+
+
+
+    public function productoXPromocion($idPromocion)
+{
+    try {
+        $imagenM = new ImageModel();
+
+        $vSQL = "        SELECT 
+            p.productosId,
+            p.nombre,
+            p.descripcion,
+            p.precio AS precio_original,
+            ROUND(p.precio * (1 - pr.descuento / 100), 2) AS precio_con_descuento,
+            pr.descuento,
+            pr.nombre AS nombre_promocion,
+            pr.tipo,
+            c.nombreSCategoria AS nombre_categoria,
+            i.url_imagen AS imagen
+        FROM productos p
+        INNER JOIN categorias c ON p.categoria_id = c.categoriaId
+        LEFT JOIN promocion_productos pp ON p.productosId = pp.producto_id AND pp.promocion_id = $idPromocion
+        LEFT JOIN promocion_categorias pc ON p.categoria_id = pc.categoria_id AND pc.promocion_id = $idPromocion
+        LEFT JOIN promociones pr ON pr.id = $idPromocion
+        LEFT JOIN (
+            SELECT i1.*
+            FROM imagenes i1
+            INNER JOIN (
+                SELECT producto_id, MIN(imagenId) AS min_imagenId
+                FROM imagenes
+                GROUP BY producto_id
+            ) i2 ON i1.imagenId = i2.min_imagenId
+        ) i ON p.productosId = i.producto_id
+        WHERE pr.activo = TRUE
+          AND CURDATE() BETWEEN pr.fecha_inicio AND pr.fecha_fin
+          AND (pp.producto_id IS NOT NULL OR pc.categoria_id IS NOT NULL)
+        GROUP BY p.productosId
+        ";
+
+        $vResultado = $this->enlace->ExecuteSQL($vSQL);
+
+        if (!empty($vResultado) && is_array($vResultado)) {
+            for ($i = 0; $i < count($vResultado); $i++) {
+                if (empty($vResultado[$i]->imagen)) {
+                    $vResultado[$i]->imagen = $imagenM->getImageProducto($vResultado[$i]->productosId);
                 }
             }
-            //Retornar la respuesta
-
-            return $vResultado;
-        } catch (Exception $e) {
-            handleException($e);
         }
+
+        return $vResultado;
+    } catch (Exception $e) {
+        handleException($e);
     }
+}
+
 
     /**
      * Obtener la cantidad de productos por genero
@@ -314,7 +372,6 @@ WHERE r.producto_id = $id";
         }
     }
 
-    */
     /**
      * Crear producto
      * @param $objeto producto a Insertinto   * @return $this->get($producto) - Objeto producto

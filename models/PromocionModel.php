@@ -49,20 +49,56 @@ class PromocionModel
 
 
     /*Obtener */
-    public function get($id)
-    {
-        try {
-            //Consulta sql
-			$vSql = "SELECT * FROM promociones where id=$id";
-			
-            //Ejecutar la consulta
-			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
-			// Retornar el objeto
-			return $vResultado[0];
-		} catch (Exception $e) {
-            handleException($e);
+   public function get($id)
+{
+    try {
+        $vSql = "
+            SELECT p.*, 
+                CASE 
+                    WHEN CURDATE() BETWEEN p.fecha_inicio AND p.fecha_fin THEN 'Vigente'
+                    WHEN CURDATE() < p.fecha_inicio THEN 'Pendiente'
+                    ELSE 'Aplicado'
+                END AS Estado,
+                c.nombreSCategoria AS nombre_categoria,
+                pr.nombre AS nombre_producto
+            FROM promociones p 
+            LEFT JOIN categorias c ON p.CategoriaID = c.categoriaId
+            LEFT JOIN productos pr ON p.ProductoID = pr.productosId
+            WHERE p.id = $id
+        ";
+
+        $vResultado = $this->enlace->ExecuteSQL($vSql);
+
+        if (!is_array($vResultado) || count($vResultado) === 0) {
+            throw new Exception("No se encontró la promoción con ID $id");
         }
+
+        $promo = $vResultado[0];
+
+        // Color para el estado
+        switch ($promo->Estado) {
+            case 'Vigente':
+                $promo->color_estado = '#FF4D4D';
+                break;
+            case 'Pendiente':
+                $promo->color_estado = '#ADD8E6';
+                break;
+            case 'Aplicado':
+                $promo->color_estado = '#D3D3D3';
+                break;
+            default:
+                $promo->color_estado = '#FFFFFF';
+                break;
+        }
+
+        return $promo;
+
+    } catch (Exception $e) {
+        handleException($e);
     }
+}
+
+
     /*Obtener los actores de una pelicula */
     public function productosConPromocion()
     {

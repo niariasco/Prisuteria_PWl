@@ -11,6 +11,10 @@ import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
+import Divider from '@mui/material/Divider';
+import ProductoService from '../../services/ProductoService';
+import  { useState } from 'react';
+
 
 
 
@@ -42,6 +46,7 @@ import { Info } from '@mui/icons-material';
 import { Cart } from '../Rental/Cart';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import StarIcon from '@mui/icons-material/Star';
 //import FilterIcon from '@mui/icons-material/FilterList';
 
 // Flechas personalizadas para react-slick
@@ -93,6 +98,31 @@ function PrevArrow(props) {
     </IconButton>
   );
 }
+//Calcula el precio del producto despues de la promo
+function calcularPromocion(producto) {
+  const precioOriginal = parseFloat(producto.precio_original || producto.precio);
+  const descuento = parseFloat(producto.descuento || 0);
+
+  if (isNaN(precioOriginal) || isNaN(descuento)) {
+    return {
+      ...producto,
+      precio_con_descuento: precioOriginal,
+      ahorro: 0,
+      porcentaje_descuento: 0,
+    };
+  }
+
+  const ahorro = +(precioOriginal * descuento / 100).toFixed(2);
+  const precio_con_descuento = +(precioOriginal - ahorro).toFixed(2);
+
+  return {
+    ...producto,
+    precio_con_descuento,
+    ahorro,
+    porcentaje_descuento: descuento,
+  };
+}
+
 
 
 
@@ -133,73 +163,102 @@ const formatearFecha = (fechaString) => {
 
 
 export function ListaCartasPromocion({data, isShopping }) {
+   const [productos, setProductos] = useState([]);
+    const [error, setError] = useState(null);
+   const [loading, setLoading] = useState(true);
+
 //Se obtiene el método addItem para agregar Producto al carrito
   const { addItem } =useCart()
     //Url para acceder a la imagenes guardadas en el API
-  const BASE_URL = import.meta.env.VITE_BASE_URL + 'uploads';
-  
-  // Estado para las categorías
- /* const [categorias, setCategorias] = useState([]);
-  const [loadingCategorias, setLoadingCategorias] = useState(false);
-  // Estado para la categoría seleccionada
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
+  const BASE_IMG = import.meta.env.VITE_BASE_URL + 'uploads';
 
   useEffect(() => {
-    setLoadingCategorias(true);
-    CategoriaService.getCategoria()
-      .then((response) => {
-        // Asumiendo que la respuesta es un array de categorías
-        setCategorias(response.data);
+    ProductoService.obtenerProductosConPromociones()
+      .then(data => {
+        const productosConCalculos = data.map(calcularPromocion);
+        setProductos(productosConCalculos);
+        setLoading(false);
       })
-      .catch((error) => {
-        console.error('Error al cargar categorías:', error);
-      })
-      .finally(() => setLoadingCategorias(false));
-  }, []);*/
-  // Configuración de slider (react-slick)
+      .catch(err => {
+        console.error(err);
+        setError('Error al cargar productos con promociones.');
+        setLoading(false);
+      });
+  }, []);
+
+
+  
+ 
  const settings = {
-    dots: true,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 3,
-    slidesToScroll: 1,
-    arrows: true,
-    autoplay: true,          // Autoplay activado
-    autoplaySpeed: 3000,     // Cambia slide cada 3 segundos
-    nextArrow: <NextArrow />,
-    prevArrow: <PrevArrow />,
-    responsive: [
-      {
-        breakpoint: 1024,
-        settings: { slidesToShow: 2 },
-      },
-      {
-        breakpoint: 600,
-        settings: { slidesToShow: 1 },
-      },
-    ],
-  };
-   /*const promocionesFiltradas = categoriaSeleccionada
-    ? data.filter((item) => item.categoriaId === categoriaSeleccionada.id)
-    : data;*/
+  dots: true,
+  infinite: true,        // Aquí el loop infinito
+  speed: 500,
+  slidesToShow: 3,
+  slidesToScroll: 1,
+  arrows: true,
+  autoplay: true,
+  autoplaySpeed: 3000,
+  nextArrow: <NextArrow />,
+  prevArrow: <PrevArrow />,
+  responsive: [
+    {
+      breakpoint: 1024,
+      settings: { slidesToShow: 2 },
+    },
+    {
+      breakpoint: 600,
+      settings: { slidesToShow: 1 },
+    },
+  ],
+};
 
-
-
-  /*const [filtroCategoria, setFiltroCategoria] = useState('');
-  const [busqueda, setBusqueda] = useState('');
-  const [soloPromociones, setSoloPromociones] = useState(false);*/
-
-      
-    //Filtro Cargeoria
-
-  /*const FiltroCategoria = ({ filtroCategoria, setFiltroCategoria }) => {
-  const [categorias, setCategorias] = useState([]);*/
+   
 
      return (
     <>
-      <Typography component="h2" variant="h4" align="center" color="#d83b6a" gutterBottom>
-        Promociones Prisutería Accesorios
-      </Typography>
+      {/* Encabezado decorativo */}
+        <Box sx={{ textAlign: 'center', mb: 6 }}>
+          <Box sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 2,
+            mb: 2,
+            px: 3,
+            py: 1.5,
+            backgroundColor: 'rgba(216, 59, 106, 0.1)',
+            borderRadius: '50px',
+            border: '2px solid rgba(216, 59, 106, 0.2)',
+          }}>
+            <StarIcon sx={{ color: '#d83b6a', fontSize: 30 }} />
+            <Typography
+              variant="h3"
+              sx={{
+                fontWeight: 'bold',
+                background: 'linear-gradient(45deg, #d83b6a, #ff6b9d)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              }}
+            >
+              Promociones Prisutería Accesorios
+            </Typography>
+            <StarIcon sx={{ color: '#d83b6a', fontSize: 30 }} />
+          </Box>
+
+          <Typography variant="h5" sx={{ color: '#6c757d', fontWeight: 'medium', mb: 3 }}>
+            Descubre nuestras mejores ofertas y promociones especiales
+          </Typography>
+
+          <Divider sx={{
+            maxWidth: 200,
+            mx: 'auto',
+            borderWidth: 2,
+            borderColor: '#d83b6a',
+            borderRadius: 2,
+          }} />
+        </Box>
+      
       <Typography component="h2" variant="h4" align="center" color="#d83b6a" gutterBottom>
         Listado Promociones Prisuteria
       </Typography>
@@ -226,11 +285,9 @@ export function ListaCartasPromocion({data, isShopping }) {
                     {item.tipo}
                   </Typography>
                   <Typography variant="body1" sx={{ fontSize: '1.5rem', color: 'green', fontWeight: 'bold', mb: 1 }}>
-                     -{item.descuento}% OFF
+                     -{item.descuento}% 
                   </Typography>
-                  <Typography variant="body1" sx={{ fontSize: '1.1rem', mb: 1 }}>
-                     Aplicado a:
-                  </Typography>
+                
                   <Typography
                     variant="body1"
                     sx={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}
@@ -249,9 +306,9 @@ export function ListaCartasPromocion({data, isShopping }) {
                 >
                   <IconButton
                     component={Link}
-                    to={`/movie/${item.id}`}
+                    to={`/promocion/${item.id}`}
                     color="blue"
-                    aria-label="Ver Detalle"
+                    aria-label="Detalle"
                     sx={{ ml: 'auto' }}
                   >
                     <Info />
@@ -261,42 +318,64 @@ export function ListaCartasPromocion({data, isShopping }) {
             </Box>
           ))}
       </Slider>
+       <Typography component="h2" variant="h4" align="center" color="#d83b6a" gutterBottom>
+        Productos con promociones
+      </Typography>
+      {loading ? (
+        <CircularProgress sx={{ display: 'block', mx: 'auto', my: 4 }} />
+      ) : error ? (
+        <Typography color="error" align="center" sx={{ mt: 4 }}>
+          {error}
+        </Typography>
+      ) : (
+        <Slider {...settings}>
+          {productos.map((prod) => (
+            <Box key={prod.id} sx={{ p: 1 }}>
+              <Card>
+                {prod.imagen && (
+                  <CardMedia
+                    component="img"
+                    height="160"
+                    image={`${BASE_IMG}${prod.imagen}`}
+                    alt={prod.nombre}
+                  />
+                )}
+                <CardHeader
+                  title={prod.nombre}
+                  subheader={`Estado: ${prod.estado_promocion}`}
+                  sx={{
+                    backgroundColor: '#d83b6a',
+                    color: '#fff',
+                    textAlign: 'center',
+                  }}
+                />
+                <CardContent>
+                  <Typography variant="body2">Categoría: {prod.categoria}</Typography>
+                  <Typography variant="body1" sx={{ mt: 1 }}>
+                    <s>₡{prod.precio_original}</s>
+                  </Typography>
+                  <Typography variant="h6" sx={{ color: 'green', fontWeight: 'bold' }}>
+                    ₡{prod.precio_con_descuento}
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Ahorro: ₡{prod.ahorro} ({prod.porcentaje_descuento}%)
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <IconButton onClick={() => addItem(prod)}>
+                    <AddShoppingCartIcon />
+                  </IconButton>
+                  <IconButton component={Link} to={`/producto/${prod.id}`} sx={{ ml: 'auto' }}>
+                    <Info />
+                  </IconButton>
+                </CardActions>
+              </Card>
+            </Box>
+          ))}
+        </Slider>
+      )}
+      
       
     </>
   );
 }
-
-
-//}
-
-
-/*const calculateStatus = (fechaInicio, fechaFin) => {
-    const today = new Date();
-    const startDate = new Date(fechaInicio);
-    const endDate = new Date(fechaFin);
-    
-    today.setHours(0, 0, 0, 0);
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(0, 0, 0, 0);
-
-    if (today >= startDate && today <= endDate) {
-      return {
-        status: 'Vigente',
-        color: '#FF4D4D',
-        textColor: '#FFFFFF'
-      };
-    } else if (today > endDate) {
-      return {
-        status: 'Aplicado',
-        color: '#D3D3D3',
-        textColor: '#666666'
-      };
-    } else {
-      return {
-        status: 'Pendiente',
-        color: '#ADD8E6',
-        textColor: '#0066CC'
-      };
-    }
-  };*/
-  // Cambio automático del banner cada 4 segundos

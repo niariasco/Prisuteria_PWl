@@ -1,168 +1,166 @@
-// React
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-
-// MUI Components
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import List from '@mui/material/List';
-import ListItemText from '@mui/material/ListItemText';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemButton from '@mui/material/ListItemButton';
-import Grid from '@mui/material/Grid';
-import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
-
-// MUI Icons
+import Divider from '@mui/material/Divider';
 import StarIcon from '@mui/icons-material/Star';
-import ArrowRightIcon from '@mui/icons-material/ArrowRight';
-import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
-
-// Services
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import DiscountIcon from '@mui/icons-material/Discount';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import PromocionService from '../../services/PromocionService';
 
 export function DetallePromociones({ addItem }) {
-  const routeParams = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const BASE_URL = import.meta.env.VITE_BASE_URL + 'uploads';
 
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    PromocionService.getPromocionById(routeParams.id)
+    PromocionService.getPromocionById(id)
       .then((response) => {
         setData(response.data);
-        setError(response.error);
         setLoaded(true);
       })
       .catch((error) => {
         console.error(error);
         setError(error);
-        throw new Error('Respuesta no válida del servidor');
       });
-  }, [routeParams.id]);
+  }, [id]);
 
   if (!loaded) return <p>Cargando...</p>;
   if (error) return <p>Error: {error.message}</p>;
 
   return (
-    <Container>
-      <Grid container spacing={4}>
-        {/* Detalles del producto */}
-        <Grid item xs={12} md={6}>
-          <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#d83b6a' }}>
-            Detalle de Promoción
-          </Typography>
-
-          <Typography variant="body1"
-                    sx={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-            Nombre de la promoción:{data.nombre} 
-          </Typography>
-
-          <Typography variant="subtitle1" gutterBottom color="text.secondary">
-            {data.descripcion}
-          </Typography>
-
-          <Typography variant="body1" gutterBottom>
-            <strong>Categoría:</strong> {data.nombreSCategoria}
-          </Typography>
-
-          {data.etiquetas ? (
-            data.etiquetas.split(', ').map((etiqueta, index) => (
-              <Chip
-                key={index}
-                label={etiqueta}
-                variant="outlined"
-                color="primary"
-                sx={{ mr: 1, mb: 1 }}
-              />
-            ))
-          ) : (
-            <Typography variant="body2"></Typography>
-          )}
-
-          <Typography variant="body1" gutterBottom>
-            <strong>Valoración promedio:</strong>{' '}
-            {data.promedio_valoracion && '⭐'.repeat(Math.round(data.promedio_valoracion))}
-          </Typography>
-
-          <IconButton
-            aria-label="Comprar"
-            sx={{
-              ml: 'auto',
-              backgroundColor: '#d83b6a',
-              color: 'white',
-              '&:hover': {
-                backgroundColor: '#b03052',
-              },
-              padding: '12px',
-              borderRadius: '8px',
-              mt: 2,
-            }}
-            onClick={() => addItem(data)}
-          >
-            <AddShoppingCartIcon sx={{ mr: 1 }} />
-            <Typography component="span" variant="body1">
-              Agregar al carrito
+    <Box sx={{ 
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+      py: 6,
+    }}>
+      <Container maxWidth="xl">
+        {/* Heade */}
+        <Box sx={{ textAlign: 'center', mb: 6 }}>
+          <Box sx={{ 
+            display: 'inline-flex', 
+            alignItems: 'center', 
+            gap: 2, 
+            mb: 2,
+            padding: '12px 24px',
+            backgroundColor: 'rgba(216, 59, 106, 0.1)',
+            borderRadius: '50px',
+            border: '2px solid rgba(216, 59, 106, 0.2)',
+          }}>
+            <StarIcon sx={{ color: '#d83b6a', fontSize: 30 }} />
+            <Typography 
+              component="h1" 
+              variant="h3" 
+              sx={{ 
+                color: '#d83b6a',
+                fontWeight: 'bold',
+                textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                background: 'linear-gradient(45deg, #d83b6a, #ff6b9d)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Promociones Prisutería Accesorios
             </Typography>
-          </IconButton>
+            <StarIcon sx={{ color: '#d83b6a', fontSize: 30 }} />
+          </Box>
+          
+        
+          
+          <Divider sx={{ 
+            maxWidth: 200, 
+            mx: 'auto', 
+            borderWidth: 2, 
+            borderColor: '#d83b6a',
+            borderRadius: 2,
+          }} />
+        </Box>
 
-          <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a', mt: 3 }}>
-            _________________________________________________
-          </Typography>
-          <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
-            Retiro disponible en Retiro en Heredia
-          </Typography>
-          <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
-            Normalmente está listo en 24 horas
-          </Typography>
-        </Grid>
-
-        {/* Botón volver */}
-        <Grid item xs={12}>
-          <Button
-            variant="outlined"
-            color="secondary"
-            onClick={() => navigate(-1)}
-            sx={{ mt: 2 }}
+        {/* Detalle visual de la promoción */}
+        <Container maxWidth="sm">
+          <Box
+            sx={{
+              backgroundColor: '#fff',
+              borderRadius: 4,
+              boxShadow: 3,
+              p: 4,
+              textAlign: 'center',
+            }}
           >
-            ← Volver
-          </Button>
-        </Grid>
+            <Typography variant="h4" sx={{ color: '#d83b6a', fontWeight: 'bold', mb: 3 }}>
+              Detalle de la Promoción
+            </Typography>
 
-        {/* Reseñas */}
-        <Grid item xs={12}>
-          <Typography variant="h5" gutterBottom sx={{ mt: 4, color: '#d83b6a' }}>
-            Reseñas
-          </Typography>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              <strong>Nombre:</strong> {data.nombre}
+            </Typography>
 
-          {data.resenas?.length === 0 ? (
-            <Typography>No hay reseñas para este producto.</Typography>
-          ) : (
-            data.resenas.map((resena, index) => (
-              <Grid
-                item
-                xs={12}
-                key={index}
-                sx={{ mb: 2, borderBottom: '1px solid #d83b6a', pb: 2 }}
-              >
-                <Typography variant="subtitle1">
-                  <strong>{resena.nombre}</strong> -{' '}
-                  {new Date(resena.fecha).toLocaleDateString()}
-                </Typography>
-                <Typography variant="body2">{resena.comentario}</Typography>
-                <Typography variant="body2">
-                  {'⭐'.repeat(resena.calificacion)} ({resena.calificacion}/5)
-                </Typography>
-              </Grid>
-            ))
-          )}
-        </Grid>
-      </Grid>
-    </Container>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Tipo:</strong> {data.tipo}
+            </Typography>
+
+            <Typography variant="body1" sx={{ mb: 1 }}>
+  <strong>Aplicado en:</strong>{' '}
+  {data.tipo === 'Categoria' && data.nombre_categoria
+    ? data.nombre_categoria
+    : data.tipo === 'Producto' && data.nombre_producto
+    ? data.nombre_producto
+    : 'N/A'}
+</Typography>
+
+
+            <Typography
+              variant="h5"
+              sx={{ color: 'green', fontWeight: 'bold', mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}
+            >
+              <DiscountIcon fontSize="small" />
+              -{data.descuento}% 
+            </Typography>
+
+            <Typography variant="body1" sx={{ mb: 1, display: 'flex', justifyContent: 'center', gap: 1 }}>
+              <CalendarMonthIcon fontSize="small" />
+              <strong>Inicio:</strong> {data.fecha_inicio}
+            </Typography>
+
+            <Typography variant="body1" sx={{ mb: 2, display: 'flex', justifyContent: 'center', gap: 1 }}>
+              <CalendarMonthIcon fontSize="small" />
+              <strong>Fin:</strong> {data.fecha_fin}
+            </Typography>
+
+            <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 1 }}>
+              Estado:
+            </Typography>
+
+            <Chip
+              label={data.Estado}
+              icon={<LocalOfferIcon />}
+              sx={{
+                backgroundColor: data.color_estado || '#ccc',
+                color: '#000',
+                fontWeight: 'bold',
+                fontSize: '1rem',
+                mb: 3,
+                px: 2,
+                py: 1,
+              }}
+            />
+
+            <Divider sx={{ my: 3 }} />
+
+            <Button variant="outlined" color="secondary" onClick={() => navigate(-1)}>
+              ← Volver
+            </Button>
+          </Box>
+        </Container>
+      </Container>
+    </Box>
   );
 }
