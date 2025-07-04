@@ -102,9 +102,24 @@ import Button from '@mui/material/Button';
             {data.nombre}
           </Typography>
 
-          <Typography variant="h5" gutterBottom sx={{ color: '#444' }}>
-            ₡{Number(data.precio).toLocaleString()}
-          </Typography>
+{data.precio_con_descuento ? (
+  <>
+    <Typography sx={{ textDecoration: 'line-through', color: 'gray' }}>
+      ₡{Number(data.precio).toLocaleString()}
+    </Typography>
+    <Typography variant="h5" color="#d83b6a" fontWeight="bold">
+      ₡{Number(data.precio_con_descuento).toLocaleString()}
+    </Typography>
+    <Typography variant="caption" color="primary">
+      {data.nombre_promocion} (-{data.descuento}%)
+    </Typography>
+  </>
+) : (
+  <Typography variant="h5">
+    ₡{Number(data.precio).toLocaleString()}
+  </Typography>
+)}
+
 
           <Typography variant="subtitle1" gutterBottom color="text.secondary">
             {data.descripcion}
