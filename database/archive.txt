@@ -36,3 +36,18 @@ UPDATE promociones
 SET fecha_inicio = '2025-07-01 00:00:00',
     fecha_fin = '2025-07-31 23:59:59'
 WHERE id = 2;
+
+
+Cambios 03/07/24 Priscilla 
+-- 1. Eliminar la clave foránea relacionada con estado_id
+ALTER TABLE ordenes DROP FOREIGN KEY ordenes_ibfk_2;
+
+-- 2. Eliminar la columna estado_id
+ALTER TABLE ordenes DROP COLUMN estado_id;
+
+-- 3. Agregar la nueva columna estado como ENUM
+ALTER TABLE ordenes 
+ADD COLUMN estado ENUM('pendiente', 'procesando', 'enviado', 'entregado', 'cancelado') 
+NOT NULL 
+AFTER total;
+
