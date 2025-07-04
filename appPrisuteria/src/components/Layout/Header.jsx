@@ -69,7 +69,7 @@ export default function Header() {
   const navItems = [
     { name: "Productos", link: "/productos",roles:null },
     { name: "Promociones", link: "/promocion", roles:null },
-    { name: "", link: "", roles:null },
+    { name: "Ordenes", link: "/orden", roles:null },
     { name: "", link: "", roles:['Administrador'] },
   ];
  /*

@@ -22,6 +22,60 @@ class OrdenModel
         }
     }
     
+    public function get($id) {
+    $vResultado = null;
+    try {
+        // 1. Encabezado del pedido + cliente
+        $vSql = "
+            SELECT 
+                o.ordenesId,
+                o.fecha,
+                o.direccion_envio,
+                o.subtotal,
+                o.impuestos,
+                o.total,
+                o.metodo_pago,
+                u.usuarioId,
+                u.nombre_usuario AS nombre_usuario
+            FROM ordenes o
+            JOIN usuarios u ON o.usuario_id = u.usuarioId
+            WHERE o.ordenesId = $id
+        ";
+
+        $pedido = $this->enlace->ExecuteSQL($vSql);
+
+        // Si no encontró la orden, retorna null
+        if (empty($pedido)) {
+            return null;
+        }
+
+        // 2. Productos normales asociados a la orden
+        $vSql = "
+            SELECT 
+                p.nombre,
+                d.cantidad,
+                d.precio_unitario,
+                d.subtotal
+            FROM detalle_orden d
+            JOIN productos p ON d.producto_id = p.productosId
+            WHERE d.orden_id = $id
+        ";
+        $productos = $this->enlace->ExecuteSQL($vSql);
+
+        // 3. Retornar objeto combinado
+        $vResultado = [
+            'pedido' => $pedido[0], // solo hay un encabezado por orden
+            'productos' => $productos
+        ];
+
+        return $vResultado;
+
+    } catch (Exception $e) {
+        die($e->getMessage());
+    }
+}
+
+
        public function listarPorUsuario($usuarioId)
     {
         try {

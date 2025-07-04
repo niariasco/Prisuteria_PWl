@@ -1,3 +1,131 @@
 Instalacion axios  28/06/24 Priscilla
 npm i axios
 
+Cambios Bases 02/07/24 Priscilla
+
+drop table promocion_categorias;
+drop table promocion_productos;
+DROP TABLE IF EXISTS `promociones`;
+
+CREATE TABLE `promociones` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nombre` VARCHAR(100) NOT NULL,
+  `tipo` ENUM('Producto', 'Categoria') NOT NULL,
+  `descuento` DECIMAL(5,2) NOT NULL,
+  `fecha_inicio` DATETIME NOT NULL,
+  `fecha_fin` DATETIME NOT NULL,
+  activo BOOLEAN DEFAULT TRUE,
+  `ProductoID` INT DEFAULT NULL,
+  `CategoriaID` INT DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`ProductoID`) REFERENCES `productos` (`productosId`) ON DELETE SET NULL,
+  FOREIGN KEY (`CategoriaID`) REFERENCES `categorias` (`categoriaId`) ON DELETE SET NULL
+);
+
+INSERT INTO promociones (
+  id, nombre, tipo, descuento, fecha_inicio, fecha_fin, activo, ProductoID, CategoriaID
+) VALUES
+(1, 'Promo Verano', 'Categoria', 10.00, '2025-06-01 00:00:00', '2025-08-31 23:59:59', TRUE, NULL, 1),
+(2, 'Oferta Especial', 'Producto', 15.00, '2025-06-10 00:00:00', '2025-06-30 23:59:59', TRUE, 2, NULL),
+(3, 'Descuento Invierno', 'Categoria', 20.00, '2025-12-01 00:00:00', '2026-02-28 23:59:59', TRUE, NULL, 2),
+(4, 'Rebaja de Enero', 'Producto', 25.00, '2026-01-01 00:00:00', '2026-01-31 23:59:59', TRUE, 4, NULL),
+(5, 'Promo Fin de Semana', 'Categoria', 5.00, '2025-06-14 00:00:00', '2025-06-16 23:59:59', TRUE, NULL, 3),
+(6, 'Liquidación Final', 'Producto', 30.00, '2025-06-01 00:00:00', '2025-06-30 23:59:59', TRUE, 3, NULL);
+
+UPDATE promociones
+SET fecha_inicio = '2025-07-01 00:00:00',
+    fecha_fin = '2025-07-31 23:59:59'
+WHERE id = 2;
+
+___________________________
+INSERT en Base Datos FECHA 7/3/2025 - NICOLE
+
+DELETE FROM imagenes WHERE imagenId = 2;
+
+INSERT INTO imagenes (producto_id, url_imagen)
+VALUES 
+  (1, 'Aretes4Perlas.jpg'),
+  (2, 'collargirasol.png'),
+  (3, 'aretestrebolnegro.png'),
+  (4, 'AretesPlataMono.jpg'),
+  (5, 'CollarCorazon.jpg'),
+  (6, 'aretestrebolrojo.png'),
+  (7, 'AretesNegro.jpg'),
+  (8, 'pulseratrebol.png');
+  
+ALTER TABLE ordenes
+  ADD COLUMN impuestos DECIMAL(10,2) DEFAULT NULL AFTER subtotal,
+MODIFY  COLUMN fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER usuario_id;
+
+drop table orden_detalle
+
+CREATE TABLE detalle_orden (
+    detalleId INT(11) NOT NULL AUTO_INCREMENT,
+    orden_id INT(11) NOT NULL,
+    producto_id INT(11) NOT NULL,
+    cantidad INT(11) NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (detalleId),
+    KEY orden_id (orden_id),
+    KEY producto_id (producto_id),
+    CONSTRAINT detalle_orden_fk_orden FOREIGN KEY (orden_id) REFERENCES ordenes (ordenesId) ON DELETE CASCADE,
+    CONSTRAINT detalle_orden_fk_producto FOREIGN KEY (producto_id) REFERENCES productos (productosId)
+) 
+INSERT INTO ordenes (usuario_id, subtotal, total, estado, metodo_pago, direccion_envio) VALUES
+(1, 15000.00, 15000.00, 'pendiente', 'tarjeta', 'San José, San Pedro, 100 metros norte de la UCR'),
+(4, 23000.50, 23000.50, 'pendiente', 'efectivo', 'Alajuela, Centro, Calle Principal #45'),
+(3, 12500.00, 12500.00, 'procesando', 'tarjeta', 'Heredia, Santo Domingo, 200 metros sur del parque'),
+(1, 9800.75, 9800.75, 'enviado', 'efectivo', 'Cartago, Barrio Oriental, Casa #12'),
+(5, 17500.00, 17500.00, 'entregado', 'tarjeta', 'Limón, Puerto Viejo, Frente a la escuela'),
+(3, 11000.00, 11000.00, 'cancelado', 'efectivo', 'Puntarenas, Playa Hermosa, Apartado 123');
+
+
+UPDATE ordenes
+SET impuestos = 2800.00,
+    total = subtotal + 2800.00
+WHERE ordenesId IN (7,8,9,10,11,12,20,21,22,23,24,25);
+
+UPDATE ordenes
+SET impuestos = 2800.00,
+    total = subtotal + 2800.00
+WHERE ordenesId IN (13,14,15,16,17,18,19);
+
+
+  INSERT INTO detalle_orden (orden_id, producto_id, cantidad, precio_unitario, subtotal) VALUES
+(7, 1, 2, 150.00, 300.00),
+(8, 2, 1, 200.00, 200.00),
+(9, 3, 3, 350.00, 1050.00),
+(10, 4, 1, 500.00, 500.00),
+(11, 5, 5, 80.00, 400.00),
+(12, 6, 2, 120.00, 240.00),
+(13, 7, 1, 100.00, 100.00),
+(14, 1, 4, 110.00, 440.00),
+(15, 2, 3, 90.00, 270.00),
+(16, 3, 2, 130.00, 260.00),
+(17, 4, 1, 160.00, 160.00),
+(18, 5, 3, 70.00, 210.00),
+(19, 6, 2, 95.00, 190.00),
+(20, 7, 1, 15000.00, 15000.00),
+(21, 1, 2, 11500.25, 23000.50),
+(22, 2, 1, 12500.00, 12500.00),
+(23, 3, 2, 4900.375, 9800.75),
+(24, 4, 1, 17500.00, 17500.00),
+(25, 5, 4, 2750.00, 11000.00);
+
+_________________________________
+Priscilla
+Cambios 03/07/24 Priscilla 
+-- 1. Eliminar la clave foránea relacionada con estado_id
+ALTER TABLE ordenes DROP FOREIGN KEY ordenes_ibfk_2;
+
+-- 2. Eliminar la columna estado_id
+ALTER TABLE ordenes DROP COLUMN estado_id;
+
+-- 3. Agregar la nueva columna estado como ENUM
+ALTER TABLE ordenes 
+ADD COLUMN estado ENUM('pendiente', 'procesando', 'enviado', 'entregado', 'cancelado') 
+NOT NULL 
+AFTER total;
+
+
