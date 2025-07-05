@@ -203,7 +203,6 @@ export function ListaCartasPromocion({ isShopping }) {
       <Typography component="h2" variant="h4" align="center" color="#d83b6a" gutterBottom>
         Productos con promociones
       </Typography>
-
       {loading ? (
         <CircularProgress sx={{ display: 'block', mx: 'auto', my: 4 }} />
       ) : error ? (
