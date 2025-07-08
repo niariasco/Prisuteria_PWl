@@ -28,6 +28,8 @@ import { ListaResenas } from "./components/Resenas/ListaResenas";
 import { DetalleResenas } from "./components/Resenas/DetalleResenas";
 import{ListaPromociones} from "./components/Promociones/ListaPromociones";
 import{DetallePromociones} from "./components/Promociones/DetallePromociones";
+import { ListOrders } from "./components/Orders/ListOrders";
+import { DetalleOrder } from "./components/Orders/DetalleOrder";
 
 const rutas = createBrowserRouter([
   {
@@ -62,6 +64,9 @@ const rutas = createBrowserRouter([
       //Rutas Promociones
       { path: '/promocion', element: <ListaPromociones /> },
       { path: '/promocion/:id', element: <DetallePromociones /> },
+
+      { path: '/orden', element: <ListOrders /> },
+     { path: '/orden/:id', element: <DetalleOrder /> }
     ]
   }
 ]);

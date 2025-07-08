@@ -142,5 +142,32 @@ class PromocionModel
             handleException($e);
         }
     }
-    
+    public function getTodasLasPromocionesConNombreAplicado()
+{
+    try {
+        $vSQL = "
+            SELECT 
+                p.id,
+                p.nombre,
+                p.tipo,
+                p.descuento,
+                p.fecha_inicio,
+                p.fecha_fin,
+                p.ProductoID,
+                prod.nombre AS nombre_producto,
+                p.CategoriaID,
+                cat.nombreSCategoria AS nombre_categoria
+            FROM promociones p
+            LEFT JOIN productos prod ON p.ProductoID = prod.productosId
+            LEFT JOIN categorias cat ON p.CategoriaID = cat.categoriaId
+            WHERE p.activo = 1
+        ";
+
+        $vResultado = $this->enlace->executeSQL($vSQL);
+        return $vResultado;
+    } catch (Exception $e) {
+        handleException($e);
+    }
+}
+
 }

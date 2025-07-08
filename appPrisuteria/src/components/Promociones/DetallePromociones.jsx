@@ -1,22 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-
-// MUI Components
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
-
-// Icons
 import StarIcon from '@mui/icons-material/Star';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import DiscountIcon from '@mui/icons-material/Discount';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 
-// Services
 import PromocionService from '../../services/PromocionService';
 
 export function DetallePromociones({ addItem }) {

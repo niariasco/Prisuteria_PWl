@@ -39,8 +39,8 @@ export function ListaCartasProductos({ data, isShopping }) {
                 <CardHeader
                   sx={{
                     p: 0,
-                    backgroundColor:'#ce9fc4',
-                    color: 'white',
+                         backgroundColor: '#ce9fc4', 
+                    color: '#f5f0f8',
                   }}
                   style={{ textAlign: 'center' }}
                   title={item.nombre}
@@ -63,7 +63,7 @@ export function ListaCartasProductos({ data, isShopping }) {
                     <>
                     <Typography
                       variant="body2"
-                      sx={{ textDecoration: 'line-through', color: 'gray', display: 'inline', mr: 1 }}
+                      sx={{ textDecoration: 'line-through', color: '#ce9fc4', display: 'inline', mr: 1 }}
                     >
                          ₡{Number(item.precio).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} 
                      </Typography>
@@ -89,8 +89,8 @@ export function ListaCartasProductos({ data, isShopping }) {
                 <CardActions
                   disableSpacing
                   sx={{
-                    backgroundColor:'#ce9fc4',
-                    color: (theme) => theme.palette.common.white,
+      backgroundColor: '#ce9fc4',
+                          color: '#d83b6a',
                   }}
                 >
                   <IconButton

@@ -91,8 +91,6 @@ import Button from '@mui/material/Button';
   )}
 </Grid>
 
-
-        {/* Detalles del producto */}
         <Grid item xs={12} md={6}>
           <Typography
             variant="h4"
@@ -101,24 +99,36 @@ import Button from '@mui/material/Button';
           >
             {data.nombre}
           </Typography>
-
-{data.precio_con_descuento ? (
+{data.precio_con_descuento && data.precio_con_descuento !== data.precio ? (
   <>
     <Typography sx={{ textDecoration: 'line-through', color: 'gray' }}>
       ₡{Number(data.precio).toLocaleString()}
     </Typography>
-    <Typography variant="h5" color="#d83b6a" fontWeight="bold">
-      ₡{Number(data.precio_con_descuento).toLocaleString()}
+    <Typography variant="h5" sx={{ color: '#d83b6a', fontWeight: 'bold' }}>
+      ₡{Math.round(data.precio_con_descuento).toLocaleString()}
     </Typography>
-    <Typography variant="caption" color="primary">
-      {data.nombre_promocion} (-{data.descuento}%)
-    </Typography>
+
+    {(data.descuento_producto || data.descuento_categoria) && (
+      <Typography variant="caption" color="primary">
+        {data.nombre_promocion_producto && `${data.nombre_promocion_producto} `}
+        {data.nombre_promocion_categoria && `${data.nombre_promocion_categoria}`}
+      </Typography>
+    )}
+
+{data.nombre_promocion && (
+  <Typography variant="caption" color="primary">
+    {data.nombre_promocion}
+    {Number(data.descuento) > 0 ? ` (-${data.descuento}%)` : ''}
+  </Typography>
+)}
+
   </>
 ) : (
   <Typography variant="h5">
     ₡{Number(data.precio).toLocaleString()}
   </Typography>
 )}
+
 
 
           <Typography variant="subtitle1" gutterBottom color="text.secondary">

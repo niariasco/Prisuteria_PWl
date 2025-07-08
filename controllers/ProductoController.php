@@ -92,7 +92,8 @@ class producto
             handleException($e);
         }
     }
-public function obtenerProductosPromocion() 
+
+    public function obtenerProductosPromocion() 
 {
     try {
         $productoModel = new ProductoModel();
@@ -108,8 +109,6 @@ public function obtenerProductosPromocion()
         handleException($e);
     }
 }
-
-
 
 
 

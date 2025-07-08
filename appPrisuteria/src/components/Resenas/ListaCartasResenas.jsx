@@ -29,10 +29,10 @@ export function ListaCartasResenas({ data }) {
             />
             <CardContent>
                 <Typography variant="body1" gutterBottom>
-                <strong>Producto : </strong> 
+                <strong>Producto : </strong>
               </Typography>
-         <Typography variant="body2" color="text.secondary" gutterBottom>
-                {resena.nombre}
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+              {resena.nombre}
               </Typography>
               <Typography variant="body1" gutterBottom>
                 <strong>Comentario:</strong>

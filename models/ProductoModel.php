@@ -70,7 +70,7 @@ ORDER BY p.nombre DESC;
             //       FROM productos p 
             //      LEFT JOIN imagenes i ON p.productosId = i.producto_id 
             //    WHERE p.productosId = $id";
-             $vSql = "SELECT 
+            $vSql = "   SELECT 
     p.*, 
     i.url_imagen AS imagen,
     c.nombreSCategoria AS nombreSCategoria,
@@ -78,10 +78,18 @@ ORDER BY p.nombre DESC;
     GROUP_CONCAT(DISTINCT e.nombrEtiquetas SEPARATOR ', ') AS etiquetas,
     GROUP_CONCAT(DISTINCT CONCAT('  ', r.comentario) SEPARATOR '\n') AS comentarios_resenas,
 
-    -- Promoción (si aplica)
-    MAX(pr.nombre) AS nombre_promocion,
-    MAX(pr.descuento) AS descuento,
-    MAX(ROUND(p.precio - (p.precio * pr.descuento / 100), 2)) AS precio_con_descuento
+    -- Promociones separadas
+    promop.nombre AS nombre_promocion_producto,
+    promop.descuento AS descuento_producto,
+    promoc.nombre AS nombre_promocion_categoria,
+    promoc.descuento AS descuento_categoria,
+
+    -- Descuento combinado acumulativo
+    ROUND(
+      p.precio 
+      * IF(promop.descuento IS NOT NULL, 1 - promop.descuento / 100, 1)
+      * IF(promoc.descuento IS NOT NULL, 1 - promoc.descuento / 100, 1)
+    , 2) AS precio_con_descuento
 
 FROM productos p
 LEFT JOIN imagenes i ON p.productosId = i.producto_id
@@ -90,16 +98,26 @@ LEFT JOIN resenas r ON p.productosId = r.producto_id
 LEFT JOIN productoetiqueta pe ON p.productosId = pe.producto_id
 LEFT JOIN etiquetas e ON pe.etiqueta_id = e.etiquetaId
 
--- JOIN promociones activas
-LEFT JOIN promociones pr 
-    ON (
-        (pr.ProductoID = p.productosId OR pr.CategoriaID = p.categoria_id)
-        AND pr.activo = 1
-        AND NOW() BETWEEN pr.fecha_inicio AND pr.fecha_fin
-    )
+-- PROMOCIÓN por producto
+LEFT JOIN promociones promop
+  ON promop.ProductoID = p.productosId
+  AND promop.tipo = 'Producto'
+  AND promop.activo = 1
+  AND NOW() BETWEEN promop.fecha_inicio AND promop.fecha_fin
+
+-- PROMOCIÓN por categoría
+LEFT JOIN promociones promoc
+  ON promoc.CategoriaID = p.categoria_id
+  AND promoc.tipo = 'Categoria'
+  AND promoc.activo = 1
+  AND NOW() BETWEEN promoc.fecha_inicio AND promoc.fecha_fin
 
 WHERE p.productosId = $id
-GROUP BY p.productosId";          
+GROUP BY p.productosId;
+
+  
+";
+          
         // Ejecutar la consulta del producto
         $vResultado = $this->enlace->ExecuteSQL($vSql);
 
@@ -238,10 +256,10 @@ WHERE r.producto_id = $id";
      * @return $vresultado - Lista de productos incluyendo el precio
      */
 
+
 public function obtenerConPromocionesVigentes()
 {
-    $sql = "
-        SELECT
+    $sql = "        SELECT
             pr.productosId AS id,
             pr.nombre,
             pr.precio AS precio_original,
@@ -283,8 +301,7 @@ public function obtenerConPromocionesVigentes()
     try {
         $imagenM = new ImageModel();
 
-        $vSQL = "
-        SELECT 
+        $vSQL = "        SELECT 
             p.productosId,
             p.nombre,
             p.descripcion,
@@ -358,7 +375,6 @@ public function obtenerConPromocionesVigentes()
         }
     }
 
-    */
     /**
      * Crear producto
      * @param $objeto producto a Insertinto   * @return $this->get($producto) - Objeto producto
