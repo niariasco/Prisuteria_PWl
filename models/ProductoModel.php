@@ -162,37 +162,7 @@ GROUP BY p.productosId;
         return null;
     }
 }
-    //  $vSql = "SELECT * FROM productos
-    //          where productosId=$id;";
 
-    //Ejecutar la consulta sql
-    //   $vResultado = $this->enlace->executeSQL($vSql);
-    //   if(!empty($vResultado)){
-    //   $vResultado=$vResultado[0];
-    //Imagenes
-    //         $vResultado->imagen=$imagenM->getImageProducto(idProducto:($vResultado->productosId));
-    //Director
-    //  $director=$directorM->get($vResultado->director_id);
-    //   $vResultado->director=$director;
-    //Generos --genres
-    //   $listaGeneros=$genreM->getGenreMovie($vResultado->id);
-    //   $vResultado->genres=$listaGeneros;
-    //Actores --actors
-    //  $listaActores=$actorM->getActorMovie($id);
-    //  $vResultado->actors=$listaActores;
-
-
-    //Retornar la respuesta
-    //    return $vResultado;
-    //  } catch (Exception $e) {
-    //       handleException($e);
-    // }
-    // }
-    /**
-     * Obtener las productos por categoria
-     * @param $idShopRental identificador de la tienda
-     * @return $vresultado - Lista de productos incluyendo el precio
-     */
 
     public function productXresenas($id)
     {
@@ -346,62 +316,72 @@ public function obtenerConPromocionesVigentes()
 }
 
 
-    /**
-     * Obtener la cantidad de productos por genero
-     * @param 
-     * @return $vresultado - Cantidad de productos por genero
-     */
-    /*
-    public function getCountByGenre()
-    {
-        try {
 
-            $vResultado = null;
-            //Consulta sql
-            $vSql = "SELECT count(mg.genre_id) as 'Cantidad', g.title as 'Genero'
-            FROM genre g, movie_genre mg, movie m
-            where mg.movie_id=m.id and mg.genre_id=g.id
-            group by mg.genre_id";
-
-            //Ejecutar la consulta
-            $vResultado = $this->enlace->ExecuteSQL($vSql);
-            // Retornar el objeto
-            return $vResultado;
-        } catch (Exception $e) {
-            handleException($e);
+public function create($objeto) {
+    try {
+        // Validar campos obligatorios
+        if (!isset($objeto->nombre, $objeto->descripcion, $objeto->precio, $objeto->categoria_id)) {
+            throw new Exception("Faltan campos obligatorios.");
         }
-    }
 
-    /**
-     * Crear producto
-     * @param $objeto producto a Insertinto   * @return $this->get($producto) - Objeto producto
-     */
+        // Valores por defecto
+        $inventario = $objeto->inventario ?? 0;
+        $activo = $objeto->activo ?? 1;
+        $es_personalizable = $objeto->es_personalizable ?? 0;
 
-    public function create($objeto)
-    {
-        try {
-            // 1. Insertar producto
-            $sql = "INSERT INTO productos (nombre, descripcion, precio, cantidad, categoria_id)
-                VALUES ($objeto->nombre, $objeto->descripcion, $objeto->precio, $objeto->cantidad, $objeto->categoria_id)";
-            $idProducto = $this->enlace->executeSQL_DML_last($sql); // Obtener ID del producto insertado
+        // Escapar strings para evitar SQL injection
+        $nombre = $this->enlace->real_escape_string($objeto->nombre);
+        $descripcion = $this->enlace->real_escape_string($objeto->descripcion);
 
-            // 2. Insertar imágenes asociadas (si hay)
-            foreach ($objeto->imagenes as $imagen) {
-                $url = $imagen->url_imagen;
-                $desc = $imagen->descripcion_imagen;
-                $principal = $imagen->es_principal ? 'TRUE' : 'FALSE';
+        // Crear el producto
+        $vSql = "INSERT INTO productos 
+                 (nombre, descripcion, precio, inventario, categoria_id, activo, es_personalizable) 
+                 VALUES (
+                     '$nombre',
+                     '$descripcion',
+                     $objeto->precio,
+                     $inventario,
+                     $objeto->categoria_id,
+                     $activo,
+                     $es_personalizable
+                 )";
 
-                $sql = "INSERT INTO imagenes (producto_id, url_imagen, descripcion_imagen, es_principal)
-                    VALUES ($idProducto, '$url', '$desc', $principal)";
-                $this->enlace->executeSQL_DML($sql);
+        $idProducto = $this->enlace->executeSQL_DML_last($vSql);
+
+        // Procesar imágenes si existen
+        if (isset($objeto->imagenes) && is_array($objeto->imagenes)) {
+            foreach ($objeto->imagenes as $img) {
+                $url = $this->enlace->real_escape_string($img->url_imagen ?? '');
+                $desc = $this->enlace->real_escape_string($img->descripcion_imagen ?? '');
+                $principal = isset($img->es_principal) && $img->es_principal ? 1 : 0;
+
+                $vSqlImg = "INSERT INTO imagenes (producto_id, url_imagen, descripcion_imagen, es_principal)
+                           VALUES ($idProducto, '$url', '$desc', $principal)";
+                $this->enlace->executeSQL_DML($vSqlImg);
             }
-
-            // 3. Devolver el producto creado
-            return $this->get($idProducto);
-        } catch (Exception $e) {
-            handleException($e);
         }
+
+        // Procesar etiquetas si existen
+        if (isset($objeto->etiquetas) && is_array($objeto->etiquetas)) {
+            foreach ($objeto->etiquetas as $etiquetaId) {
+                // Validar que etiquetaId sea un número
+                if (is_numeric($etiquetaId)) {
+                    $vSqlEtq = "INSERT INTO productoetiqueta (producto_id, etiqueta_id)
+                               VALUES ($idProducto, $etiquetaId)";
+                    $this->enlace->executeSQL_DML($vSqlEtq);
+                }
+            }
+        }
+
+        return [
+            'status' => 'success',
+            'productosId' => $idProducto,
+            'message' => 'Producto creado exitosamente'
+        ];
+    } catch (Exception $e) {
+        handleException($e);
     }
+}
 
     /**
      * Actualizar producto

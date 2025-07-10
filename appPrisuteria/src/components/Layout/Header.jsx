@@ -20,8 +20,12 @@ import { useCart } from "../../hooks/useCart";
 import { UserContext } from "../../context/UserContext";
 
 export default function Header() {
+const [anchorElSubmenu, setAnchorElSubmenu] = useState(null);
+const handleSubmenuOpen = (event) => setAnchorElSubmenu(event.currentTarget);
+const handleSubmenuClose = () => setAnchorElSubmenu(null);
+
   //Obtener usuario
-  const {user, decodeToken,autorize}= useContext(UserContext)
+  const {user, decodeToken/*,autorize*/}= useContext(UserContext)
   const [userData,setUserData]=useState(decodeToken())
   useEffect(()=>{setUserData(decodeToken())},[user])
   
@@ -65,13 +69,25 @@ export default function Header() {
     { name: "Registrarse", link: "/user/create", login: false },
     { name: "Logout", link: "/user/logout", login: true },
   ];
-  //Lista enlaces menu principal
   const navItems = [
     { name: "Productos", link: "/productos",roles:null },
     { name: "Promociones", link: "/promocion", roles:null },
     { name: "Ordenes", link: "/orden", roles:null },
-    { name: "", link: "", roles:['Administrador'] },
-  ];
+//    { name: "Mantenimientos", link: "", roles:['Administrador'] },
+  {
+    name: "Mantenimientos",
+    link: "", 
+  //  roles: ['Administrador'], // Solo para admin
+    children: [
+      { name: "Productos", link: "/productos/crear" },
+      { name: "Reseñas", link: "/resenas" },
+      { name: "Promociones", link: "/admin/promociones" },
+      { name: "Órdenes", link: "/admin/ordenes" },
+      { name: "Usuarios", link: "/admin/usuarios" },
+    ],
+  },
+];
+
  /*
   //Lista enlaces menu principal
   const navItems = [
@@ -84,43 +100,74 @@ export default function Header() {
   //Identificador menu principal
   const menuIdPrincipal = "menu-appbar";
   //Menu Principal
-  const menuPrincipal = (
-    <Box sx={{ display: { xs: "none", sm: "block" } }}>
-      {navItems &&
-        navItems.map((item, index) => {
-          //if(autorize(requiredRoles:['Administrador']))
-        if(userData && item.roles){
-          //Verificar rol
-          if(autorize({requiredRoles:item.roles})){
-            //Rutas con restricción
-            return (<Button
-              key={index}
-              component={Link}
-              to={item.link}
-              color="#FFFFFF"
-            >
-              <Typography textAlign="center">{item.name}</Typography>
-            </Button>)
-          }
-        }else{
-          if(item.roles==null){
-            //Rutas sin restricción
-            return (<Button
-              key={index}
-              component={Link}
-              to={item.link}
-              color="#FFFFFF"
-            >
-              <Typography textAlign="center">{item.name}</Typography>
-            </Button>)
+const menuPrincipal = (
+  <Box sx={{ display: { xs: "none", sm: "block" } }}>
+    {navItems &&
+      navItems.map((item, index) => {
+        if (item.name === "Mantenimientos") {
+          return (
+            <Box key={index} sx={{ display: "inline-block", mx: 1 }}>
+              <Button
+                color="inherit"
+                aria-controls={`submenu-${index}`}
+                aria-haspopup="true"
+                onClick={handleSubmenuOpen}
+              >
+                <Typography textAlign="center">{item.name}</Typography>
+              </Button>
+              <Menu
+                id={`submenu-${index}`}
+                anchorEl={anchorElSubmenu}
+                open={Boolean(anchorElSubmenu)}
+                onClose={handleSubmenuClose}
+              >
+                <MenuItem component={Link} to="/admin/productos" onClick={handleSubmenuClose}>Productos</MenuItem>
+                <MenuItem component={Link} to="/admin/resenas" onClick={handleSubmenuClose}>Reseñas</MenuItem>
+                <MenuItem component={Link} to="/admin/promociones" onClick={handleSubmenuClose}>Promociones</MenuItem>
+                <MenuItem component={Link} to="/admin/ordenes" onClick={handleSubmenuClose}>Órdenes</MenuItem>
+                <MenuItem component={Link} to="/admin/usuarios" onClick={handleSubmenuClose}>Usuarios</MenuItem>
+              </Menu>
+            </Box>
+          );
+        }
+
+        // Rutas protegidas
+        /*
+        if (userData && item.roles) {
+          if (autorize({ requiredRoles: item.roles })) {
+            return (
+              <Button
+                key={index}
+                component={Link}
+                to={item.link}
+                color="#FFFFFF"
+              >
+                <Typography textAlign="center">{item.name}</Typography>
+              </Button>
+            );
           }
         }
-                
-            
-         
-})}
-    </Box>
-  );
+        */
+
+        // Rutas sin restricción
+        if (item.roles == null) {
+          return (
+            <Button
+              key={index}
+              component={Link}
+              to={item.link}
+              color="#FFFFFF"
+            >
+              <Typography textAlign="center">{item.name}</Typography>
+            </Button>
+          );
+        }
+
+        return null; // por si no cae en ninguna condición
+      })}
+  </Box>
+);
+
   //Menu Principal responsivo
   const menuPrincipalMobile = navItems.map((page, index) => (
     <MenuItem key={index} component={Link} to={page.link}>

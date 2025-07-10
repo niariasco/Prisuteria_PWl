@@ -1,5 +1,5 @@
 import axios from 'axios';
-//http://localhost:81/apiProducto/Producto/
+//http://localhost:81/prisuteria/Producto/
 const BASE_URL = import.meta.env.VITE_BASE_URL + 'producto';
 class ProductoService {
   //Definición para Llamar al API y obtener el listado de películas
@@ -39,7 +39,7 @@ class ProductoService {
   createProducto(Producto) {
     return axios.post(BASE_URL, JSON.stringify(Producto));
   }
-
+  
   updateProducto(Producto) {
     return axios({
       method: 'put',

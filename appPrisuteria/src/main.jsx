@@ -21,7 +21,7 @@ import { Unauthorized } from "./components/User/Unauthorized";
 import { Login } from "./components/User/Login";
 import { Logout } from "./components/User/Logout";
 import { Signup } from "./components/User/Signup";
-import { Auth } from "./components/User/Auth";
+/*import { Auth } from "./components/User/Auth"; */
 import { ListaProductos } from "./components/Productos/ListaProductos";
 import { DetalleProductos } from "./components/Productos/DetalleProductos";
 import { ListaResenas } from "./components/Resenas/ListaResenas";
@@ -30,6 +30,7 @@ import{ListaPromociones} from "./components/Promociones/ListaPromociones";
 import{DetallePromociones} from "./components/Promociones/DetallePromociones";
 import { ListOrders } from "./components/Orders/ListOrders";
 import { DetalleOrder } from "./components/Orders/DetalleOrder";
+import { CreateProducto } from "./components/Productos/CreateProducto";
 
 const rutas = createBrowserRouter([
   {
@@ -38,38 +39,45 @@ const rutas = createBrowserRouter([
       { path: '/', element: <Home /> },
       { path: '*', element: <PageNotFound /> },
 
-      // Rutas protegidas (puedes agregar otras aquí si es necesario)
+      // RUTAS ADMINISTRADOR (sin restricción temporalmente)
+      /*
       {
-        path: '/',
         element: <Auth requiredRoles={['Administrador']} />,
         children: [
-          // Aquí puedes agregar rutas protegidas en el futuro
+          { path: '/productos/crear', element: <CreateProducto /> },
+          { path: '/admin/resenas', element: <ListaResenas /> },
+          { path: '/admin/promociones', element: <ListaPromociones /> },
+          { path: '/admin/ordenes', element: <ListOrders /> },
+          { path: '/admin/usuarios', element: <div>Gestión de usuarios</div> }
         ]
       },
+      */
 
-      // Rutas de usuario
+      // Rutas de admin sin Auth (acceso libre )
+      { path: '/admin/productos', element: <CreateProducto /> },
+      { path: '/admin/resenas', element: <ListaResenas /> },
+      { path: '/admin/promociones', element: <ListaPromociones /> },
+      { path: '/admin/ordenes', element: <ListOrders /> },
+      { path: '/admin/usuarios', element: <div>Gestión de usuarios</div> },
+
       { path: '/unauthorized', element: <Unauthorized /> },
       { path: '/user/login', element: <Login /> },
       { path: '/user/logout', element: <Logout /> },
       { path: '/user/create', element: <Signup /> },
 
-      // Rutas de productos
-      { path: '/productos', element: <ListaProductos /> },
+      { path: '/producto', element: <ListaProductos /> },
       { path: '/producto/:id', element: <DetalleProductos /> },
-
-        // Rutas de resenas
       { path: '/resena', element: <ListaResenas /> },
       { path: '/resena/:id', element: <DetalleResenas /> },
-
-      //Rutas Promociones
       { path: '/promocion', element: <ListaPromociones /> },
       { path: '/promocion/:id', element: <DetallePromociones /> },
-
       { path: '/orden', element: <ListOrders /> },
-     { path: '/orden/:id', element: <DetalleOrder /> }
+      { path: '/orden/:id', element: <DetalleOrder /> }
     ]
   }
 ]);
+
+
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
