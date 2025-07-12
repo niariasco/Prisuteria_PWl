@@ -6,7 +6,7 @@ class EtiquetasService {
 
   //Listas Categorias
   //localhost:81//appPrisuteria/categoria
-  getEtiqueta() {
+  getAllEtiquetas() {
     return axios.get(BASE_URL);
   }
 

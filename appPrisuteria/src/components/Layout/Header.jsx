@@ -70,7 +70,7 @@ const handleSubmenuClose = () => setAnchorElSubmenu(null);
     { name: "Logout", link: "/user/logout", login: true },
   ];
   const navItems = [
-    { name: "Productos", link: "/productos",roles:null },
+    { name: "Productos", link: "/producto",roles:null },
     { name: "Promociones", link: "/promocion", roles:null },
     { name: "Ordenes", link: "/orden", roles:null },
 //    { name: "Mantenimientos", link: "", roles:['Administrador'] },

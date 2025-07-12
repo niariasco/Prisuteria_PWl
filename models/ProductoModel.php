@@ -318,71 +318,32 @@ public function obtenerConPromocionesVigentes()
 
 
 public function create($objeto) {
-    try {
-        // Validar campos obligatorios
-        if (!isset($objeto->nombre, $objeto->descripcion, $objeto->precio, $objeto->categoria_id)) {
-            throw new Exception("Faltan campos obligatorios.");
-        }
+              try {
+            //Consulta sql
+            //Identificador autoincrementable
+            $sql = "Insert into productos (nombre, descripcion, precio, categoria_id)".
+                    " Values ('$objeto->nombre',
+                    '$objeto->descripcion','$objeto->precio',$objeto->categoria_id)";
 
-        // Valores por defecto
-        $inventario = $objeto->inventario ?? 0;
-        $activo = $objeto->activo ?? 1;
-        $es_personalizable = $objeto->es_personalizable ?? 0;
-
-        // Escapar strings para evitar SQL injection
-        $nombre = $this->enlace->real_escape_string($objeto->nombre);
-        $descripcion = $this->enlace->real_escape_string($objeto->descripcion);
-
-        // Crear el producto
-        $vSql = "INSERT INTO productos 
-                 (nombre, descripcion, precio, inventario, categoria_id, activo, es_personalizable) 
-                 VALUES (
-                     '$nombre',
-                     '$descripcion',
-                     $objeto->precio,
-                     $inventario,
-                     $objeto->categoria_id,
-                     $activo,
-                     $es_personalizable
-                 )";
-
-        $idProducto = $this->enlace->executeSQL_DML_last($vSql);
-
-        // Procesar imágenes si existen
-        if (isset($objeto->imagenes) && is_array($objeto->imagenes)) {
-            foreach ($objeto->imagenes as $img) {
-                $url = $this->enlace->real_escape_string($img->url_imagen ?? '');
-                $desc = $this->enlace->real_escape_string($img->descripcion_imagen ?? '');
-                $principal = isset($img->es_principal) && $img->es_principal ? 1 : 0;
-
-                $vSqlImg = "INSERT INTO imagenes (producto_id, url_imagen, descripcion_imagen, es_principal)
-                           VALUES ($idProducto, '$url', '$desc', $principal)";
-                $this->enlace->executeSQL_DML($vSqlImg);
+            //Ejecutar la consulta
+            //Obtener ultimo insert
+            $idproducto=$this->enlace->executeSQL_DML_last($sql);
+             //--- Generos ---
+            //Crear elementos a insertar en etiquetas
+            foreach ($objeto->etiquetas as $value) {
+                $sql="Insert into productoetiqueta(producto_id,etiqueta_id)".
+                    " Values($idproducto,$value)";
+                $vResultadoGen=$this->enlace->executeSQL_DML($sql);
             }
+            //Retornar pelicula
+            return $this->get($idproducto);
+        } catch (Exception $e) {
+            handleException($e);
         }
-
-        // Procesar etiquetas si existen
-        if (isset($objeto->etiquetas) && is_array($objeto->etiquetas)) {
-            foreach ($objeto->etiquetas as $etiquetaId) {
-                // Validar que etiquetaId sea un número
-                if (is_numeric($etiquetaId)) {
-                    $vSqlEtq = "INSERT INTO productoetiqueta (producto_id, etiqueta_id)
-                               VALUES ($idProducto, $etiquetaId)";
-                    $this->enlace->executeSQL_DML($vSqlEtq);
-                }
-            }
-        }
-
-        return [
-            'status' => 'success',
-            'productosId' => $idProducto,
-            'message' => 'Producto creado exitosamente'
-        ];
-    } catch (Exception $e) {
-        handleException($e);
     }
-}
 
+
+       
     /**
      * Actualizar producto
      * @param $objeto producto a actualizar

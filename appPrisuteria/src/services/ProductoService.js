@@ -36,19 +36,22 @@ class ProductoService {
  //   return axios.get(BASE_URL+'/ProductosByShopRental/'+ShopRentalId);
  // }
 
-  createProducto(Producto) {
-    return axios.post(BASE_URL, JSON.stringify(Producto));
-  }
-  
-  updateProducto(Producto) {
-    return axios({
-      method: 'put',
-      url: BASE_URL,
-      data: JSON.stringify(Producto)
 
-    })
+  createProducto(producto) {
+    return axios.post(BASE_URL, producto, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
-  
+
+  updateProducto(producto) {
+    return axios.put(BASE_URL, producto, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
 }
 
 export default new ProductoService();

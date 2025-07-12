@@ -6,7 +6,7 @@ class CategoriaService {
 
   //Listas Categorias
   //localhost:81//appPrisuteria/categoria
-  getCategoria() {
+  getAllCategorias() {
     return axios.get(BASE_URL);
   }
   //Obtener Categoria id

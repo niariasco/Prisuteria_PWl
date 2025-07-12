@@ -1,227 +1,223 @@
 import { useEffect, useState } from 'react';
 import {
-  Button, FormControl, FormHelperText, Grid, TextField,
-  Typography, Select, MenuItem, InputLabel
+  Container,
+  Typography,
+  Grid,
+  TextField,
+  Button,
+  Box,
+  IconButton
 } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
 import ProductoService from '../../services/ProductoService';
-import ImageService from '../../services/ImageService';
 import CategoriaService from '../../services/CategoriaService';
-import EtiquetasService from '../../services/EtiquetasService';
+import EtiquetaService from '../../services/EtiquetasService';
+import { SelectCategoria } from './Forms/SelectCategoria';
+import { SelectEtiquetas } from './Forms/SelectEtiquetas';
+import PropTypes from 'prop-types';
 
-export function CreateProducto() {
-  const navigate = useNavigate();
-  const [fileList, setFileList] = useState([]);
-  const [previewURLs, setPreviewURLs] = useState([]);
+export function CreateProducto({ productoId = null, onSuccess }) {
+  const { control, handleSubmit, reset} = useForm();
   const [categorias, setCategorias] = useState([]);
   const [etiquetas, setEtiquetas] = useState([]);
+  const [imagenesNuevas, setImagenesNuevas] = useState([]);
+  const [imagenesExistentes, setImagenesExistentes] = useState([]);
+  const [imagenesAEliminar, setImagenesAEliminar] = useState([]);
 
-  // Validación Yup
-  const schema = yup.object({
-    nombre: yup.string().required('Nombre requerido'),
-    descripcion: yup.string().required('Descripción requerida'),
-    precio: yup.number().typeError('Debe ser un número').required('Precio requerido'),
-    inventario: yup.number().typeError('Debe ser un número').required('Inventario requerido'),
-    categoria_id: yup.number().required('Seleccione una categoría'),
-    etiquetas: yup.array().of(yup.number()).min(1, 'Seleccione al menos una etiqueta'),
-  });
-
-  const { control, handleSubmit, formState: { errors } } = useForm({
-    defaultValues: {
-      nombre: '',
-      descripcion: '',
-      precio: '',
-      inventario: '',
-      categoria_id: '',
-      etiquetas: [],
-      es_personalizable: false,
-    },
-    resolver: yupResolver(schema),
-  });
-
+  // Obtener categorías y etiquetas
   useEffect(() => {
-    CategoriaService.getCategoria()
-      .then(res => {
-        setCategorias(res.data);
-      })
-      .catch(err => {
-        console.error("Error al cargar categorías:", err);
-        toast.error("No se pudieron cargar las categorías");
-      });
-
-    EtiquetasService.getEtiqueta()
-      .then(res => {
-        setEtiquetas(res.data);
-      })
-      .catch(err => {
-        console.error("Error al cargar etiquetas:", err);
-        toast.error("No se pudieron cargar las etiquetas");
-      });
+    CategoriaService.getAllCategorias().then(res => setCategorias(res.data));
+    EtiquetaService.getAllEtiquetas().then(res => setEtiquetas(res.data));
   }, []);
 
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setFileList(files);
-    setPreviewURLs(files.map(file => URL.createObjectURL(file)));
-  };
-
-  const onSubmit = async (dataForm) => {
-    try {
-      // Preparar los datos del producto incluyendo las etiquetas
-      const productoData = {
-        nombre: dataForm.nombre,
-        descripcion: dataForm.descripcion,
-        precio: parseFloat(dataForm.precio),
-        inventario: parseInt(dataForm.inventario),
-        categoria_id: parseInt(dataForm.categoria_id),
-        es_personalizable: dataForm.es_personalizable ? 1 : 0,
-        etiquetas: dataForm.etiquetas // Incluir las etiquetas en el objeto
-      };
-
-      console.log("Datos del producto a enviar:", productoData);
-
-      // Crear el producto - Asegúrate de que la URL sea correcta
-      const res = await ProductoService.createProducto(productoData);
-      const idProducto = res.data.productosId || res.data.id;
-
-      // Subir imágenes si existen
-      if (fileList.length > 0) {
-        const formData = new FormData();
-        fileList.forEach((file) => formData.append('files[]', file));
-        formData.append('producto_id', idProducto);
-        await ImageService.createImages(formData);
-      }
-
-      toast.success('Producto creado correctamente');
-      navigate('/productos');
-    } catch (err) {
-      toast.error('Error al crear el producto');
-      console.error("Error en creación de producto:", err);
-      console.error("Detalles del servidor:", err.response?.data || err.message);
+  // Cargar producto si es edición
+  useEffect(() => {
+    if (productoId) {
+      ProductoService.getProductoById(productoId).then(res => {
+        const p = res.data;
+        reset({
+          nombre: p.nombre,
+          descripcion: p.descripcion,
+          precio: p.precio,
+          categoria_id: p.categoriaId,
+          etiquetas: p.etiquetas.map(e => e.etiquetaId)
+        });
+        setImagenesExistentes(p.imagenes || []);
+      });
     }
+  }, [productoId, reset]);
+
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    setImagenesNuevas(prev => [...prev, ...files]);
   };
+
+  const eliminarImagenExistente = (url) => {
+    setImagenesExistentes(prev => prev.filter(img => img !== url));
+    setImagenesAEliminar(prev => [...prev, url]);
+  };
+
+  const eliminarImagenNueva = (index) => {
+    setImagenesNuevas(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const onSubmit = (data) => {
+    const formData = new FormData();
+    formData.append('nombre', data.nombre);
+    formData.append('descripcion', data.descripcion);
+    formData.append('precio', data.precio);
+    formData.append('categoria_id', data.categoria_id);
+
+    data.etiquetas.forEach(id => formData.append('etiquetas[]', id));
+    imagenesNuevas.forEach(file => formData.append('imagenes_nuevas[]', file));
+    imagenesAEliminar.forEach(url => formData.append('imagenes_eliminar[]', url));
+    if (productoId) formData.append('producto_id', productoId);
+
+    const submitAction = productoId
+      ? ProductoService.updateProducto(formData)
+      : ProductoService.createProducto(formData);
+
+    submitAction.then((res) => {
+      if (res.data.success && onSuccess) onSuccess();
+    });
+  };
+
+  const BASE_URL = import.meta.env.VITE_BASE_URL + 'uploads/';
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate>
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <Typography variant="h5">Crear Producto</Typography>
-        </Grid>
+    <Container maxWidth="md" sx={{ mt: 4 }}>
+      <Typography variant="h4" sx={{ mb: 4 }}>
+        {productoId ? 'Editar Producto' : 'Crear Producto'}
+      </Typography>
 
-        <Grid item xs={6}>
-          <Controller name="nombre" control={control}
-            render={({ field }) => (
-              <TextField {...field} label="Nombre" fullWidth
-                error={Boolean(errors.nombre)} helperText={errors.nombre?.message} />
-            )} />
-        </Grid>
+      <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data">
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Controller
+              name="nombre"
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <TextField label="Nombre del producto" fullWidth required {...field} />
+              )}
+            />
+          </Grid>
 
-        <Grid item xs={6}>
-          <Controller name="precio" control={control}
-            render={({ field }) => (
-              <TextField {...field} label="Precio" fullWidth type="number"
-                error={Boolean(errors.precio)} helperText={errors.precio?.message} />
-            )} />
-        </Grid>
+          <Grid item xs={12}>
+            <Controller
+              name="descripcion"
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <TextField
+                  label="Descripción"
+                  fullWidth
+                  multiline
+                  rows={4}
+                  required
+                  {...field}
+                />
+              )}
+            />
+          </Grid>
 
-        <Grid item xs={12}>
-          <Controller name="descripcion" control={control}
-            render={({ field }) => (
-              <TextField {...field} label="Descripción" fullWidth multiline rows={4}
-                error={Boolean(errors.descripcion)} helperText={errors.descripcion?.message} />
-            )} />
-        </Grid>
+          <Grid item xs={6}>
+            <Controller
+              name="precio"
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <TextField label="Precio" fullWidth type="number" required {...field} />
+              )}
+            />
+          </Grid>
 
-        <Grid item xs={6}>
-          <Controller name="inventario" control={control}
-            render={({ field }) => (
-              <TextField {...field} label="Inventario" fullWidth type="number"
-                error={Boolean(errors.inventario)} helperText={errors.inventario?.message} />
-            )} />
-        </Grid>
-
-        <Grid item xs={6}>
-          <FormControl fullWidth error={Boolean(errors.categoria_id)}>
-            <InputLabel id="categoria-label">Categoría</InputLabel>
+          <Grid item xs={6}>
             <Controller
               name="categoria_id"
               control={control}
+              defaultValue=""
               render={({ field }) => (
-                <Select
-                  {...field}
-                  labelId="categoria-label"
-                  id="categoria_id"
-                  label="Categoría"
-                >
-                  {categorias.map((cat) => (
-                    <MenuItem key={cat.categoriaId} value={cat.categoriaId}>
-                      {cat.nombreSCategoria}
-                    </MenuItem>
-                  ))}
-                </Select>
+                <SelectCategoria field={field} data={categorias} />
               )}
             />
-            <FormHelperText>{errors.categoria_id?.message}</FormHelperText>
-          </FormControl>
-        </Grid>
+          </Grid>
 
-        <Grid item xs={12}>
-          <FormControl fullWidth error={Boolean(errors.etiquetas)}>
-            <InputLabel id="etiquetas-label">Etiquetas</InputLabel>
+          <Grid item xs={12}>
             <Controller
               name="etiquetas"
               control={control}
+              defaultValue={[]}
               render={({ field }) => (
-                <Select
-                  {...field}
-                  labelId="etiquetas-label"
-                  id="etiquetas"
-                  multiple
-                  value={field.value}
-                  onChange={field.onChange}
-                  renderValue={(selected) =>
-                    etiquetas
-                      .filter((etiqueta) => selected.includes(etiqueta.etiquetaId))
-                      .map((e) => e.nombrEtiquetas)
-                      .join(', ')
-                  }
-                >
-                  {etiquetas.map((etiqueta) => (
-                    <MenuItem key={etiqueta.etiquetaId} value={etiqueta.etiquetaId}>
-                      {etiqueta.nombrEtiquetas}
-                    </MenuItem>
-                  ))}
-                </Select>
+                <SelectEtiquetas field={field} data={etiquetas} />
               )}
             />
-            <FormHelperText>{errors.etiquetas?.message}</FormHelperText>
-          </FormControl>
-        </Grid>
+          </Grid>
 
-        <Grid item xs={12}>
-          <FormControl fullWidth>
-            <label htmlFor="imagenes">Imágenes</label>
-            <input multiple type="file" id="imagenes" onChange={handleFileChange} />
-            <Grid container spacing={1}>
-              {previewURLs.map((src, i) => (
-                <Grid item key={i}>
-                  <img src={src} width={100} alt="preview" />
-                </Grid>
+          <Grid item xs={12}>
+            <Typography variant="subtitle1" gutterBottom>Imágenes existentes</Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              {imagenesExistentes.map((img, i) => (
+                <Box key={i} sx={{ position: 'relative' }}>
+                  <img
+                    src={BASE_URL + img}
+                    alt={`img-${i}`}
+                    style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 6 }}
+                  />
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => eliminarImagenExistente(img)}
+                    sx={{ position: 'absolute', top: 0, right: 0 }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
               ))}
-            </Grid>
-          </FormControl>
-        </Grid>
+            </Box>
+          </Grid>
 
-        <Grid item xs={12}>
-          <Button type="submit" variant="contained" color="primary">
-            Guardar
-          </Button>
+          <Grid item xs={12}>
+            <Typography variant="subtitle1">Agregar nuevas imágenes</Typography>
+            <input type="file" accept="image/*" multiple onChange={handleImageChange} />
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 2 }}>
+              {imagenesNuevas.map((img, i) => (
+                <Box key={i} sx={{ position: 'relative' }}>
+                  <img
+                    src={URL.createObjectURL(img)}
+                    alt={`preview-${i}`}
+                    style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 6 }}
+                  />
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => eliminarImagenNueva(i)}
+                    sx={{ position: 'absolute', top: 0, right: 0 }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              ))}
+            </Box>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Button
+              type="submit"
+              variant="contained"
+              sx={{ backgroundColor: '#d83b6a', ':hover': { backgroundColor: '#b03052' } }}
+            >
+              {productoId ? 'Actualizar Producto' : 'Crear Producto'}
+            </Button>
+          </Grid>
         </Grid>
-      </Grid>
-    </form>
+      </form>
+    </Container>
   );
 }
+
+CreateProducto.propTypes = {
+  productoId: PropTypes.number,
+  onSuccess: PropTypes.func,
+};
