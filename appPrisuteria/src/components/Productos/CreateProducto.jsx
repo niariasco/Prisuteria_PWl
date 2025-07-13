@@ -6,7 +6,7 @@ import {
   TextField,
   Button,
   Box,
-  IconButton
+  IconButton,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useForm, Controller } from 'react-hook-form';
@@ -18,12 +18,15 @@ import { SelectEtiquetas } from './Forms/SelectEtiquetas';
 import PropTypes from 'prop-types';
 
 export function CreateProducto({ productoId = null, onSuccess }) {
-  const { control, handleSubmit, reset} = useForm();
+  const { control, handleSubmit, reset } = useForm();
   const [categorias, setCategorias] = useState([]);
   const [etiquetas, setEtiquetas] = useState([]);
   const [imagenesNuevas, setImagenesNuevas] = useState([]);
   const [imagenesExistentes, setImagenesExistentes] = useState([]);
   const [imagenesAEliminar, setImagenesAEliminar] = useState([]);
+  const [productoCreadoId, setProductoCreadoId] = useState(null);
+
+  const BASE_URL = import.meta.env.VITE_BASE_URL + 'uploads/';
 
   // Obtener categorías y etiquetas
   useEffect(() => {
@@ -31,7 +34,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
     EtiquetaService.getAllEtiquetas().then(res => setEtiquetas(res.data));
   }, []);
 
-  // Cargar producto si es edición
+  // Si es edición, carga datos del producto
   useEffect(() => {
     if (productoId) {
       ProductoService.getProductoById(productoId).then(res => {
@@ -41,7 +44,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
           descripcion: p.descripcion,
           precio: p.precio,
           categoria_id: p.categoriaId,
-          etiquetas: p.etiquetas.map(e => e.etiquetaId)
+          etiquetas: p.etiquetas.map(e => e.etiquetaId),
         });
         setImagenesExistentes(p.imagenes || []);
       });
@@ -72,24 +75,51 @@ export function CreateProducto({ productoId = null, onSuccess }) {
     data.etiquetas.forEach(id => formData.append('etiquetas[]', id));
     imagenesNuevas.forEach(file => formData.append('imagenes_nuevas[]', file));
     imagenesAEliminar.forEach(url => formData.append('imagenes_eliminar[]', url));
+
     if (productoId) formData.append('producto_id', productoId);
 
     const submitAction = productoId
       ? ProductoService.updateProducto(formData)
       : ProductoService.createProducto(formData);
 
-    submitAction.then((res) => {
-      if (res.data.success && onSuccess) onSuccess();
-    });
+submitAction.then(res => {
+  console.log('Respuesta:', res);
+  if (res.status === 200) {
+    if (!productoId && res.data.productosId) {
+      setProductoCreadoId(res.data.productosId);
+      reset();
+      setImagenesNuevas([]);
+      setImagenesAEliminar([]);
+      setImagenesExistentes([]);
+    }
+    if (onSuccess) onSuccess();
+  }
+}).catch(err => {
+  console.error('Error al crear producto:', err);
+});
   };
-
-  const BASE_URL = import.meta.env.VITE_BASE_URL + 'uploads/';
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Typography variant="h4" sx={{ mb: 4 }}>
         {productoId ? 'Editar Producto' : 'Crear Producto'}
       </Typography>
+
+      {productoCreadoId && (
+        <Box sx={{ mb: 3, p: 2, backgroundColor: '#c287d7ff', borderRadius: 2 }}>
+          <Typography variant="h6" color="success.main">
+            ¡Producto creado exitosamente!
+          </Typography>
+          <Typography sx={{ mt: 1 }}>
+            <a
+              href={`/producto/${productoCreadoId}`}
+              style={{ color: '#d219a4ff', textDecoration: 'underline' }}
+            >
+              Ver producto
+            </a>
+          </Typography>
+        </Box>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data">
         <Grid container spacing={3}>
@@ -206,7 +236,10 @@ export function CreateProducto({ productoId = null, onSuccess }) {
             <Button
               type="submit"
               variant="contained"
-              sx={{ backgroundColor: '#d83b6a', ':hover': { backgroundColor: '#b03052' } }}
+              sx={{
+                backgroundColor: '#d83b6a',
+                ':hover': { backgroundColor: '#b03052' },
+              }}
             >
               {productoId ? 'Actualizar Producto' : 'Crear Producto'}
             </Button>

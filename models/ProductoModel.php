@@ -342,7 +342,6 @@ public function create($objeto) {
         }
     }
 
-
        
     /**
      * Actualizar producto
