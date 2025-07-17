@@ -22,7 +22,6 @@ import { UserContext } from "../../context/UserContext";
 export default function Header() {
 const [anchorElSubmenu, setAnchorElSubmenu] = useState(null);
 const handleSubmenuOpen = (event) => setAnchorElSubmenu(event.currentTarget);
-const handleSubmenuClose = () => setAnchorElSubmenu(null);
 
   //Obtener usuario
   const {user, decodeToken/*,autorize*/}= useContext(UserContext)
@@ -38,7 +37,13 @@ const handleSubmenuClose = () => setAnchorElSubmenu(null);
   const isMobileOpcionesMenuOpen = Boolean(mobileOpcionesAnchorEl);
   //Gestión menu principal
   const [anchorElPrincipal, setAnchorElPrincipal] = useState(null);
-  //Abierto menu usuario
+
+const [anchorElProductos, setAnchorElProductos] = useState(null);
+const [anchorElResenas, setAnchorElResenas] = useState(null);
+const [anchorElPromociones, setAnchorElPromociones] = useState(null);
+const [anchorElOrdenes, setAnchorElOrdenes] = useState(null);
+const [anchorElUsuarios, setAnchorElUsuarios] = useState(null);
+
   const handleUserMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -63,6 +68,22 @@ const handleSubmenuClose = () => setAnchorElSubmenu(null);
   const handleOpcionesMenuClose = () => {
     setMobileMoreAnchorEl(null);
   };
+
+const handleOpen = (setter) => (event) => {
+  setter(event.currentTarget);
+};
+
+const handleClose = (setter) => () => {
+  setter(null);
+};
+
+const handleSubmenuClose = () => {
+  setAnchorElSubmenu(null);
+  setAnchorElProductos(null); // Asegura que se cierre también el submenu de productos
+};
+
+
+
   //Lista enlaces menu usuario
   const userItems = [
     { name: "Login", link: "/user/login", login: false },
@@ -78,13 +99,7 @@ const handleSubmenuClose = () => setAnchorElSubmenu(null);
     name: "Mantenimientos",
     link: "", 
   //  roles: ['Administrador'], // Solo para admin
-    children: [
-      { name: "Productos", link: "/productos/crear" },
-      { name: "Reseñas", link: "/resenas" },
-      { name: "Promociones", link: "/admin/promociones" },
-      { name: "Órdenes", link: "/admin/ordenes" },
-      { name: "Usuarios", link: "/admin/usuarios" },
-    ],
+
   },
 ];
 
@@ -97,10 +112,7 @@ const handleSubmenuClose = () => setAnchorElSubmenu(null);
     { name: "Mantenimiento Peliculas", link: "/movie-table/", roles:['Administrador'] },
   ];
   */
-  //Identificador menu principal
-  const menuIdPrincipal = "menu-appbar";
-  //Menu Principal
-const menuPrincipal = (
+  const menuPrincipal = (
   <Box sx={{ display: { xs: "none", sm: "block" } }}>
     {navItems &&
       navItems.map((item, index) => {
@@ -115,21 +127,126 @@ const menuPrincipal = (
               >
                 <Typography textAlign="center">{item.name}</Typography>
               </Button>
+
               <Menu
                 id={`submenu-${index}`}
                 anchorEl={anchorElSubmenu}
                 open={Boolean(anchorElSubmenu)}
                 onClose={handleSubmenuClose}
               >
-                <MenuItem component={Link} to="/admin/productos" onClick={handleSubmenuClose}>Productos</MenuItem>
-                <MenuItem component={Link} to="/admin/resenas" onClick={handleSubmenuClose}>Reseñas</MenuItem>
-                <MenuItem component={Link} to="/admin/promociones" onClick={handleSubmenuClose}>Promociones</MenuItem>
-                <MenuItem component={Link} to="/admin/ordenes" onClick={handleSubmenuClose}>Órdenes</MenuItem>
-                <MenuItem component={Link} to="/admin/usuarios" onClick={handleSubmenuClose}>Usuarios</MenuItem>
+                {/* Productos */}
+                <MenuItem
+                  onMouseEnter={handleOpen(setAnchorElProductos)}
+                  onMouseLeave={handleClose(setAnchorElProductos)}
+                >
+                  Productos
+                  <Menu
+                    anchorEl={anchorElProductos}
+                    open={Boolean(anchorElProductos)}
+                    onClose={handleClose(setAnchorElProductos)}
+                    anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                    transformOrigin={{ vertical: "top", horizontal: "left" }}
+                    MenuListProps={{ onMouseLeave: handleClose(setAnchorElProductos) }}
+                  >
+                    <MenuItem component={Link} to="/productos/crear" onClick={handleSubmenuClose}>Crear</MenuItem>
+                    <MenuItem component={Link} to="/productos/actualizar" onClick={handleSubmenuClose}>Actualizar</MenuItem>
+                    <MenuItem component={Link} to="/productos/eliminar" onClick={handleSubmenuClose}>Eliminar</MenuItem>
+                  </Menu>
+                </MenuItem>
+
+                {/* Reseñas */}
+                <MenuItem
+                  onMouseEnter={handleOpen(setAnchorElResenas)}
+                  onMouseLeave={handleClose(setAnchorElResenas)}
+                >
+                  Reseñas
+                  <Menu
+                    anchorEl={anchorElResenas}
+                    open={Boolean(anchorElResenas)}
+                    onClose={handleClose(setAnchorElResenas)}
+                    anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                    transformOrigin={{ vertical: "top", horizontal: "left" }}
+                    MenuListProps={{ onMouseLeave: handleClose(setAnchorElResenas) }}
+                  >
+                    <MenuItem component={Link} to="/resenas/crear" onClick={handleSubmenuClose}>Crear</MenuItem>
+                    <MenuItem component={Link} to="/resenas/actualizar" onClick={handleSubmenuClose}>Actualizar</MenuItem>
+                    <MenuItem component={Link} to="/resenas/eliminar" onClick={handleSubmenuClose}>Eliminar</MenuItem>
+                  </Menu>
+                </MenuItem>
+
+                {/* Promociones */}
+                <MenuItem
+                  onMouseEnter={handleOpen(setAnchorElPromociones)}
+                  onMouseLeave={handleClose(setAnchorElPromociones)}
+                >
+                  Promociones
+                  <Menu
+                    anchorEl={anchorElPromociones}
+                    open={Boolean(anchorElPromociones)}
+                    onClose={handleClose(setAnchorElPromociones)}
+                    anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                    transformOrigin={{ vertical: "top", horizontal: "left" }}
+                    MenuListProps={{ onMouseLeave: handleClose(setAnchorElPromociones) }}
+                  >
+                    <MenuItem component={Link} to="/promociones/crear" onClick={handleSubmenuClose}>Crear</MenuItem>
+                    <MenuItem component={Link} to="/promociones/actualizar" onClick={handleSubmenuClose}>Actualizar</MenuItem>
+                    <MenuItem component={Link} to="/promociones/eliminar" onClick={handleSubmenuClose}>Eliminar</MenuItem>
+                  </Menu>
+                </MenuItem>
+
+                {/* Órdenes */}
+                <MenuItem
+                  onMouseEnter={handleOpen(setAnchorElOrdenes)}
+                  onMouseLeave={handleClose(setAnchorElOrdenes)}
+                >
+                  Órdenes
+                  <Menu
+                    anchorEl={anchorElOrdenes}
+                    open={Boolean(anchorElOrdenes)}
+                    onClose={handleClose(setAnchorElOrdenes)}
+                    anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                    transformOrigin={{ vertical: "top", horizontal: "left" }}
+                    MenuListProps={{ onMouseLeave: handleClose(setAnchorElOrdenes) }}
+                  >
+                    <MenuItem component={Link} to="/ordenes/crear" onClick={handleSubmenuClose}>Crear</MenuItem>
+                    <MenuItem component={Link} to="/ordenes/actualizar" onClick={handleSubmenuClose}>Actualizar</MenuItem>
+                    <MenuItem component={Link} to="/ordenes/eliminar" onClick={handleSubmenuClose}>Eliminar</MenuItem>
+                  </Menu>
+                </MenuItem>
+
+                {/* Usuarios */}
+                <MenuItem
+                  onMouseEnter={handleOpen(setAnchorElUsuarios)}
+                  onMouseLeave={handleClose(setAnchorElUsuarios)}
+                >
+                  Usuarios
+                  <Menu
+                    anchorEl={anchorElUsuarios}
+                    open={Boolean(anchorElUsuarios)}
+                    onClose={handleClose(setAnchorElUsuarios)}
+                    anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                    transformOrigin={{ vertical: "top", horizontal: "left" }}
+                    MenuListProps={{ onMouseLeave: handleClose(setAnchorElUsuarios) }}
+                  >
+                    <MenuItem component={Link} to="/usuarios/crear" onClick={handleSubmenuClose}>Crear</MenuItem>
+                    <MenuItem component={Link} to="/usuarios/actualizar" onClick={handleSubmenuClose}>Actualizar</MenuItem>
+                    <MenuItem component={Link} to="/usuarios/eliminar" onClick={handleSubmenuClose}>Eliminar</MenuItem>
+                  </Menu>
+                </MenuItem>
               </Menu>
             </Box>
           );
         }
+
+        // Otros ítems fuera de "Mantenimientos"
+        return (
+          <Button key={index} component={Link} to={item.path} color="inherit">
+            <Typography textAlign="center">{item.name}</Typography>
+          </Button>
+        );
+      })}
+  </Box>
+);
 
         // Rutas protegidas
         /*
@@ -148,26 +265,6 @@ const menuPrincipal = (
           }
         }
         */
-
-        // Rutas sin restricción
-        if (item.roles == null) {
-          return (
-            <Button
-              key={index}
-              component={Link}
-              to={item.link}
-              color="#FFFFFF"
-            >
-              <Typography textAlign="center">{item.name}</Typography>
-            </Button>
-          );
-        }
-
-        return null; // por si no cae en ninguna condición
-      })}
-  </Box>
-);
-
   //Menu Principal responsivo
   const menuPrincipalMobile = navItems.map((page, index) => (
     <MenuItem key={index} component={Link} to={page.link}>
@@ -288,7 +385,6 @@ const menuPrincipal = (
           <IconButton
             size="large"
             color="inherit"
-            aria-controls={menuIdPrincipal}
             aria-haspopup="true"
             sx={{ mr: 2 }}
             onClick={handleOpenPrincipalMenu}
@@ -296,7 +392,6 @@ const menuPrincipal = (
             <MenuIcon />
           </IconButton>
           <Menu
-            id={menuIdPrincipal}
             anchorEl={anchorElPrincipal}
             anchorOrigin={{
               vertical: "bottom",

@@ -350,25 +350,62 @@ public function create($objeto) {
      */
 
 
-    public function update($objeto)
-    {
-        try {
-            //Consulta sql
-            $sql = "Update productos SET nombre ='$objeto->nombre'," .
-                "descripcion = '$objeto->descripcion', precio = $objeto->precio," .
-                "cantidad = $objeto->cantidad, categoria_id = $objeto->categoria_id" .
-                " Where id=$objeto->id";
+public function update($objeto)
+{
+    try {
+        // 1. Actualizar información base del producto
+        $sql = "UPDATE productos SET 
+                    nombre = '$objeto->nombre',
+                    descripcion = '$objeto->descripcion',
+                    precio = '$objeto->precio',
+                    categoria_id = $objeto->categoria_id
+                WHERE id = $objeto->id";
 
-            //Ejecutar la consulta
-            $cResults = $this->enlace->executeSQL_DML($sql);
+        $this->enlace->executeSQL_DML($sql);
 
+        // 2. Actualizar etiquetas
+        $sql = "DELETE FROM productoetiqueta WHERE producto_id = $objeto->id";
+        $this->enlace->executeSQL_DML($sql);
 
-            //Retornar pelicula
-            return $this->get($objeto->productosId);
-        } catch (Exception $e) {
-            handleException($e);
+        foreach ($objeto->etiquetas as $etiquetaId) {
+            $sql = "INSERT INTO productoetiqueta (producto_id, etiqueta_id) 
+                    VALUES ($objeto->id, $etiquetaId)";
+            $this->enlace->executeSQL_DML($sql);
         }
+
+        // 3. Eliminar imágenes marcadas
+        foreach ($objeto->imagenesEliminar as $imagenId) {
+            // Obtener nombre de la imagen para eliminar el archivo del servidor
+            $sql = "SELECT url_imagen FROM imagenes WHERE id = $imagenId AND producto_id = $objeto->id";
+            $result = $this->enlace->executeSQL($sql);
+            if (count($result) > 0) {
+                $nombreImagen = $result[0]['url_imagen'];
+                $ruta = __DIR__ . "/../../uploads/" . $nombreImagen;
+                if (file_exists($ruta)) {
+                    unlink($ruta);
+                }
+
+                // Eliminar de la base de datos
+                $sql = "DELETE FROM imagenes WHERE id = $imagenId AND producto_id = $objeto->id";
+                $this->enlace->executeSQL_DML($sql);
+            }
+        }
+
+        // 4. Agregar nuevas imágenes
+        foreach ($objeto->imagenesNuevas as $imagen) {
+            $nombreImagen = $imagen->nombre;
+            $sql = "INSERT INTO imagenes (producto_id, url_imagen) 
+                    VALUES ($objeto->id, '$nombreImagen')";
+            $this->enlace->executeSQL_DML($sql);
+        }
+
+        // 5. Retornar producto actualizado (puedes implementar get() similar a películas)
+        return $this->get($objeto->id);
+        
+    } catch (Exception $e) {
+        handleException($e);
     }
+}
 
 
 }
