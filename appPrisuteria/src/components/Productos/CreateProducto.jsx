@@ -107,7 +107,7 @@ submitAction.then(res => {
 
       {productoCreadoId && (
         <Box sx={{ mb: 3, p: 2, backgroundColor: '#c287d7ff', borderRadius: 2 }}>
-          <Typography variant="h6" color="success.main">
+          <Typography variant="h6" color="#d219a4ff">
             ¡Producto creado exitosamente!
           </Typography>
           <Typography sx={{ mt: 1 }}>
