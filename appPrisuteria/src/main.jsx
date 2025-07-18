@@ -31,7 +31,7 @@ import{DetallePromociones} from "./components/Promociones/DetallePromociones";
 import { ListOrders } from "./components/Orders/ListOrders";
 import { DetalleOrder } from "./components/Orders/DetalleOrder";
 import { CreateProducto } from "./components/Productos/CreateProducto";
-/*import { UpdateProducto } from "./components/Productos/UpdateProducto";*/
+import { UpdateProducto } from "./components/Productos/UpdateProducto";
 
 const rutas = createBrowserRouter([
   {
@@ -58,7 +58,7 @@ const rutas = createBrowserRouter([
 
       // Rutas de admin sin Auth (acceso libre )
       { path: '/productos/crear', element: <CreateProducto /> },
-        { path: '/productos/actualizar', element: <CreateProducto /> },
+      { path: '/productos/actualizar', element: <UpdateProducto /> },
       { path: '/admin/resenas', element: <ListaResenas /> },
       { path: '/admin/promociones', element: <ListaPromociones /> },
       { path: '/admin/ordenes', element: <ListOrders /> },

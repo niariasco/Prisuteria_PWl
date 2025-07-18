@@ -353,59 +353,71 @@ public function create($objeto) {
 public function update($objeto)
 {
     try {
+        $id = intval($objeto->id);
+
         // 1. Actualizar información base del producto
+        $nombre = $this->enlace->escapeString($objeto->nombre);
+        $descripcion = $this->enlace->escapeString($objeto->descripcion);
+        $precio = floatval($objeto->precio);
+        $categoria_id = intval($objeto->categoria_id);
+
         $sql = "UPDATE productos SET 
-                    nombre = '$objeto->nombre',
-                    descripcion = '$objeto->descripcion',
-                    precio = '$objeto->precio',
-                    categoria_id = $objeto->categoria_id
-                WHERE id = $objeto->id";
+                    nombre = '$nombre',
+                    descripcion = '$descripcion',
+                    precio = $precio,
+                    categoria_id = $categoria_id
+                WHERE productosId = $id";
 
         $this->enlace->executeSQL_DML($sql);
 
         // 2. Actualizar etiquetas
-        $sql = "DELETE FROM productoetiqueta WHERE producto_id = $objeto->id";
+        $sql = "DELETE FROM productoetiqueta WHERE producto_id = $id";
         $this->enlace->executeSQL_DML($sql);
 
-        foreach ($objeto->etiquetas as $etiquetaId) {
-            $sql = "INSERT INTO productoetiqueta (producto_id, etiqueta_id) 
-                    VALUES ($objeto->id, $etiquetaId)";
-            $this->enlace->executeSQL_DML($sql);
-        }
-
-        // 3. Eliminar imágenes marcadas
-        foreach ($objeto->imagenesEliminar as $imagenId) {
-            // Obtener nombre de la imagen para eliminar el archivo del servidor
-            $sql = "SELECT url_imagen FROM imagenes WHERE id = $imagenId AND producto_id = $objeto->id";
-            $result = $this->enlace->executeSQL($sql);
-            if (count($result) > 0) {
-                $nombreImagen = $result[0]['url_imagen'];
-                $ruta = __DIR__ . "/../../uploads/" . $nombreImagen;
-                if (file_exists($ruta)) {
-                    unlink($ruta);
-                }
-
-                // Eliminar de la base de datos
-                $sql = "DELETE FROM imagenes WHERE id = $imagenId AND producto_id = $objeto->id";
+        if (!empty($objeto->etiquetas) && is_array($objeto->etiquetas)) {
+            foreach ($objeto->etiquetas as $etiquetaId) {
+                $etiquetaIdInt = intval($etiquetaId);
+                $sql = "INSERT INTO productoetiqueta (producto_id, etiqueta_id) 
+                        VALUES ($id, $etiquetaIdInt)";
                 $this->enlace->executeSQL_DML($sql);
             }
         }
 
-        // 4. Agregar nuevas imágenes
-        foreach ($objeto->imagenesNuevas as $imagen) {
-            $nombreImagen = $imagen->nombre;
-            $sql = "INSERT INTO imagenes (producto_id, url_imagen) 
-                    VALUES ($objeto->id, '$nombreImagen')";
-            $this->enlace->executeSQL_DML($sql);
+        // 3. Eliminar imágenes marcadas
+        if (!empty($objeto->imagenesEliminar) && is_array($objeto->imagenesEliminar)) {
+            foreach ($objeto->imagenesEliminar as $imagenId) {
+                $imagenIdInt = intval($imagenId);
+
+                $sql = "SELECT url_imagen FROM imagenes WHERE id = $imagenIdInt AND producto_id = $id";
+                $result = $this->enlace->executeSQL($sql);
+                if (count($result) > 0) {
+                    $nombreImagen = $result[0]['url_imagen'];
+                    $ruta = __DIR__ . "/../../uploads/" . $nombreImagen;
+                    if (file_exists($ruta)) {
+                        unlink($ruta);
+                    }
+                    $sql = "DELETE FROM imagenes WHERE id = $imagenIdInt AND producto_id = $id";
+                    $this->enlace->executeSQL_DML($sql);
+                }
+            }
         }
 
-        // 5. Retornar producto actualizado (puedes implementar get() similar a películas)
-        return $this->get($objeto->id);
-        
+        // 4. Agregar nuevas imágenes
+        if (!empty($objeto->imagenesNuevas) && is_array($objeto->imagenesNuevas)) {
+            foreach ($objeto->imagenesNuevas as $imagen) {
+                // $imagen debería ser un objeto o arreglo con propiedad 'nombre'
+                $nombreImagen = $this->enlace->escapeString($imagen->nombre);
+                $sql = "INSERT INTO imagenes (producto_id, url_imagen) 
+                        VALUES ($id, '$nombreImagen')";
+                $this->enlace->executeSQL_DML($sql);
+            }
+        }
+
+        // 5. Retornar producto actualizado
+        return $this->get($id);
+
     } catch (Exception $e) {
         handleException($e);
     }
 }
-
-
 }
