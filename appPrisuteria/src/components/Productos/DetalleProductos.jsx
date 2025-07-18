@@ -21,20 +21,27 @@ import Button from '@mui/material/Button';
   //Resultado de consumo del API, respuesta
   const [data, setData] = useState(null);
   //Error del APIs
-  const [error, setError] = useState('');
+  const [error /*, setError*/] = useState(''); 
   //Booleano para establecer sí se ha recibido respuesta
   const [loaded, setLoaded] = useState(false);
     const navigate = useNavigate();
   useEffect(() => {
     //Llamar al API y obtener una Producto
-    ProductoService.getProductoById(routeParams.id)
+    /*ProductoService.getProductoById(routeParams.id)
       .then((response) => {
         setData(response.data);
         console.log(response.data);
         setError(response.error);
         setLoaded(true);
       })
-
+*/
+ProductoService.getProductoById(routeParams.id)
+  .then((response) => {
+    const producto = response.data;
+    producto.etiquetas = producto.etiquetas || []; // aseguramos array
+    setData(producto);
+    setLoaded(true);
+  })
     .catch((error) => {
       console.error('Error al cargar reseñas:', error);
     });
@@ -140,17 +147,17 @@ import Button from '@mui/material/Button';
           </Typography>
 
 
-{data.etiquetas
-  ? data.etiquetas.split(', ').map((etiqueta, index) => (
-      <Chip
-        key={index}
-        label={etiqueta}
-        variant="outlined"
-        color="primary"
-        sx={{ mr: 1, mb: 1 }}
-      />
-    ))
-  : <Typography variant="body2"></Typography>}
+{typeof data.etiquetas === 'string' && data.etiquetas.length > 0 ? (
+  data.etiquetas.split(',').map((etiqueta, index) => (
+    <Chip
+      key={index}
+      label={etiqueta.trim()}
+      variant="outlined"
+      color="primary"
+      sx={{ mr: 1, mb: 1 }}
+    />
+  ))
+) : <Typography variant="body2"></Typography>}
 
           <Typography variant="body1" gutterBottom>
              <strong> Valoración promedio: </strong>
@@ -207,15 +214,11 @@ import Button from '@mui/material/Button';
     Reseñas
   </Typography>
 
- {data.resenas?.length === 0 ? (
-  <Typography>No hay reseñas para este producto.</Typography>
-) : (
+{Array.isArray(data.resenas) && data.resenas.length > 0 ? (
   data.resenas.map((resena, index) => (
     <Grid item xs={12} 
-    key={index} 
-    sx={{ mb: 2, 
-    borderBottom: '1px solid #d83b6a ', //linea separadora
-    pb: 2}}> 
+      key={index} 
+      sx={{ mb: 2, borderBottom: '1px solid #d83b6a ', pb: 2 }}> 
       <Typography variant="subtitle1">
         <strong>{resena.nombre}</strong> - {new Date(resena.fecha).toLocaleDateString()}
       </Typography>
@@ -225,6 +228,8 @@ import Button from '@mui/material/Button';
       </Typography>
     </Grid>
   ))
+) : (
+  <Typography>No hay reseñas para este producto.</Typography>
 )}
 </Grid>
     

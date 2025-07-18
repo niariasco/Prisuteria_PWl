@@ -1,27 +1,11 @@
-Instalacion axios  28/06/24 Priscilla
-npm i axios
+7/11/2025 || nicole 
 
-Cambios Bases 02/07/24 Priscilla
+npm install react-hook-form yup @hookform/resolvers axios
 
-drop table promocion_categorias;
-drop table promocion_productos;
-DROP TABLE IF EXISTS `promociones`;
 
-CREATE TABLE `promociones` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `nombre` VARCHAR(100) NOT NULL,
-  `tipo` ENUM('Producto', 'Categoria') NOT NULL,
-  `descuento` DECIMAL(5,2) NOT NULL,
-  `fecha_inicio` DATETIME NOT NULL,
-  `fecha_fin` DATETIME NOT NULL,
-  activo BOOLEAN DEFAULT TRUE,
-  `ProductoID` INT DEFAULT NULL,
-  `CategoriaID` INT DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  FOREIGN KEY (`ProductoID`) REFERENCES `productos` (`productosId`) ON DELETE SET NULL,
-  FOREIGN KEY (`CategoriaID`) REFERENCES `categorias` (`categoriaId`) ON DELETE SET NULL
-);
+npm install react-hook-form
 
+<<<<<<< HEAD
 INSERT INTO promociones (
   id, nombre, tipo, descuento, fecha_inicio, fecha_fin, activo, ProductoID, CategoriaID
 ) VALUES
@@ -311,4 +295,6 @@ ADD COLUMN estado ENUM('pendiente', 'procesando', 'enviado', 'entregado', 'cance
 NOT NULL 
 AFTER total;
 
+=======
+>>>>>>> productosYresenas
 

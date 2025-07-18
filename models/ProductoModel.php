@@ -162,37 +162,7 @@ GROUP BY p.productosId;
         return null;
     }
 }
-    //  $vSql = "SELECT * FROM productos
-    //          where productosId=$id;";
 
-    //Ejecutar la consulta sql
-    //   $vResultado = $this->enlace->executeSQL($vSql);
-    //   if(!empty($vResultado)){
-    //   $vResultado=$vResultado[0];
-    //Imagenes
-    //         $vResultado->imagen=$imagenM->getImageProducto(idProducto:($vResultado->productosId));
-    //Director
-    //  $director=$directorM->get($vResultado->director_id);
-    //   $vResultado->director=$director;
-    //Generos --genres
-    //   $listaGeneros=$genreM->getGenreMovie($vResultado->id);
-    //   $vResultado->genres=$listaGeneros;
-    //Actores --actors
-    //  $listaActores=$actorM->getActorMovie($id);
-    //  $vResultado->actors=$listaActores;
-
-
-    //Retornar la respuesta
-    //    return $vResultado;
-    //  } catch (Exception $e) {
-    //       handleException($e);
-    // }
-    // }
-    /**
-     * Obtener las productos por categoria
-     * @param $idShopRental identificador de la tienda
-     * @return $vresultado - Lista de productos incluyendo el precio
-     */
 
     public function productXresenas($id)
     {
@@ -222,33 +192,30 @@ WHERE r.producto_id = $id";
 
 
     public function productosXCategoria($categoriaId)
-{
-    try {
-        $imagenM = new ImageModel();
+    {
+        try {
+            $imagenM = new ImageModel();
+            //Consulta SQL
+            $vSQL = "    SELECT p.*, c.nombre AS nombre_categoria
+                FROM productos p
+             JOIN categorias c ON p.categoria_id =$categoriaId
+                ORDER BY c.nombre, p.nombre";
+            //Ejecutar la consulta
+            $vResultado = $this->enlace->ExecuteSQL($vSQL);
 
-        $vSQL = "
-        SELECT 
-            p.*, 
-            c.nombreSCategoria AS nombre_categoria
-        FROM productos p
-        INNER JOIN categorias c ON p.categoria_id = c.categoriaId
-        WHERE p.categoria_id = $categoriaId
-        ORDER BY c.nombreSCategoria, p.nombre
-        ";
-
-        $vResultado = $this->enlace->ExecuteSQL($vSQL);
-
-        if (!empty($vResultado) && is_array($vResultado)) {
-            for ($i = 0; $i < count($vResultado); $i++) {
-                $vResultado[$i]->imagen = $imagenM->getImageProducto($vResultado[$i]->productosId);
+            //Incluir imagenes
+            if (!empty($vResultado) && is_array($vResultado)) {
+                for ($i = 0; $i < count($vResultado); $i++) {
+                    $vResultado[$i]->imagen = $imagenM->getImageProducto(idProducto: ($vResultado[$i]->id));
+                }
             }
-        }
+            //Retornar la respuesta
 
-        return $vResultado;
-    } catch (Exception $e) {
-        handleException($e);
+            return $vResultado;
+        } catch (Exception $e) {
+            handleException($e);
+        }
     }
-}
 
     /**
      * Obtener las productos por categoria
@@ -349,63 +316,33 @@ public function obtenerConPromocionesVigentes()
 }
 
 
-    /**
-     * Obtener la cantidad de productos por genero
-     * @param 
-     * @return $vresultado - Cantidad de productos por genero
-     */
-    /*
-    public function getCountByGenre()
-    {
-        try {
 
-            $vResultado = null;
+public function create($objeto) {
+              try {
             //Consulta sql
-            $vSql = "SELECT count(mg.genre_id) as 'Cantidad', g.title as 'Genero'
-            FROM genre g, movie_genre mg, movie m
-            where mg.movie_id=m.id and mg.genre_id=g.id
-            group by mg.genre_id";
+            //Identificador autoincrementable
+            $sql = "Insert into productos (nombre, descripcion, precio, categoria_id)".
+                    " Values ('$objeto->nombre',
+                    '$objeto->descripcion','$objeto->precio',$objeto->categoria_id)";
 
             //Ejecutar la consulta
-            $vResultado = $this->enlace->ExecuteSQL($vSql);
-            // Retornar el objeto
-            return $vResultado;
-        } catch (Exception $e) {
-            handleException($e);
-        }
-    }
-
-    /**
-     * Crear producto
-     * @param $objeto producto a Insertinto   * @return $this->get($producto) - Objeto producto
-     */
-
-    public function create($objeto)
-    {
-        try {
-            // 1. Insertar producto
-            $sql = "INSERT INTO productos (nombre, descripcion, precio, cantidad, categoria_id)
-                VALUES ($objeto->nombre, $objeto->descripcion, $objeto->precio, $objeto->cantidad, $objeto->categoria_id)";
-            $idProducto = $this->enlace->executeSQL_DML_last($sql); // Obtener ID del producto insertado
-
-            // 2. Insertar imágenes asociadas (si hay)
-            foreach ($objeto->imagenes as $imagen) {
-                $url = $imagen->url_imagen;
-                $desc = $imagen->descripcion_imagen;
-                $principal = $imagen->es_principal ? 'TRUE' : 'FALSE';
-
-                $sql = "INSERT INTO imagenes (producto_id, url_imagen, descripcion_imagen, es_principal)
-                    VALUES ($idProducto, '$url', '$desc', $principal)";
-                $this->enlace->executeSQL_DML($sql);
+            //Obtener ultimo insert
+            $idproducto=$this->enlace->executeSQL_DML_last($sql);
+             //--- Generos ---
+            //Crear elementos a insertar en etiquetas
+            foreach ($objeto->etiquetas as $value) {
+                $sql="Insert into productoetiqueta(producto_id,etiqueta_id)".
+                    " Values($idproducto,$value)";
+                $vResultadoGen=$this->enlace->executeSQL_DML($sql);
             }
-
-            // 3. Devolver el producto creado
-            return $this->get($idProducto);
+            //Retornar pelicula
+            return $this->get($idproducto);
         } catch (Exception $e) {
             handleException($e);
         }
     }
 
+       
     /**
      * Actualizar producto
      * @param $objeto producto a actualizar
@@ -413,25 +350,74 @@ public function obtenerConPromocionesVigentes()
      */
 
 
-    public function update($objeto)
-    {
-        try {
-            //Consulta sql
-            $sql = "Update productos SET nombre ='$objeto->nombre'," .
-                "descripcion = '$objeto->descripcion', precio = $objeto->precio," .
-                "cantidad = $objeto->cantidad, categoria_id = $objeto->categoria_id" .
-                " Where id=$objeto->id";
+public function update($objeto)
+{
+    try {
+        $id = intval($objeto->id);
 
-            //Ejecutar la consulta
-            $cResults = $this->enlace->executeSQL_DML($sql);
+        // 1. Actualizar información base del producto
+        $nombre = $this->enlace->escapeString($objeto->nombre);
+        $descripcion = $this->enlace->escapeString($objeto->descripcion);
+        $precio = floatval($objeto->precio);
+        $categoria_id = intval($objeto->categoria_id);
 
+        $sql = "UPDATE productos SET 
+                    nombre = '$nombre',
+                    descripcion = '$descripcion',
+                    precio = $precio,
+                    categoria_id = $categoria_id
+                WHERE productosId = $id";
 
-            //Retornar pelicula
-            return $this->get($objeto->productosId);
-        } catch (Exception $e) {
-            handleException($e);
+        $this->enlace->executeSQL_DML($sql);
+
+        // 2. Actualizar etiquetas
+        $sql = "DELETE FROM productoetiqueta WHERE producto_id = $id";
+        $this->enlace->executeSQL_DML($sql);
+
+        if (!empty($objeto->etiquetas) && is_array($objeto->etiquetas)) {
+            foreach ($objeto->etiquetas as $etiquetaId) {
+                $etiquetaIdInt = intval($etiquetaId);
+                $sql = "INSERT INTO productoetiqueta (producto_id, etiqueta_id) 
+                        VALUES ($id, $etiquetaIdInt)";
+                $this->enlace->executeSQL_DML($sql);
+            }
         }
+
+        // 3. Eliminar imágenes marcadas
+        if (!empty($objeto->imagenesEliminar) && is_array($objeto->imagenesEliminar)) {
+            foreach ($objeto->imagenesEliminar as $imagenId) {
+                $imagenIdInt = intval($imagenId);
+
+                $sql = "SELECT url_imagen FROM imagenes WHERE id = $imagenIdInt AND producto_id = $id";
+                $result = $this->enlace->executeSQL($sql);
+                if (count($result) > 0) {
+                    $nombreImagen = $result[0]['url_imagen'];
+                    $ruta = __DIR__ . "/../../uploads/" . $nombreImagen;
+                    if (file_exists($ruta)) {
+                        unlink($ruta);
+                    }
+                    $sql = "DELETE FROM imagenes WHERE id = $imagenIdInt AND producto_id = $id";
+                    $this->enlace->executeSQL_DML($sql);
+                }
+            }
+        }
+
+        // 4. Agregar nuevas imágenes
+        if (!empty($objeto->imagenesNuevas) && is_array($objeto->imagenesNuevas)) {
+            foreach ($objeto->imagenesNuevas as $imagen) {
+                // $imagen debería ser un objeto o arreglo con propiedad 'nombre'
+                $nombreImagen = $this->enlace->escapeString($imagen->nombre);
+                $sql = "INSERT INTO imagenes (producto_id, url_imagen) 
+                        VALUES ($id, '$nombreImagen')";
+                $this->enlace->executeSQL_DML($sql);
+            }
+        }
+
+        // 5. Retornar producto actualizado
+        return $this->get($id);
+
+    } catch (Exception $e) {
+        handleException($e);
     }
-
-
+}
 }

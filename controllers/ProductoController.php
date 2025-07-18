@@ -3,9 +3,6 @@
 //localhost:81/apiprisuteria/producto
 class producto
 {
-     private $modelo;
-
-   
     //GET listar
     public function index()
     {
@@ -113,23 +110,22 @@ class producto
 
 
     //POST Crear
-    public function create()
-    {
-        try {
-            $request = new Request();
-            $response = new Response();
-            //Obtener json enviado
-            $inputJSON = $request->getJSON();
-            //Instancia del modelo
-            $producto = new ProductoModel();
-            //Acción del modelo a ejecutar
-            $result = $producto->create($inputJSON);
-            //Dar respuesta
-            $response->toJSON($result);
-        } catch (Exception $e) {
-            handleException($e);
-        }
-    }
+public function create()
+{
+    $response = new Response();
+    $request = new Request();
+
+    // Obtener el JSON enviado por el frontend
+    $inputJSON = $request->getJSON();
+
+    // Instanciar modelo y crear producto
+    $producto = new ProductoModel();
+    $result = $producto->create($inputJSON);
+
+    // Devolver la respuesta como JSON
+    $response->toJSON($result);
+}
+
     //PUT actualizar
     public function update()
     {

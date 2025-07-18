@@ -1,12 +1,12 @@
 import axios from 'axios';
-//http://localhost:81/appPrisuteria/categoria/
-const BASE_URL = import.meta.env.VITE_BASE_URL + 'categoria';
+//http://localhost:81/prisuteriapwl/categorias/
+const BASE_URL = import.meta.env.VITE_BASE_URL + 'categorias';
 class CategoriaService {
   //Definición para Llamar al API y obtener el listado de categorias
 
   //Listas Categorias
   //localhost:81//appPrisuteria/categoria
-  getCategoria() {
+  getAllCategorias() {
     return axios.get(BASE_URL);
   }
   //Obtener Categoria id

@@ -14,76 +14,58 @@ class ImageModel
     /**
      * Subir imagen de un producto
      */
-    public function uploadFile($object)
+
+    // Subir múltiples imágenes para un producto
+    // $files: arreglo $_FILES['imagenesNuevas']
+    // $product_id: id del producto
+    public function uploadFiles($files, $product_id)
     {
-        try {
-            $file = $object['file'];
-            $product_id = $object['product_id'];
-            
-            // Obtener la información del archivo
-            $fileName = $file['name'];
-            $tempPath = $file['tmp_name'];
-            $fileSize = $file['size'];
-            $fileError = $file['error'];
+        $resultados = [];
+
+        // Reorganizamos la estructura para iterar fácilmente
+        $file_count = count($files['name']);
+        for ($i = 0; $i < $file_count; $i++) {
+            $fileName = $files['name'][$i];
+            $tempPath = $files['tmp_name'][$i];
+            $fileSize = $files['size'][$i];
+            $fileError = $files['error'][$i];
 
             if (!empty($fileName)) {
-                // Extraer la extensión
-                $fileExt = explode('.', $fileName);
-                $fileActExt = strtolower(end($fileExt));
+                $fileExtArr = explode('.', $fileName);
+                $fileActExt = strtolower(end($fileExtArr));
+                $uniqueFileName = "product-" . uniqid() . "." . $fileActExt;
 
-                // Crear un nombre único para evitar sobreescritura
-                $uniqueFileName = uniqid() . "." . $fileActExt;
-
-                // Validar tipo de archivo
                 if (in_array($fileActExt, $this->valid_extensions)) {
-                    // Validar que no exista ya el archivo
                     if (!file_exists($this->upload_path . $uniqueFileName)) {
-                        // Validar tamaño y error
                         if ($fileSize < 2000000 && $fileError == 0) {
-                            // Mover archivo a carpeta uploads
                             if (move_uploaded_file($tempPath, $this->upload_path . $uniqueFileName)) {
-                                // Primero verificar si ya existe una imagen para este producto
-                                $checkSql = "SELECT imagenId FROM imagenes WHERE producto_id = $product_id";
-                                $existing = $this->enlace->ExecuteSQL($checkSql);
-                                
-                                if (!empty($existing)) {
-                                    // Actualizar imagen existente
-                                    $sql = "UPDATE imagenes SET url_imagen = '$uniqueFileName' WHERE producto_id = $product_id";
-                                } else {
-                                    // Insertar nueva imagen
-                                    $sql = "INSERT INTO imagenes (producto_id, url_imagen) VALUES ($product_id, '$uniqueFileName')";
-                                }
-                                
+                                $sql = "INSERT INTO imagenes (producto_id, url_imagen) VALUES ($product_id, '$uniqueFileName')";
                                 $vResultado = $this->enlace->executeSQL_DML($sql);
                                 if ($vResultado > 0) {
-                                    return [
-                                        'success' => true,
-                                        'message' => 'Imagen creada exitosamente',
-                                        'filename' => $uniqueFileName
-                                    ];
+                                    $resultados[] = ['success' => true, 'message' => 'Imagen subida', 'filename' => $uniqueFileName];
+                                } else {
+                                    $resultados[] = ['success' => false, 'message' => 'Error BD al insertar imagen'];
                                 }
                             } else {
-                                return ['success' => false, 'message' => 'Error al mover el archivo'];
+                                $resultados[] = ['success' => false, 'message' => 'Error al mover archivo'];
                             }
                         } else {
-                            return ['success' => false, 'message' => 'Archivo muy grande o con errores'];
+                            $resultados[] = ['success' => false, 'message' => 'Archivo demasiado grande o con error'];
                         }
                     } else {
-                        return ['success' => false, 'message' => 'El archivo ya existe'];
+                        $resultados[] = ['success' => false, 'message' => 'Archivo ya existe'];
                     }
                 } else {
-                    return ['success' => false, 'message' => 'Tipo de archivo no válido'];
+                    $resultados[] = ['success' => false, 'message' => 'Extensión no válida'];
                 }
             } else {
-                return ['success' => false, 'message' => 'No se recibió ningún archivo'];
+                $resultados[] = ['success' => false, 'message' => 'Archivo vacío'];
             }
-        } catch (Exception $e) {
-            handleException($e);
-            return ['success' => false, 'message' => 'Error interno del servidor'];
         }
+        return $resultados;
     }
 
-    /**
+  /**
      * Obtener imagen de un producto específico
      * @param int $idProducto
      * @return string|null - Nombre del archivo de imagen

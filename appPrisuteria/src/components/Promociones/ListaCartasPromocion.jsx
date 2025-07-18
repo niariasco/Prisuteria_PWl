@@ -249,4 +249,8 @@ export function ListaCartasPromocion({ isShopping }) {
 
 ListaCartasPromocion.propTypes = {
   isShopping: PropTypes.bool.isRequired,
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> productosYresenas
