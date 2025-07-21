@@ -74,7 +74,6 @@ class ProductoService {
   getProductoById(ProductoId){
     return axios.get(BASE_URL+'/'+ProductoId);
   }
-<<<<<<< HEAD
  obtenerProductosConPromociones() {
     return axios
       .get(`${BASE_URL}/obtenerProductosPromocion`)
@@ -89,8 +88,6 @@ class ProductoService {
 
 
 
-=======
->>>>>>> productosYresenas
   //Obtener peliculas por tienda
   //localhost:81/apiProducto/Producto/ProductosByShopRental/1
  // getProductoByShopRental(ShopRentalId){

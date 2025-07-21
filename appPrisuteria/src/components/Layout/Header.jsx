@@ -80,6 +80,9 @@ const handleClose = (setter) => () => {
 const handleSubmenuClose = () => {
   setAnchorElSubmenu(null);
   setAnchorElProductos(null); // Asegura que se cierre también el submenu de productos
+
+  setAnchorElPromociones(null);// Asegura que se cierre también el submenu de promociones
+
 };
 
 
