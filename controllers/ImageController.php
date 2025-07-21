@@ -24,12 +24,4 @@ class image{
             handleException($e);
         }
     }
-
-
-
-
-
-
-
-    
 }

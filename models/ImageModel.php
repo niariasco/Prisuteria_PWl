@@ -5,65 +5,82 @@ class ImageModel
     private $valid_extensions = array('jpeg', 'jpg', 'png', 'gif');
 
     public $enlace;
-    
     public function __construct()
     {
         $this->enlace = new MySqlConnect();
     }
-
-    /**
-     * Subir imagen de un producto
-     */
-
-    // Subir múltiples imágenes para un producto
-    // $files: arreglo $_FILES['imagenesNuevas']
-    // $product_id: id del producto
-    public function uploadFiles($files, $product_id)
+    //Subir imagen de una pelicula registrada
+    public function uploadFile($object)
     {
-        $resultados = [];
+        try {
+            $file = $object['file'];
+            $product_id = $object['producto_id'];
 
-        // Reorganizamos la estructura para iterar fácilmente
-        $file_count = count($files['name']);
-        for ($i = 0; $i < $file_count; $i++) {
-            $fileName = $files['name'][$i];
-            $tempPath = $files['tmp_name'][$i];
-            $fileSize = $files['size'][$i];
-            $fileError = $files['error'][$i];
+            $fileName = $file['name'];
+            $tempPath = $file['tmp_name'];
+            $fileSize = $file['size'];
+            $fileError = $file['error'];
 
             if (!empty($fileName)) {
-                $fileExtArr = explode('.', $fileName);
-                $fileActExt = strtolower(end($fileExtArr));
-                $uniqueFileName = "product-" . uniqid() . "." . $fileActExt;
-
+                //Crear un nombre único para el archivo
+                $fileExt = explode('.', $fileName);
+                $fileActExt = strtolower(end($fileExt));
+                $fileName = "" . uniqid() . "." . $fileActExt;
+                //Validar el tipo de archivo
                 if (in_array($fileActExt, $this->valid_extensions)) {
-                    if (!file_exists($this->upload_path . $uniqueFileName)) {
+                    //Validar que no exista
+                    if (!file_exists($this->upload_path . $fileName)) {
+                        //Validar que no sobrepase el tamaño
                         if ($fileSize < 2000000 && $fileError == 0) {
-                            if (move_uploaded_file($tempPath, $this->upload_path . $uniqueFileName)) {
-                                $sql = "INSERT INTO imagenes (producto_id, url_imagen) VALUES ($product_id, '$uniqueFileName')";
+                            //Moverlo a la carpeta del servidor del API
+                            if (move_uploaded_file($tempPath, $this->upload_path . $fileName)) {
+                                //Guardarlo en la BD
+                                 $sql = "INSERT INTO imagenes (producto_id, url_imagen) VALUES ($product_id, '$fileName')";
                                 $vResultado = $this->enlace->executeSQL_DML($sql);
                                 if ($vResultado > 0) {
-                                    $resultados[] = ['success' => true, 'message' => 'Imagen subida', 'filename' => $uniqueFileName];
-                                } else {
-                                    $resultados[] = ['success' => false, 'message' => 'Error BD al insertar imagen'];
-                                }
-                            } else {
-                                $resultados[] = ['success' => false, 'message' => 'Error al mover archivo'];
+                                   // return 'Imagen creada';
+                                
+     // Continúa con las imágenes múltiples después de la principal
                             }
-                        } else {
-                            $resultados[] = ['success' => false, 'message' => 'Archivo demasiado grande o con error'];
                         }
-                    } else {
-                        $resultados[] = ['success' => false, 'message' => 'Archivo ya existe'];
                     }
-                } else {
-                    $resultados[] = ['success' => false, 'message' => 'Extensión no válida'];
                 }
-            } else {
-                $resultados[] = ['success' => false, 'message' => 'Archivo vacío'];
             }
         }
-        return $resultados;
+
+        // === Subir imágenes adicionales (imagenes_nuevas[]) ===
+        if (isset($object['imagenes_nuevas']) && is_array($object['imagenes_nuevas'])) {
+            foreach ($object['imagenes_nuevas'] as $img) {
+                if (!empty($img['name'])) {
+                    $imgName = $img['name'];
+                    $imgTmp = $img['tmp_name'];
+                    $imgSize = $img['size'];
+                    $imgError = $img['error'];
+
+                    $extParts = explode('.', $imgName);
+                    $imgExt = strtolower(end($extParts));
+                    $newName = uniqid() . "." . $imgExt;
+
+                    if (in_array($imgExt, $this->valid_extensions)) {
+                        if (!file_exists($this->upload_path . $newName)) {
+                            if ($imgSize < 2000000 && $imgError == 0) {
+                                if (move_uploaded_file($imgTmp, $this->upload_path . $newName)) {
+                                    $sql = "INSERT INTO imagenes (producto_id, url_imagen) VALUES ($product_id, '$newName')";
+                                    $this->enlace->executeSQL_DML($sql);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return 'Imágenes subidas correctamente';
+    } catch (Exception $e) {
+        handleException($e);
     }
+}
+
 
   /**
      * Obtener imagen de un producto específico
