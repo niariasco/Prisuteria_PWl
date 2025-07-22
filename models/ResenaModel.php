@@ -94,7 +94,7 @@ ORDER BY
 }
  public function create($objeto) {
         try {
-            // fecha con  formato Y-m-d H:i:s 
+            //   formato Y-m-d H:i:s 
             $fechaBD = !empty($objeto->fecha) ? date('Y-m-d H:i:s', strtotime($objeto->fecha)) : date('Y-m-d H:i:s');
 
             // Insertar reseña
@@ -111,7 +111,8 @@ ORDER BY
                 '".$this->enlace->addslashes($objeto->comentario)."',
                 '$objeto->calificacion',
                 '$fechaBD',
-                1);";  // visible = 1
+                '$objeto->visible');";
+	
 
             $idResena = $this->enlace->executeSQL_DML_last($vSql);
 
