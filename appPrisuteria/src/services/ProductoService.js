@@ -52,6 +52,13 @@ class ProductoService {
       },
     });
   }
+/*
+  updateProducto(formData) {
+  return axios.post('http://localhost:81/prisuteriapwl/productos/actualizar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+}
+*/
 }
 
 export default new ProductoService();

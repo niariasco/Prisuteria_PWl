@@ -266,7 +266,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
 
           {/* Imagen principal */}
           <Grid item xs={12}>
-            <Typography variant="h6">Imagen principal</Typography>
+            <Typography variant="h6">Agregar Imagen</Typography>
             <input type="file" onChange={handleChangeImage} />
             {fileURL && (
               <Box sx={{ position: 'relative', mt: 1, display: 'inline-block' }}>

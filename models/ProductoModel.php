@@ -328,7 +328,6 @@ public function create($objeto) {
             //Ejecutar la consulta
             //Obtener ultimo insert
             $idproducto=$this->enlace->executeSQL_DML_last($sql);
-             //--- Generos ---
             //Crear elementos a insertar en etiquetas
             foreach ($objeto->etiquetas as $value) {
                 $sql="Insert into productoetiqueta(producto_id,etiqueta_id)".
@@ -380,15 +379,31 @@ if (!empty($objeto->imagenes_eliminar)) {
         $this->enlace->executeSQL_DML($sql);
     }
 }
-
+/*
         // insertar nuevas imágenes
-        if (!empty($objeto->imagenes_nuevas)) {
-            foreach ($objeto->imagenes_nuevas as $url) {
+if (!empty($objeto->imagenes_nuevas)) {
+    foreach ($objeto->imagenes_nuevas as $img) {
+
+        if (is_object($img) && isset($img->name)) {
+            // nombre único
+            $nombreArchivo = uniqid() . "_" . basename($img->name);
+            $rutaDestino = __DIR__ . "uploads/" . $nombreArchivo;
+
+            if (move_uploaded_file($img->tmp_name, $rutaDestino)) {
                 $sql = "INSERT INTO imagenes (producto_id, url_imagen) 
-                        VALUES ($objeto->productosId, '$url')";
+                        VALUES ($objeto->productosId, '$nombreArchivo')";
                 $this->enlace->executeSQL_DML($sql);
             }
+        } else {
+            //if URL existente
+            $urlImagen = addslashes((string) $img);
+            $sql = "INSERT INTO imagenes (producto_id, url_imagen) 
+                    VALUES ($objeto->productosId, '$urlImagen')";
+            $this->enlace->executeSQL_DML($sql);
         }
+    }
+}
+*/
 
         return $this->get($objeto->productosId);
 
