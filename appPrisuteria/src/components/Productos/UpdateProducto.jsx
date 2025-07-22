@@ -33,6 +33,8 @@ export function UpdateProducto() {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+const [promedioValoracion, setPromedioValoracion] = useState(null);
+const [totalResenas, setTotalResenas] = useState(0);
 
   // Cargar categorías, etiquetas y lista de productos
   useEffect(() => {
@@ -42,44 +44,46 @@ export function UpdateProducto() {
   }, []);
 
   // Cargar un producto al seleccionar
-  useEffect(() => {
-    if (!productoSeleccionado) return;
-    setLoading(true);
-    ProductoService.getProductoById(productoSeleccionado)
-      .then(res => {
-        const p = res.data;
-        if (!p) throw new Error('No se encontró el producto');
+useEffect(() => {
+  if (!productoSeleccionado) return;
+  setLoading(true);
+  ProductoService.getProductoById(productoSeleccionado)
+    .then(res => {
+      const p = res.data;
+      if (!p) throw new Error('No se encontró el producto');
 
-        // Convertir etiquetas (string) en array de nombres
-        let etiquetasSeleccionadas = [];
-        if (p.etiquetas && typeof p.etiquetas === 'string') {
-          etiquetasSeleccionadas = p.etiquetas
-            .split(',')
-            .map(e => e.trim())
-            .map(nombre => {
-              // Buscar ID correspondiente en la lista global de etiquetas
-              const etq = etiquetas.find(et => et.nombrEtiquetas === nombre);
-              return etq ? etq.etiquetaId : null;
-            })
-            .filter(Boolean);
-        }
+      let etiquetasSeleccionadas = [];
+      if (p.etiquetas && typeof p.etiquetas === 'string') {
+        etiquetasSeleccionadas = p.etiquetas
+          .split(',')
+          .map(e => e.trim())
+          .map(nombre => {
+            const etq = etiquetas.find(et => et.nombrEtiquetas === nombre);
+            return etq ? etq.etiquetaId : null;
+          })
+          .filter(Boolean);
+      }
 
-        reset({
-          nombre: p.nombre,
-          descripcion: p.descripcion,
-          precio: p.precio,
-          categoria_id: Number(p.categoria_id),
-          etiquetas: etiquetasSeleccionadas,
-        });
-        setImagenesExistentes(p.imagenes || []);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error al cargar producto:', err);
-        setError('No se pudo cargar el producto');
-        setLoading(false);
+      reset({
+        nombre: p.nombre,
+        descripcion: p.descripcion,
+        precio: p.precio,
+        categoria_id: Number(p.categoria_id),
+        etiquetas: etiquetasSeleccionadas,
       });
-  }, [productoSeleccionado, etiquetas, reset]);
+
+      setImagenesExistentes(p.imagenes || []);
+      setPromedioValoracion(p.promedio_valoracion ?? 0);
+      setTotalResenas(p.resenas?.length || 0);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error('Error al cargar producto:', err);
+      setError('No se pudo cargar el producto');
+      setLoading(false);
+    });
+}, [productoSeleccionado, etiquetas, reset]);
+
 
   const handleChangeImage = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -283,30 +287,51 @@ export function UpdateProducto() {
             </Grid>
 
             {/* Imágenes existentes */}
-            {imagenesExistentes.length > 0 && (
-              <Grid item xs={12}>
-                <Typography variant="h6">Imágenes existentes</Typography>
-                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
-                  {imagenesExistentes.map((img, i) => (
-                    <Box key={i} sx={{ position: 'relative' }}>
-                      <img
-                        src={img}
-                        alt={`img-${i}`}
-                        style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 6 }}
-                      />
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => eliminarImagenExistente(img)}
-                        sx={{ position: 'absolute', top: 0, right: 0 }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  ))}
-                </Box>
-              </Grid>
-            )}
+         {imagenesExistentes.length > 0 && (
+  <Grid item xs={12}>
+    <Typography variant="h6">Imágenes actuales</Typography>
+    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1 }}>
+      {imagenesExistentes.map((img, i) => (
+        <Box
+          key={i}
+          sx={{
+            position: 'relative',
+            width: 120,
+            height: 120,
+            borderRadius: 2,
+            overflow: 'hidden',
+            boxShadow: 2,
+          }}
+        >
+          <img
+            src={img}
+            alt={`img-${i}`}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              borderRadius: '4px',
+            }}
+          />
+          <IconButton
+            size="small"
+            color="error"
+            onClick={() => eliminarImagenExistente(img)}
+            sx={{
+              position: 'absolute',
+              top: 4,
+              right: 4,
+              backgroundColor: 'rgba(255,255,255,0.7)',
+              '&:hover': { backgroundColor: 'rgba(255,0,0,0.8)' },
+            }}
+          >
+            <DeleteIcon />
+          </IconButton>
+        </Box>
+      ))}
+    </Box>
+  </Grid>
+)}
 
        <Grid item xs={12}>
               <Typography variant="h6">Otras imágenes</Typography>
@@ -337,7 +362,14 @@ export function UpdateProducto() {
               </IconButton>
             </Grid>
     
-        
+ <Grid item xs={12}>
+  <TextField
+    label="Promedio de valoraciones"
+    value={`${promedioValoracion} / 5 (${totalResenas} reseñas)`}
+    InputProps={{ readOnly: true }}
+    fullWidth
+  />
+</Grid>       
 
             <Grid item xs={12}>
               <Button
