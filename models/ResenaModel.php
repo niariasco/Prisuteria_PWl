@@ -92,16 +92,13 @@ ORDER BY
             handleException($e);
         }
 }
-	public function create($objeto) {
+ public function create($objeto) {
         try {
-            $fechaReact = $objeto->fecha;
-            // Crear un objeto DateTime a partir de la cadena de fecha
-            // Convertir la fecha al formato deseado para la base de datos
-            $fechaBD = date('Y-m-d', strtotime($fechaReact));
-            
-            //Consulta sql
-            
-			$vSql = "INSERT INTO resenas
+            // fecha con  formato Y-m-d H:i:s 
+            $fechaBD = !empty($objeto->fecha) ? date('Y-m-d H:i:s', strtotime($objeto->fecha)) : date('Y-m-d H:i:s');
+
+            // Insertar reseña
+            $vSql = "INSERT INTO resenas
                 (usuario_id,
                 producto_id,
                 comentario,
@@ -111,37 +108,31 @@ ORDER BY
                 VALUES
                 ('$objeto->usuario_id',
                 '$objeto->producto_id',
-                '$objeto->comentario',
+                '".$this->enlace->addslashes($objeto->comentario)."',
                 '$objeto->calificacion',
                 '$fechaBD',
-                '$objeto->visible');";
-			
-            //Ejecutar la consulta
-			$idResena = $this->enlace->executeSQL_DML_last( $vSql);
-            //Insertar peliculas
-            /*
-            foreach ($objeto->movies as $item) {
-                $sql="INSERT INTO movie_rental.rental_movie
-                    (rental_id,
-                    movie_id,
-                    price,
-                    days,
-                    subtotal)
-                    VALUES
-                    ($idRental,
-                    $item->id,
-                    $item->price,
-                    $item->days,
-                    $item->subtotal);";
-                $vResultadoM= $this->enlace->executeSQL_DML($sql);
-            }
-                */
-			// Retornar el objeto creado
-            return $this->get($idResena);
+                1);";  // visible = 1
+
+            $idResena = $this->enlace->executeSQL_DML_last($vSql);
+
+            //  la reseña creada
+            $nuevaResenaArr = $this->get($idResena);
+            $nuevaResena = !empty($nuevaResenaArr) ? $nuevaResenaArr[0] : null;
+
+            //  promedio actualizado
+            $promedio = $this->getByProducto($objeto->producto_id);
+
+            //  return objeto con reseña y promedio
+            return (object)[
+                'nuevaResena' => $nuevaResena,
+                'promedioValoracion' => $promedio
+            ];
         } catch (Exception $e) {
             handleException($e);
         }
     }
+
+
     //Ventas por mes x Tienda
     /*
     public function rentalMonthbyShop()

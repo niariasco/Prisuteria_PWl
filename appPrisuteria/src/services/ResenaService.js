@@ -1,5 +1,5 @@
 import axios from 'axios';
-//http://localhost:81/prisuteriapwl/resenas/
+//http://localhost:81/prisuteriapwl/resena/
 const BASE_URL = import.meta.env.VITE_BASE_URL + 'resena';
 class ResenaService {
   //Definición para Llamar al API y obtener el listado de películas
