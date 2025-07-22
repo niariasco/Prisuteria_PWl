@@ -1,776 +1,366 @@
-import ProductoService from "../../services/ProductoService"
-import { SelectCategoria } from "../Productos/Forms/SelectCategoria"
-import { SelectEtiquetas } from "../Productos/Forms/SelectEtiquetas"
-import CategoriaService from "../../services/CategoriaService"
-import EtiquetasService from "../../services/EtiquetasService"
-import { useRef } from "react";
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from 'react';
 import {
-  Box,
-  Button,
+  Container,
   Typography,
-  TextField,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
-  Snackbar,
-  Card,
-  CardMedia,
-  CardActions,
   Grid,
+  TextField,
+  Button,
+  Box,
   IconButton,
-  Alert as MuiAlert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
-  Fade,
-} from "@mui/material"
-import {
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  CloudUpload as CloudUploadIcon,
-} from "@mui/icons-material"
-import { useForm, Controller } from "react-hook-form"
-import { yupResolver } from "@hookform/resolvers/yup"
-import * as Yup from "yup"
-
-const Alert = (props) => <MuiAlert elevation={6} variant="filled" {...props} />
-
-const validationSchema = Yup.object().shape({
-  nombre: Yup.string().required("El nombre es obligatorio"),
-  descripcion: Yup.string().required("La descripción es obligatoria"),
-  precio: Yup.number()
-    .typeError("Debe ser un número")
-    .positive("Debe ser mayor que 0")
-    .required("El precio es obligatorio"),
-  categoriaId: Yup.string().required("La categoría es obligatoria"),
-})
-
-const procesarEtiquetas = (etiquetas) => {
-  if (!etiquetas) return []
-
-  if (typeof etiquetas === "string") {
-    return [etiquetas]
-  }
-
-  if (Array.isArray(etiquetas)) {
-    return etiquetas.map((e) => (typeof e === "object" && e?.id ? e.id : e))
-  }
-
-  if (typeof etiquetas === "object" && etiquetas !== null) {
-    if (etiquetas.data && Array.isArray(etiquetas.data)) {
-      return etiquetas.data.map((e) => (typeof e === "object" && e?.id ? e.id : e))
-    }
-    if (etiquetas.id) {
-      return [etiquetas.id]
-    }
-  }
-
-  return []
-}
-
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { useForm, Controller } from 'react-hook-form';
+import ProductoService from '../../services/ProductoService';
+import ImageService from '../../services/ImageService';
+import CategoriaService from '../../services/CategoriaService';
+import EtiquetaService from '../../services/EtiquetasService';
+import { SelectCategoria } from './Forms/SelectCategoria';
+import { SelectEtiquetas } from './Forms/SelectEtiquetas';
+import PropTypes from 'prop-types';
+import { toast } from 'react-hot-toast';
+import AddIcon from '@mui/icons-material/Add';
 
 export function UpdateProducto() {
-  const [productoSeleccionado, setProductoSeleccionado] = useState("")
-  const [productos, setProductos] = useState([])
-  const [imagenes, setImagenes] = useState([])
-  const [imagenesAEliminar, setImagenesAEliminar] = useState([])
-  const [nuevasImagenes, setNuevasImagenes] = useState([])
-  const [previewNuevasImagenes, setPreviewNuevasImagenes] = useState([])
-  const [categorias, setCategorias] = useState([])
-  const [etiquetas, setEtiquetas] = useState([])
-  const [mensajeExito, setMensajeExito] = useState(false)
-  const [mensajeError, setMensajeError] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [loadingProducto, setLoadingProducto] = useState(false)
-  const [dialogEliminar, setDialogEliminar] = useState(false)
-  const [imagenAEliminar, setImagenAEliminar] = useState(null)
-  const [productoData, setProductoData] = useState(null)
-  const [mostrarFormulario, setMostrarFormulario] = useState(false)
+  const { control, handleSubmit, reset } = useForm();
+  const [categorias, setCategorias] = useState([]);
+  const [etiquetas, setEtiquetas] = useState([]);
+  const [imagenesExistentes, setImagenesExistentes] = useState([]);
+ const [imagenesExtra, setImagenesExtra] = useState([]);
+  const [imagenesAEliminar, setImagenesAEliminar] = useState([]);
+  const [file, setFile] = useState(null);
+  const [fileURL, setFileURL] = useState(null);
+  const [productoSeleccionado, setProductoSeleccionado] = useState('');
+  const [productos, setProductos] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  // Estado para controlar la key del Collapse y evitar problemas de DOM
-  const [collapseKey, setCollapseKey] = useState(0)
-
-  // Usar useRef para mantener referencias a las URLs de preview
-  const previewUrlsRef = useRef([])
-
-  // Ref para el timeout de mostrar formulario
-  const timeoutRef = useRef(null)
-const fadeNodeRef = useRef(null);
-
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors, isDirty },
-  } = useForm({
-    resolver: yupResolver(validationSchema),
-    defaultValues: {
-      nombre: "",
-      descripcion: "",
-      precio: "",
-      categoriaId: "",
-      etiquetas: [],
-    },
-  })
-
-  // Función para limpiar previews - ahora usando useCallback correctamente
-  const limpiarPreviews = useCallback(() => {
-    previewUrlsRef.current.forEach((url) => {
-      if (url) {
-        try {
-          URL.revokeObjectURL(url)
-        } catch (error) {
-          console.warn("Error al liberar URL:", error)
-        }
-      }
-    })
-    previewUrlsRef.current = []
-    setPreviewNuevasImagenes([])
-  }, [])
-
-  // Función para limpiar timeouts
-  const limpiarTimeouts = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-      timeoutRef.current = null
-    }
-  }, [])
-
-  // Cargar datos iniciales
+  // Cargar categorías, etiquetas y lista de productos
   useEffect(() => {
-    const cargarDatosIniciales = async () => {
-      try {
-        setLoading(true)
-        const [productosRes, categoriasRes, etiquetasRes] = await Promise.all([
-          ProductoService.getAllProductos(),
-          CategoriaService.getAllCategorias(),
-          EtiquetasService.getAllEtiquetas(),
-        ])
+    CategoriaService.getAllCategorias().then(res => setCategorias(res.data));
+    EtiquetaService.getAllEtiquetas().then(res => setEtiquetas(res.data));
+    ProductoService.getAllProductos().then(res => setProductos(res.data));
+  }, []);
 
-        setProductos(productosRes.data || [])
-        setCategorias(categoriasRes.data || [])
-        setEtiquetas(etiquetasRes.data || [])
-      } catch (error) {
-        console.error("Error al cargar datos iniciales:", error)
-        setMensajeError("Error al cargar los datos iniciales")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    cargarDatosIniciales()
-  }, [])
-
-  // Cargar datos del producto seleccionado
+  // Cargar un producto al seleccionar
   useEffect(() => {
-    if (productoSeleccionado) {
-      const cargarProducto = async () => {
-        try {
-          // Limpiar timeouts anteriores
-          limpiarTimeouts()
+    if (!productoSeleccionado) return;
+    setLoading(true);
+    ProductoService.getProductoById(productoSeleccionado)
+      .then(res => {
+        const p = res.data;
+        if (!p) throw new Error('No se encontró el producto');
 
-          setLoadingProducto(true)
-          setProductoData(null)
-          setMostrarFormulario(false)
-
-          // Incrementar la key para forzar re-render del Collapse
-          setCollapseKey((prev) => prev + 1)
-
-          const response = await ProductoService.getProductoById(productoSeleccionado)
-          const producto = response.data
-
-          console.log("=== DEBUG: Producto cargado ===")
-          console.log("Producto completo:", producto)
-          console.log("Etiquetas del producto:", producto.etiquetas)
-          console.log("Tipo de etiquetas:", typeof producto.etiquetas)
-          console.log("Es array:", Array.isArray(producto.etiquetas))
-
-          // Limpiar previews anteriores
-          limpiarPreviews()
-
-          // Establecer datos del producto
-          setProductoData(producto)
-          setImagenes(producto.imagenes || [])
-          setImagenesAEliminar([])
-          setNuevasImagenes([])
-
-          // Procesar etiquetas de forma segura
-          const etiquetasIds = procesarEtiquetas(producto.etiquetas)
-          console.log("Etiquetas procesadas:", etiquetasIds)
-
-          // Resetear formulario con datos del producto
-          reset({
-            nombre: producto.nombre || "",
-            descripcion: producto.descripcion || "",
-            precio: producto.precio || "",
-            categoriaId: producto.categoria_id || "",
-            etiquetas: etiquetasIds,
-          })
-
-          // Mostrar formulario después de cargar los datos con un delay más largo
-          timeoutRef.current = setTimeout(() => {
-            setMostrarFormulario(true)
-          }, 300)
-        } catch (error) {
-          console.error("Error al cargar producto:", error)
-          setMensajeError("Error al cargar el producto seleccionado")
-          setProductoData(null)
-          setMostrarFormulario(false)
-        } finally {
-          setLoadingProducto(false)
+        // Convertir etiquetas (string) en array de nombres
+        let etiquetasSeleccionadas = [];
+        if (p.etiquetas && typeof p.etiquetas === 'string') {
+          etiquetasSeleccionadas = p.etiquetas
+            .split(',')
+            .map(e => e.trim())
+            .map(nombre => {
+              // Buscar ID correspondiente en la lista global de etiquetas
+              const etq = etiquetas.find(et => et.nombrEtiquetas === nombre);
+              return etq ? etq.etiquetaId : null;
+            })
+            .filter(Boolean);
         }
-      }
-      cargarProducto()
-    } else {
-      // Limpiar timeouts
-      limpiarTimeouts()
 
-      setProductoData(null)
-      setMostrarFormulario(false)
-      limpiarPreviews()
-      reset({
-        nombre: "",
-        descripcion: "",
-        precio: "",
-        categoriaId: "",
-        etiquetas: [],
+        reset({
+          nombre: p.nombre,
+          descripcion: p.descripcion,
+          precio: p.precio,
+          categoria_id: Number(p.categoria_id),
+          etiquetas: etiquetasSeleccionadas,
+        });
+        setImagenesExistentes(p.imagenes || []);
+        setLoading(false);
       })
+      .catch(err => {
+        console.error('Error al cargar producto:', err);
+        setError('No se pudo cargar el producto');
+        setLoading(false);
+      });
+  }, [productoSeleccionado, etiquetas, reset]);
 
-      // Incrementar key para limpiar el Collapse
-      setCollapseKey((prev) => prev + 1)
+  const handleChangeImage = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      setFileURL(URL.createObjectURL(selectedFile));
     }
-  }, [productoSeleccionado, reset, limpiarPreviews, limpiarTimeouts])
+  };
 
-  // Manejar selección de nuevas imágenes
-  const handleImagenChange = (e) => {
-    try {
-      const files = Array.from(e.target.files)
-      if (files.length === 0) return
 
-      // Limpiar previews anteriores
-      limpiarPreviews()
+  const agregarBloqueImagen = () => {
+   setImagenesExtra(prev => [...prev, { file: null, url: null }]);
+  };
 
-      setNuevasImagenes(files)
 
-      // Crear previews para las nuevas imágenes
-      const previews = files.map((file) => {
-        const url = URL.createObjectURL(file)
-        previewUrlsRef.current.push(url)
-        return {
-          file,
-          url,
-          name: file.name,
-        }
-      })
-
-      setPreviewNuevasImagenes(previews)
-    } catch (error) {
-      console.error("Error al procesar imágenes:", error)
-      setMensajeError("Error al procesar las imágenes seleccionadas")
+  const handleAddImage = (e, index) => {
+    if (e.target.files && e.target.files[0]) {
+      const imgFile = e.target.files[0];
+      const url = URL.createObjectURL(imgFile);
+      setImagenesExtra(prev => {
+        const copia = [...prev];
+        copia[index] = { file: imgFile, url };
+        return copia;
+      });
     }
-  }
+  };
 
-  // Confirmar eliminación de imagen existente
-  const confirmarEliminarImagen = (imagen) => {
-    setImagenAEliminar(imagen)
-    setDialogEliminar(true)
-  }
+  const eliminarImagenExtra = (index) => {
+    setImagenesExtra(prev => prev.filter((_, i) => i !== index));
+  };
 
-  // Eliminar imagen existente
-  const handleDeleteImagen = () => {
-    if (imagenAEliminar) {
-      setImagenes((prev) => prev.filter((img) => img.id !== imagenAEliminar.id))
-      setImagenesAEliminar((prev) => [...prev, imagenAEliminar.id])
-      setDialogEliminar(false)
-      setImagenAEliminar(null)
-    }
-  }
+  const eliminarImagenExistente = (url) => {
+    setImagenesExistentes(prev => prev.filter(img => img !== url));
+    setImagenesAEliminar(prev => [...prev, url]);
+  };
 
-  // Eliminar nueva imagen (antes de guardar)
-  const handleDeleteNuevaImagen = (index) => {
-    setNuevasImagenes((prev) => prev.filter((_, i) => i !== index))
-    setPreviewNuevasImagenes((prev) => {
-      // Limpiar URL del objeto para evitar memory leaks
-      if (prev[index] && prev[index].url) {
-        try {
-          URL.revokeObjectURL(prev[index].url)
-          // Remover de las referencias
-          previewUrlsRef.current = previewUrlsRef.current.filter((url) => url !== prev[index].url)
-        } catch (error) {
-          console.warn("Error al liberar URL:", error)
-        }
-      }
-      return prev.filter((_, i) => i !== index)
-    })
-  }
+  const onSubmit = (data) => {
+    if (!productoSeleccionado) return;
+    const formData = new FormData();
+    formData.append('productosId', productoSeleccionado);
+    formData.append('nombre', data.nombre);
+    formData.append('descripcion', data.descripcion);
+    formData.append('precio', data.precio);
+    formData.append('categoria_id', data.categoria_id);
 
-  // Restablecer formulario
-  const handleReset = () => {
-    if (productoData) {
-      // Limpiar previews
-      limpiarPreviews()
+    data.etiquetas.forEach(id => formData.append('etiquetas[]', id));
+    imagenesAEliminar.forEach(url => formData.append('imagenes_eliminar[]', url));
+  imagenesExtra.forEach(img => {
+    if (img.file) formData.append('imagenes_nuevas[]', img.file);
+  });
 
-      // Restablecer datos
-      setImagenes(productoData.imagenes || [])
-      setImagenesAEliminar([])
-      setNuevasImagenes([])
-
-      // Procesar etiquetas de forma segura
-      const etiquetasIds = procesarEtiquetas(productoData.etiquetas)
-
-      reset({
-        nombre: productoData.nombre || "",
-        descripcion: productoData.descripcion || "",
-        precio: productoData.precio || "",
-        categoriaId: productoData.categoria_id || "",
-        etiquetas: etiquetasIds,
-      })
-    }
-  }
-
-  // Enviar formulario
-  const onSubmit = async (data) => {
-    try {
-      setLoading(true)
-
-      // Validar que tenemos un producto seleccionado
-      if (!productoSeleccionado) {
-        setMensajeError("No hay producto seleccionado")
-        return
-      }
-
-      const formData = new FormData()
-
-      // Agregar campos básicos
-      formData.append("nombre", data.nombre)
-      formData.append("descripcion", data.descripcion)
-      formData.append("precio", data.precio)
-      formData.append("categoria_id", data.categoriaId)
-
-      // Agregar etiquetas
-      if (data.etiquetas && Array.isArray(data.etiquetas)) {
-        data.etiquetas.forEach((etiqueta) => {
-          formData.append("etiquetas[]", etiqueta)
-        })
-      }
-
-      // Agregar imágenes existentes que se mantienen
-      if (imagenes && Array.isArray(imagenes)) {
-        imagenes.forEach((img) => {
-          formData.append("imagenes_existentes[]", img.nombre)
-        })
-      }
-
-      // Agregar IDs de imágenes a eliminar
-      if (imagenesAEliminar && Array.isArray(imagenesAEliminar)) {
-        imagenesAEliminar.forEach((id) => {
-          formData.append("imagenes_eliminar[]", id)
-        })
-      }
-
-      // Agregar nuevas imágenes
-      if (nuevasImagenes && Array.isArray(nuevasImagenes)) {
-        nuevasImagenes.forEach((file) => {
-          formData.append("imagenes[]", file)
-        })
-      }
-
-      console.log("=== DEBUG: Enviando formulario ===")
-      console.log("Datos del formulario:", data)
-      console.log("Producto seleccionado:", productoSeleccionado)
-      console.log("Imágenes existentes:", imagenes)
-      console.log("Imágenes a eliminar:", imagenesAEliminar)
-      console.log("Nuevas imágenes:", nuevasImagenes)
-
-      const response = await ProductoService.updateProducto(productoSeleccionado, formData)
-      console.log("Respuesta del servidor:", response)
-
-      setMensajeExito(true)
-
-      // Limpiar previews para evitar memory leaks
-      limpiarPreviews()
-
-      // Ocultar formulario temporalmente para evitar problemas con Collapse
-      setMostrarFormulario(false)
-
-      // Incrementar key para forzar re-render
-      setCollapseKey((prev) => prev + 1)
-
-      // Recargar el producto para mostrar los cambios con un delay
-      setTimeout(async () => {
-        try {
-          const responseReload = await ProductoService.getProductoById(productoSeleccionado)
-          const producto = responseReload.data
-          setProductoData(producto)
-          setImagenes(producto.imagenes || [])
-          setImagenesAEliminar([])
-          setNuevasImagenes([])
-
-          // Procesar etiquetas de forma segura
-          const etiquetasIds = procesarEtiquetas(producto.etiquetas)
+    ProductoService.updateProducto(formData)
+      .then(res => {
+        if (res.status === 200) {
+          toast.success('Producto actualizado correctamente', {
+            duration: 4000,
+            position: 'top-center',
+          });
 
           reset({
-            nombre: producto.nombre || "",
-            descripcion: producto.descripcion || "",
-            precio: producto.precio || "",
-            categoriaId: producto.categoria_id || "",
-            etiquetas: etiquetasIds,
-          })
+          nombre: '',
+          descripcion: '',
+          precio: '',
+          categoria_id: '',
+          etiquetas: [],
+        });
+        setFile(null);
+        setFileURL(null);
+        setImagenesAEliminar([]);
+        setImagenesExistentes([]);
+        setProductoSeleccionado(''); 
 
-          // Mostrar formulario nuevamente
-          setTimeout(() => {
-            setMostrarFormulario(true)
-          }, 100)
-        } catch (reloadError) {
-          console.error("Error al recargar producto:", reloadError)
-          // Mostrar formulario aunque haya error en la recarga
-          setMostrarFormulario(true)
-        }
-      }, 500)
-    } catch (error) {
-      console.error("Error al actualizar producto:", error)
-      let errorMessage = "Error al actualizar el producto. Intente nuevamente."
-
-      // Mostrar mensaje de error más específico si está disponible
-      if (error.response && error.response.data && error.response.data.message) {
-        errorMessage = error.response.data.message
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-
-      setMensajeError(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Limpiar URLs de objeto y timeouts al desmontar componente
-  useEffect(() => {
-    return () => {
-      // Limpiar timeouts
-      limpiarTimeouts()
-
-      // Limpiar todas las URLs al desmontar
-      previewUrlsRef.current.forEach((url) => {
-        if (url) {
-          try {
-            URL.revokeObjectURL(url)
-          } catch (error) {
-            console.warn("Error al liberar URL:", error)
+          // Subir imagen principal si existe
+          if (file) {
+            const imgForm = new FormData();
+            imgForm.append('file', file);
+            imgForm.append('producto_id', productoSeleccionado);
+            ImageService.createImage(imgForm)
+              .then(() => console.log('Imagen principal subida'))
+              .catch(err => console.error('Error al subir imagen principal:', err));
           }
         }
       })
-      previewUrlsRef.current = []
-    }
-  }, [limpiarTimeouts])
+      .catch(err => {
+        console.error('Error al actualizar producto:', err);
+        setError('Error al actualizar el producto.');
+      });
+  };
+
+  if (loading) return <p>Cargando producto...</p>;
+  if (error) return <p>{error}</p>;
 
   return (
-    <Box sx={{ maxWidth: 800, mx: "auto", mt: 3, p: 2 }}>
-      <Typography variant="h4" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <EditIcon color="primary" />
-        Modificar Producto
+    <Container maxWidth="md" sx={{ mt: 4 }}>
+      <Typography variant="h4" sx={{ mb: 4 }}>
+        Editar Producto
       </Typography>
 
-      {/* Selector de producto */}
-      <Card sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          1. Seleccionar Producto
-        </Typography>
-        <FormControl fullWidth>
-          <InputLabel id="producto-label">Producto</InputLabel>
-          <Select
-            labelId="producto-label"
-            value={productoSeleccionado}
-            label="Producto"
-            onChange={(e) => setProductoSeleccionado(e.target.value)}
-            disabled={loading}
-          >
-            {productos.map((prod) => (
-              <MenuItem key={prod.id} value={prod.id}>
-                {prod.nombre} (ID: {prod.id})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Card>
+      {/* Select inicial para escoger el producto */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h6">Selecciona un producto</Typography>
+        <select
+          value={productoSeleccionado}
+          onChange={e => setProductoSeleccionado(e.target.value)}
+          style={{ padding: '8px', width: '100%', marginTop: '8px' }}
+        >
+          <option value="">-- Selecciona --</option>
+          {productos.map(prod => (
+            <option key={prod.productosId} value={prod.productosId}>
+              {prod.nombre}
+            </option>
+          ))}
+        </select>
+      </Box>
 
-
-{productoSeleccionado && (
-  <Box>
-    {loadingProducto && (
-      <Card sx={{ p: 3, textAlign: "center" }}>
-        <CircularProgress sx={{ mb: 2 }} />
-        <Typography>Cargando información del producto...</Typography>
-      </Card>
-    )}
-
-    {mostrarFormulario && !loadingProducto ? (
-      <Fade
-        in={mostrarFormulario && !loadingProducto}
-        timeout={300}
-        nodeRef={fadeNodeRef}
-      >
-        <Card ref={fadeNodeRef} sx={{ p: 3 }} key={`form-${collapseKey}`}>
-          <Typography
-            variant="h6"
-            gutterBottom
-            sx={{ display: "flex", alignItems: "center", gap: 1 }}
-          >
-            <EditIcon />
-            2. Editar Información del Producto
-          </Typography>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <Grid container spacing={2}>
-              {/* Campos básicos */}
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="nombre"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Nombre del Producto"
-                      fullWidth
-                      margin="normal"
-                      error={!!errors.nombre}
-                      helperText={errors.nombre?.message}
-                    />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="precio"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Precio"
-                      fullWidth
-                      margin="normal"
-                      type="number"
-                      error={!!errors.precio}
-                      helperText={errors.precio?.message}
-                    />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Controller
-                  name="descripcion"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Descripción"
-                      fullWidth
-                      margin="normal"
-                      multiline
-                      rows={3}
-                      error={!!errors.descripcion}
-                      helperText={errors.descripcion?.message}
-                    />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="categoriaId"
-                  control={control}
-                  render={({ field }) => (
-                    <SelectCategoria
-                      data={categorias}
-                      field={field}
-                      error={!!errors.categoriaId}
-                    />
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <Controller
-                  name="etiquetas"
-                  control={control}
-                  defaultValue={[]}
-                  render={({ field }) => (
-                    <SelectEtiquetas field={field} data={etiquetas} />
-                  )}
-                />
-              </Grid>
+      {productoSeleccionado && (
+        <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data">
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <Controller
+                name="nombre"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField label="Nombre" fullWidth required {...field} />
+                )}
+              />
             </Grid>
 
-            {/* Gestión de imágenes */}
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                3. Gestión de Imágenes
-              </Typography>
+            <Grid item xs={12}>
+              <Controller
+                name="descripcion"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    label="Descripción"
+                    fullWidth
+                    multiline
+                    rows={4}
+                    required
+                    {...field}
+                  />
+                )}
+              />
+            </Grid>
 
-              {/* Imágenes existentes */}
-              {imagenes.length > 0 && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Imágenes Actuales:
-                  </Typography>
-                  <Grid container spacing={2}>
-                    {imagenes.map((img) => (
-                      <Grid item xs={6} sm={4} md={3} key={img.id}>
-                        <Card>
-                          <CardMedia
-                            component="img"
-                            height="120"
-                            image={`/uploads/${img.nombre}`}
-                            alt={`Imagen ${img.id}`}
-                            sx={{ objectFit: "cover" }}
-                          />
-                          <CardActions>
-                            <IconButton
-                              color="error"
-                              onClick={() => confirmarEliminarImagen(img)}
-                              size="small"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </CardActions>
-                        </Card>
-                      </Grid>
-                    ))}
-                  </Grid>
+            <Grid item xs={6}>
+              <Controller
+                name="precio"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField label="Precio" fullWidth type="number" required {...field} />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Controller
+                name="categoria_id"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <SelectCategoria field={field} data={categorias} />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Controller
+                name="etiquetas"
+                control={control}
+                defaultValue={[]}
+                render={({ field }) => (
+                  <SelectEtiquetas field={field} data={etiquetas} />
+                )}
+              />
+            </Grid>
+
+            {/* Imagen principal */}
+            <Grid item xs={12}>
+              <Typography variant="h6">Imagen principal</Typography>
+              <input type="file" onChange={handleChangeImage} />
+              {fileURL && (
+                <Box sx={{ position: 'relative', mt: 1, display: 'inline-block' }}>
+                  <img src={fileURL} width={300} alt="preview" style={{ borderRadius: 8 }} />
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => {
+                      setFile(null);
+                      setFileURL(null);
+                    }}
+                    sx={{ position: 'absolute', top: 8, right: 8 }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
                 </Box>
               )}
+            </Grid>
 
-              {/* Nuevas imágenes */}
-              <Box sx={{ mb: 2 }}>
-                <Button
-                  variant="outlined"
-                  component="label"
-                  startIcon={<CloudUploadIcon />}
-                  sx={{ mb: 2 }}
-                >
-                  Agregar Nuevas Imágenes
-                  <input
-                    type="file"
-                    hidden
-                    multiple
-                    accept="image/*"
-                    onChange={handleImagenChange}
-                  />
-                </Button>
+            {/* Imágenes existentes */}
+            {imagenesExistentes.length > 0 && (
+              <Grid item xs={12}>
+                <Typography variant="h6">Imágenes existentes</Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+                  {imagenesExistentes.map((img, i) => (
+                    <Box key={i} sx={{ position: 'relative' }}>
+                      <img
+                        src={img}
+                        alt={`img-${i}`}
+                        style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 6 }}
+                      />
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => eliminarImagenExistente(img)}
+                        sx={{ position: 'absolute', top: 0, right: 0 }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              </Grid>
+            )}
 
-                {nuevasImagenes.length > 0 && (
-                  <Box>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Nuevas imágenes seleccionadas ({nuevasImagenes.length}):
-                    </Typography>
-                    <Grid container spacing={2}>
-                      {previewNuevasImagenes.map((preview, index) => (
-                        <Grid
-                          item
-                          xs={6}
-                          sm={4}
-                          md={3}
-                          key={preview.name || index}
-                        >
-                          <Card>
-                            <CardMedia
-                              component="img"
-                              height="120"
-                              image={preview.url}
-                              alt={`Nueva imagen ${index}`}
-                              sx={{ objectFit: "cover" }}
-                            />
-                            <CardActions>
-                              <IconButton
-                                color="error"
-                                onClick={() => handleDeleteNuevaImagen(index)}
-                                size="small"
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </CardActions>
-                          </Card>
-                        </Grid>
-                      ))}
-                    </Grid>
-                  </Box>
-                )}
-              </Box>
-            </Box>
+       <Grid item xs={12}>
+              <Typography variant="h6">Otras imágenes</Typography>
+              {imagenesExtra.map((img, index) => (
+                <Box key={index} sx={{ position: 'relative', mb: 2 }}>
+                  <input type="file" onChange={e => handleAddImage(e, index)} />
+                  {img.url && (
+                    <img src={img.url} width={300} alt={`preview-${index}`} style={{ borderRadius: 8 }} />
+                  )}
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => eliminarImagenExtra(index)}
+                    sx={{ position: 'absolute', top: 8, right: 8 }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              ))}
 
-            {/* Botones de acción */}
-            <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
+              <IconButton
+                color="primary"
+                aria-label="Agregar imagen"
+                onClick={agregarBloqueImagen}
+                sx={{ mt: 1 }}
+              >
+                <AddIcon />
+              </IconButton>
+            </Grid>
+    
+        
+
+            <Grid item xs={12}>
               <Button
                 type="submit"
                 variant="contained"
-                color="primary"
-                disabled={loading || !isDirty}
-                startIcon={
-                  loading ? <CircularProgress size={20} /> : <SaveIcon />
-                }
-                sx={{ flex: 1 }}
+                sx={{
+                  backgroundColor: '#d83b6a',
+                  ':hover': { backgroundColor: '#b03052' },
+                }}
               >
-                {loading ? "Guardando..." : "Guardar Cambios"}
+                Actualizar Producto
               </Button>
-
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={handleReset}
-                disabled={loading || loadingProducto}
-                startIcon={<CancelIcon />}
-              >
-                Restablecer
-              </Button>
-            </Box>
-          </form>
-        </Card>
-      </Fade>
-    ) : null}
-  </Box>
-)}
-
-
-      {/* Dialog de confirmación para eliminar imagen */}
-      <Dialog open={dialogEliminar} onClose={() => setDialogEliminar(false)}>
-        <DialogTitle>Confirmar Eliminación</DialogTitle>
-        <DialogContent>
-          <Typography>¿Está seguro de que desea eliminar esta imagen? Esta acción no se puede deshacer.</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogEliminar(false)}>Cancelar</Button>
-          <Button onClick={handleDeleteImagen} color="error" autoFocus>
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Snackbars para mensajes */}
-      <Snackbar
-        open={mensajeExito}
-        autoHideDuration={4000}
-        onClose={() => setMensajeExito(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity="success" onClose={() => setMensajeExito(false)}>
-          ¡Producto actualizado correctamente!
-        </Alert>
-      </Snackbar>
-
-      <Snackbar
-        open={!!mensajeError}
-        autoHideDuration={4000}
-        onClose={() => setMensajeError("")}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity="error" onClose={() => setMensajeError("")}>
-          {mensajeError}
-        </Alert>
-      </Snackbar>
-    </Box>
-  )
+            </Grid>
+          </Grid>
+        </form>
+      )}
+    </Container>
+  );
 }
+
+UpdateProducto.propTypes = {
+  productoId: PropTypes.number,
+  onSuccess: PropTypes.func,
+};
+
+

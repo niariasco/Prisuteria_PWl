@@ -350,71 +350,47 @@ public function create($objeto) {
      */
 
 
-public function update($objeto)
-{
+public function update($objeto) {
     try {
-        $id = intval($objeto->id);
-
-        // 1. Actualizar información base del producto
-        $nombre = $this->enlace->escapeString($objeto->nombre);
-        $descripcion = $this->enlace->escapeString($objeto->descripcion);
-        $precio = floatval($objeto->precio);
-        $categoria_id = intval($objeto->categoria_id);
 
         $sql = "UPDATE productos SET 
-                    nombre = '$nombre',
-                    descripcion = '$descripcion',
-                    precio = $precio,
-                    categoria_id = $categoria_id
-                WHERE productosId = $id";
-
+                    nombre = '$objeto->nombre',
+                    descripcion = '$objeto->descripcion',
+                    precio = $objeto->precio,
+                    categoria_id = $objeto->categoria_id
+                    WHERE productosId = $objeto->productosId";
         $this->enlace->executeSQL_DML($sql);
 
-        // 2. Actualizar etiquetas
-        $sql = "DELETE FROM productoetiqueta WHERE producto_id = $id";
+        //(muchas a muchas)
+        $sql = "DELETE FROM productoetiqueta WHERE producto_id = $objeto->productosId";
         $this->enlace->executeSQL_DML($sql);
 
-        if (!empty($objeto->etiquetas) && is_array($objeto->etiquetas)) {
-            foreach ($objeto->etiquetas as $etiquetaId) {
-                $etiquetaIdInt = intval($etiquetaId);
-                $sql = "INSERT INTO productoetiqueta (producto_id, etiqueta_id) 
-                        VALUES ($id, $etiquetaIdInt)";
-                $this->enlace->executeSQL_DML($sql);
-            }
+        foreach ($objeto->etiquetas as $etiquetaId) {
+            $sql = "INSERT INTO productoetiqueta (producto_id, etiqueta_id)
+                    VALUES ($objeto->productosId, $etiquetaId)";
+            $this->enlace->executeSQL_DML($sql);
         }
 
-        // 3. Eliminar imágenes marcadas
-        if (!empty($objeto->imagenesEliminar) && is_array($objeto->imagenesEliminar)) {
-            foreach ($objeto->imagenesEliminar as $imagenId) {
-                $imagenIdInt = intval($imagenId);
+        // eliminar imágenes (si corresponde)
+if (!empty($objeto->imagenes_eliminar)) {
+    foreach ($objeto->imagenes_eliminar as $nombreImagen) {
+        //$nombreImagenEsc = $this->enlace->real_escape_string($nombreImagen);
+        $nombreImagenEsc = addslashes($nombreImagen);
+        $sql = "DELETE FROM imagenes WHERE url_imagen = '$nombreImagenEsc' AND producto_id = $objeto->productosId";
+        $this->enlace->executeSQL_DML($sql);
+    }
+}
 
-                $sql = "SELECT url_imagen FROM imagenes WHERE id = $imagenIdInt AND producto_id = $id";
-                $result = $this->enlace->executeSQL($sql);
-                if (count($result) > 0) {
-                    $nombreImagen = $result[0]['url_imagen'];
-                    $ruta = __DIR__ . "/../../uploads/" . $nombreImagen;
-                    if (file_exists($ruta)) {
-                        unlink($ruta);
-                    }
-                    $sql = "DELETE FROM imagenes WHERE id = $imagenIdInt AND producto_id = $id";
-                    $this->enlace->executeSQL_DML($sql);
-                }
-            }
-        }
-
-        // 4. Agregar nuevas imágenes
-        if (!empty($objeto->imagenesNuevas) && is_array($objeto->imagenesNuevas)) {
-            foreach ($objeto->imagenesNuevas as $imagen) {
-                // $imagen debería ser un objeto o arreglo con propiedad 'nombre'
-                $nombreImagen = $this->enlace->escapeString($imagen->nombre);
+        // insertar nuevas imágenes
+        if (!empty($objeto->imagenes_nuevas)) {
+            foreach ($objeto->imagenes_nuevas as $url) {
                 $sql = "INSERT INTO imagenes (producto_id, url_imagen) 
-                        VALUES ($id, '$nombreImagen')";
+                        VALUES ($objeto->productosId, '$url')";
                 $this->enlace->executeSQL_DML($sql);
             }
         }
 
-        // 5. Retornar producto actualizado
-        return $this->get($id);
+        return $this->get($objeto->productosId);
 
     } catch (Exception $e) {
         handleException($e);

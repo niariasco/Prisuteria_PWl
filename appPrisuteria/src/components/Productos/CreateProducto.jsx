@@ -247,15 +247,14 @@ export function CreateProducto({ productoId = null, onSuccess }) {
             />
           </Grid>
 
-          <Grid item xs={6}>
+         <Grid item xs={12}>
             <Controller
               name="categoria_id"
               control={control}
-              defaultValue=""
+              defaultValue={[]}
               render={({ field }) => <SelectCategoria field={field} data={categorias} />}
             />
           </Grid>
-
           <Grid item xs={12}>
             <Controller
               name="etiquetas"
