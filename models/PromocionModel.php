@@ -184,10 +184,8 @@ class PromocionModel
  *
  * @return object|null Retorna la promoción insertada o null en caso de error.
  */
-public function create($objeto)
-{
+public function create($objeto) {
     try {
-        // Armar la consulta SQL para insertar en la tabla promociones
         $sql = "INSERT INTO promociones (
                     nombre, tipo, descuento, fecha_inicio, fecha_fin, activo, ProductoID, CategoriaID
                 ) VALUES (
@@ -201,10 +199,7 @@ public function create($objeto)
                     " . ($objeto->CategoriaID ?? "NULL") . "
                 )";
 
-        // Ejecutar la consulta y obtener el ID generado
         $idPromocion = $this->enlace->executeSQL_DML_last($sql);
-
-        // Devolver la promoción insertada (puedes usar un método get)
         return $this->get($idPromocion);
     } catch (Exception $e) {
         handleException($e);

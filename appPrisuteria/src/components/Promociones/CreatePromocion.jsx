@@ -1,117 +1,163 @@
 import { useEffect, useState } from 'react';
 import {
-  Box, Button, Container, Grid,
-  TextField, Typography, Select, MenuItem, FormControl, InputLabel, FormHelperText
+  Container,
+  Typography,
+  Grid,
+  TextField,
+  Button,
+  Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
-import CategoriaService from '../../services/CategoriaService';
-import ProductoService from '../../services/ProductoService';
 import PromocionService from '../../services/PromocionService';
+import ProductoService from '../../services/ProductoService';
+import CategoriaService from '../../services/CategoriaService';
 import PropTypes from 'prop-types';
+import { toast } from 'react-hot-toast';
 
 export function CreatePromocion({ promocionId = null, onSuccess }) {
-  const { control, handleSubmit, reset, watch, setError, clearErrors, formState: { errors } } = useForm();
+  const { control, handleSubmit, reset, watch, formState: { errors } } = useForm();
   const [categorias, setCategorias] = useState([]);
   const [productos, setProductos] = useState([]);
-  const tipoSeleccionado = watch('tipo');
-  const fechaInicioValue = watch('fecha_inicio');
-  const fechaFinValue = watch('fecha_fin');
+  const [promocionCreadaId, setPromocionCreadaId] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Observar el tipo de promoción seleccionado
+  const tipoPromocion = watch('tipo_promocion');
 
   useEffect(() => {
-    CategoriaService.getAllCategorias().then(res => setCategorias(res.data));
-    ProductoService.getAllProductos().then(res => setProductos(res.data));
+    
+  CategoriaService.getAllCategorias()
+      .then((res) => {
+        console.log("Categorías recibidas:", res.data);
+        setCategorias(res.data);
+      })
+      .catch((err) => console.error(err));
+
+    ProductoService.getAllProductos()
+      .then(res => {
+        console.log('Productos cargados:', res.data); // Debug
+        setProductos(res.data || []);
+      })
+      .catch(err => {
+        console.error('Error al cargar productos:', err);
+        toast.error('Error al cargar productos', {
+          duration: 3000,
+          position: 'top-center',
+        });
+      });
   }, []);
 
   useEffect(() => {
     if (promocionId) {
-      PromocionService.getById(promocionId).then(res => {
+      PromocionService.getPromocionById(promocionId).then(res => {
         const p = res.data;
         reset({
           nombre: p.nombre,
-          tipo: p.tipo,
-          descuento: p.descuento,
-          fecha_inicio: p.fecha_inicio ? p.fecha_inicio.substring(0, 16) : '',
-          fecha_fin: p.fecha_fin ? p.fecha_fin.substring(0, 16) : '',
-          ProductoID: p.ProductoID,
-          CategoriaID: p.CategoriaID,
+          tipo_promocion: p.tipo_promocion,
+          aplica_a: p.aplica_a,
+          descuento_porcentaje: p.descuento_porcentaje,
+
+          fecha_inicio: p.fecha_inicio,
+          fecha_fin: p.fecha_fin,
         });
       });
     }
   }, [promocionId, reset]);
 
-  // Validar fechas y descuentos personalizadas antes de enviar
-  const validarFechasYDescuento = (data) => {
-    let valido = true;
-    const ahora = new Date();
-    const fechaInicio = data.fecha_inicio ? new Date(data.fecha_inicio) : null;
-    const fechaFin = data.fecha_fin ? new Date(data.fecha_fin) : null;
-
-    clearErrors('fecha_inicio');
-    clearErrors('fecha_fin');
-    clearErrors('descuento');
-    clearErrors('ProductoID');
-    clearErrors('CategoriaID');
-
-    // Fecha inicio >= hoy
-    if (!fechaInicio) {
-      setError('fecha_inicio', { type: 'manual', message: 'Obligatorio' });
-      valido = false;
-    } else if (fechaInicio < ahora) {
-      setError('fecha_inicio', { type: 'manual', message: 'La fecha de inicio no puede ser anterior a hoy.' });
-      valido = false;
+  // Función para validar fechas
+  const validarFecha = (value, fechaComparacion = null, tipo = 'inicio') => {
+    if (!value) return 'Este campo es requerido';
+    
+    const fechaSeleccionada = new Date(value);
+    const fechaActual = new Date();
+    fechaActual.setHours(0, 0, 0, 0);
+    
+    if (tipo === 'inicio') {
+      if (fechaSeleccionada < fechaActual) {
+        return 'La fecha de inicio no puede ser anterior a la fecha actual';
+      }
     }
-
-    // Fecha fin >= fecha inicio
-    if (!fechaFin) {
-      setError('fecha_fin', { type: 'manual', message: 'Obligatorio' });
-      valido = false;
-    } else if (fechaInicio && fechaFin < fechaInicio) {
-      setError('fecha_fin', { type: 'manual', message: 'La fecha de fin no puede ser anterior a la fecha de inicio.' });
-      valido = false;
+    
+    if (tipo === 'fin' && fechaComparacion) {
+      const fechaInicio = new Date(fechaComparacion);
+      if (fechaSeleccionada <= fechaInicio) {
+        return 'La fecha de fin debe ser posterior a la fecha de inicio';
+      }
     }
-
-    // Descuento entre 0 y 100
-    if (data.descuento === undefined || data.descuento === '' || isNaN(data.descuento)) {
-      setError('descuento', { type: 'manual', message: 'Obligatorio' });
-      valido = false;
-    } else if (data.descuento < 0 || data.descuento > 100) {
-      setError('descuento', { type: 'manual', message: 'El descuento debe estar entre 0 y 100.' });
-      valido = false;
-    }
-
-    // Validar selección de producto o categoría según tipo
-    if (data.tipo === 'Producto' && (!data.ProductoID || data.ProductoID === '')) {
-      setError('ProductoID', { type: 'manual', message: 'Obligatorio' });
-      valido = false;
-    }
-
-    if (data.tipo === 'Categoria' && (!data.CategoriaID || data.CategoriaID === '')) {
-      setError('CategoriaID', { type: 'manual', message: 'Obligatorio' });
-      valido = false;
-    }
-
-    return valido;
+    
+    return true;
   };
 
   const onSubmit = (data) => {
-    if (!validarFechasYDescuento(data)) return;
+    console.log('Datos del formulario:', data); // Debug
 
-    const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        formData.append(key, value);
-      }
-    });
+    // Crear objeto JSON en lugar de FormData para coincidir con el backend
+    const promocionData = {
+      nombre: data.nombre,
+      tipo: data.tipo_promocion, // Backend espera 'tipo', no 'tipo_promocion'
+      descuento: parseFloat(data.descuento_porcentaje), // Backend espera 'descuento' como número
+      fecha_inicio: data.fecha_inicio,
+      fecha_fin: data.fecha_fin,
+      activo: true, // Campo requerido por el backend
+      // Según el tipo de promoción, establecer ProductoID o CategoriaID
+      ProductoID: data.tipo_promocion === 'producto' ? parseInt(data.aplica_a) : null,
+      CategoriaID: data.tipo_promocion === 'categoria' ? parseInt(data.aplica_a) : null
+    };
 
-    if (promocionId) formData.append('id', promocionId);
+    console.log('Datos para enviar al backend:', promocionData); // Debug
 
-    const action = promocionId
-      ? PromocionService.updatePromocion(formData)
-      : PromocionService.createPromocion(formData);
+    const submitAction = promocionId
+      ? PromocionService.updatePromocion(promocionData)
+      : PromocionService.createPromocion(promocionData);
 
-    action.then(res => {
-      if (res.status === 200 && onSuccess) onSuccess();
-    }).catch(err => console.error('Error al guardar promoción:', err));
+    submitAction
+      .then((res) => {
+        console.log('Respuesta del servidor:', res); // Debug
+        
+        if (res.status === 200 || res.status === 201) {
+          // Resetear si es creación
+          if (!promocionId) {
+            const idGenerado = res.data?.id || res.data?.promocionId;
+            if (idGenerado) {
+              setPromocionCreadaId(idGenerado);
+            }
+            reset();
+          }
+
+          toast.success('Promoción guardada correctamente', {
+            duration: 4000,
+            position: 'top-center',
+          });
+
+          if (onSuccess) onSuccess();
+        } else {
+          throw new Error(`Status inesperado: ${res.status}`);
+        }
+      })
+      .catch(err => {
+        console.error('Error completo:', err); // Debug más detallado
+        console.error('Error response:', err.response); // Debug respuesta del servidor
+        
+        let errorMessage = 'Error al guardar la promoción.';
+        
+        if (err.response?.data?.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.response?.data?.error) {
+          errorMessage = err.response.data.error;
+        } else if (err.message) {
+          errorMessage = err.message;
+        }
+        
+        setError(errorMessage);
+        toast.error(errorMessage, {
+          duration: 4000,
+          position: 'top-center',
+        });
+      });
   };
 
   return (
@@ -120,194 +166,207 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
         {promocionId ? 'Editar Promoción' : 'Crear Promoción'}
       </Typography>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Grid container spacing={3}>
+      {error && (
+        <Box sx={{ mb: 3, p: 2, backgroundColor: '#ffebee', borderRadius: 2 }}>
+          <Typography variant="h6" color="error">
+            Error: {error}
+          </Typography>
+        </Box>
+      )}
 
-          {/* Nombre */}
+      {promocionCreadaId && (
+        <Box sx={{ mb: 3, p: 2, backgroundColor: '#c287d7ff', borderRadius: 2 }}>
+          <Typography variant="h6" color="#d219a4ff">
+            ¡Promoción creada exitosamente!
+          </Typography>
+          <Typography sx={{ mt: 1 }}>
+            <a
+              href={`/promocion/${promocionCreadaId}`}
+              style={{ color: '#d219a4ff', textDecoration: 'underline' }}
+            >
+              Ver promoción
+            </a>
+          </Typography>
+        </Box>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Grid container spacing={2}>
+          {/* Nombre de la promoción */}
           <Grid item xs={12}>
             <Controller
               name="nombre"
               control={control}
               defaultValue=""
-              rules={{ required: true }}
+              rules={{ required: 'El nombre de la promoción es requerido' }}
               render={({ field }) => (
-                <>
-                  <TextField
-                    label="Nombre de la promoción"
-                    fullWidth
-                    error={!!errors.nombre}
-                    {...field}
-                  />
-                  {errors.nombre && (
-                    <Typography sx={{ color: 'red', fontSize: '0.75rem', mt: 0.5 }}>
-                      Obligatorio
-                    </Typography>
-                  )}
-                </>
+                <TextField
+                  label="Nombre de la promoción"
+                  fullWidth
+                  required
+                  error={!!errors.nombre}
+                  helperText={errors.nombre?.message}
+                  {...field}
+                />
               )}
             />
           </Grid>
 
-          {/* Tipo */}
-          <Grid item xs={6}>
+          {/* Tipo de promoción */}
+          <Grid item xs={12} sm={6}>
             <Controller
-              name="tipo"
+              name="tipo_promocion"
               control={control}
               defaultValue=""
-              rules={{ required: true }}
+              rules={{ required: 'Seleccione el tipo de promoción' }}
               render={({ field }) => (
-                <FormControl fullWidth error={!!errors.tipo}>
+                <FormControl fullWidth required error={!!errors.tipo_promocion}>
                   <InputLabel>Tipo de promoción</InputLabel>
-                  <Select {...field} label="Tipo de promoción" >
-                    <MenuItem value="Producto">Producto</MenuItem>
-                    <MenuItem value="Categoria">Categoría</MenuItem>
+                  <Select label="Tipo de promoción" {...field}>
+                    <MenuItem value="categoria">Categoría</MenuItem>
+                    <MenuItem value="producto">Producto</MenuItem>
                   </Select>
-                  {errors.tipo && (
-                    <FormHelperText sx={{ color: 'red', fontSize: '0.75rem' }}>
-                      Obligatorio
-                    </FormHelperText>
+                  {errors.tipo_promocion && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                      {errors.tipo_promocion.message}
+                    </Typography>
                   )}
                 </FormControl>
               )}
             />
           </Grid>
 
-          {/* Aplica a - Producto */}
-          {tipoSeleccionado === 'Producto' && (
-            <Grid item xs={6}>
-              <Controller
-                name="ProductoID"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.ProductoID}>
-                    <InputLabel>Producto</InputLabel>
-                    <Select {...field} label="Producto">
-                      {productos.map(p => (
-                        <MenuItem key={p.productosId} value={p.productosId}>{p.nombre}</MenuItem>
-                      ))}
-                    </Select>
-                    {errors.ProductoID && (
-                      <FormHelperText sx={{ color: 'red', fontSize: '0.75rem' }}>
-                        Obligatorio
-                      </FormHelperText>
-                    )}
-                  </FormControl>
-                )}
-              />
-            </Grid>
-          )}
-
-          {/* Aplica a - Categoría */}
-          {tipoSeleccionado === 'Categoria' && (
-            <Grid item xs={6}>
-              <Controller
-                name="CategoriaID"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.CategoriaID}>
-                    <InputLabel>Categoría</InputLabel>
-                    <Select {...field} label="Categoría">
-                      {categorias.map(c => (
-                        <MenuItem key={c.categoriaId} value={c.categoriaId}>{c.nombre}</MenuItem>
-                      ))}
-                    </Select>
-                    {errors.CategoriaID && (
-                      <FormHelperText sx={{ color: 'red', fontSize: '0.75rem' }}>
-                        Obligatorio
-                      </FormHelperText>
-                    )}
-                  </FormControl>
-                )}
-              />
-            </Grid>
-          )}
-
-          {/* Descuento */}
-          <Grid item xs={6}>
+          {/* Aplica a (Categoría o Producto) */}
+          <Grid item xs={12} sm={6}>
             <Controller
-              name="descuento"
+              name="aplica_a"
               control={control}
               defaultValue=""
+              rules={{ required: `Seleccione ${tipoPromocion === 'categoria' ? 'una categoría' : 'un producto'}` }}
               render={({ field }) => (
-                <>
-                  <TextField
-                    label="Descuento (%)"
-                    type="number"
-                    fullWidth
-                    error={!!errors.descuento}
-                    inputProps={{ min: 0, max: 100, step: 0.01 }}
+                <FormControl fullWidth required error={!!errors.aplica_a} disabled={!tipoPromocion}>
+                  <InputLabel>
+                    {tipoPromocion === 'categoria' ? 'Categoría' : tipoPromocion === 'producto' ? 'Producto' : 'Seleccione tipo primero'}
+                  </InputLabel>
+                  <Select
+                    label={tipoPromocion === 'categoria' ? 'Categoría' : tipoPromocion === 'producto' ? 'Producto' : 'Seleccione tipo primero'}
                     {...field}
-                  />
-                  {errors.descuento && (
-                    <Typography sx={{ color: 'red', fontSize: '0.75rem', mt: 0.5 }}>
-                      {errors.descuento.message === 'Obligatorio' ? 'Obligatorio' : errors.descuento.message}
+                  >
+                    {tipoPromocion === 'categoria' &&
+  categorias.map((cat) => (
+    <MenuItem key={cat.categoriaId} value={cat.categoriaId}>
+      {cat.nombreSCategoria}
+    </MenuItem>
+  ))}
+
+                    {tipoPromocion === 'producto' &&
+                      productos.map((prod) => (
+                        <MenuItem key={prod.id} value={prod.id}>
+                          {prod.nombre}
+                        </MenuItem>
+                      ))}
+                  </Select>
+                  {errors.aplica_a && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                      {errors.aplica_a.message}
                     </Typography>
                   )}
-                </>
+                </FormControl>
               )}
             />
           </Grid>
 
-          {/* Fecha Inicio */}
-          <Grid item xs={6}>
+          {/* Descuento por porcentaje */}
+          <Grid item xs={12}>
+            <Controller
+              name="descuento_porcentaje"
+              control={control}
+              defaultValue=""
+              rules={{
+                required: 'El descuento por porcentaje es requerido',
+                validate: (value) => {
+                  if (value && (value < 1 || value > 100)) {
+                    return 'El porcentaje debe estar entre 1 y 100';
+                  }
+                  return true;
+                }
+              }}
+              render={({ field }) => (
+                <TextField
+                  label="Descuento (%)"
+                  fullWidth
+                  type="number"
+                  required
+                  inputProps={{ min: 1, max: 100, step: 0.01 }}
+                  error={!!errors.descuento_porcentaje}
+                  helperText={errors.descuento_porcentaje?.message}
+                  {...field}
+                />
+              )}
+            />
+          </Grid>
+
+          {/* Fecha de inicio */}
+          <Grid item xs={12} sm={6}>
             <Controller
               name="fecha_inicio"
               control={control}
               defaultValue=""
+              rules={{
+                required: 'La fecha de inicio es requerida',
+                validate: (value) => validarFecha(value, null, 'inicio')
+              }}
               render={({ field }) => (
-                <>
-                  <TextField
-                    label="Fecha inicio"
-                    type="datetime-local"
-                    fullWidth
-                    error={!!errors.fecha_inicio}
-                    InputLabelProps={{ shrink: true }}
-                    {...field}
-                  />
-                  {errors.fecha_inicio && (
-                    <Typography sx={{ color: 'red', fontSize: '0.75rem', mt: 0.5 }}>
-                      {errors.fecha_inicio.message === 'Obligatorio' ? 'Obligatorio' : errors.fecha_inicio.message}
-                    </Typography>
-                  )}
-                </>
+                <TextField
+                  label="Fecha de inicio"
+                  fullWidth
+                  type="date"
+                  required
+                  InputLabelProps={{ shrink: true }}
+                  error={!!errors.fecha_inicio}
+                  helperText={errors.fecha_inicio?.message}
+                  {...field}
+                />
               )}
             />
           </Grid>
 
-          {/* Fecha Fin */}
-          <Grid item xs={6}>
+          {/* Fecha de fin */}
+          <Grid item xs={12} sm={6}>
             <Controller
               name="fecha_fin"
               control={control}
               defaultValue=""
+              rules={{
+                required: 'La fecha de fin es requerida',
+                validate: (value) => validarFecha(value, watch('fecha_inicio'), 'fin')
+              }}
               render={({ field }) => (
-                <>
-                  <TextField
-                    label="Fecha fin"
-                    type="datetime-local"
-                    fullWidth
-                    error={!!errors.fecha_fin}
-                    InputLabelProps={{ shrink: true }}
-                    {...field}
-                  />
-                  {errors.fecha_fin && (
-                    <Typography sx={{ color: 'red', fontSize: '0.75rem', mt: 0.5 }}>
-                      {errors.fecha_fin.message === 'Obligatorio' ? 'Obligatorio' : errors.fecha_fin.message}
-                    </Typography>
-                  )}
-                </>
+                <TextField
+                  label="Fecha de fin"
+                  fullWidth
+                  type="date"
+                  required
+                  InputLabelProps={{ shrink: true }}
+                  error={!!errors.fecha_fin}
+                  helperText={errors.fecha_fin?.message}
+                  {...field}
+                />
               )}
             />
           </Grid>
 
-          {/* Botón enviar */}
+          {/* Botón de envío */}
           <Grid item xs={12}>
             <Button
               type="submit"
               variant="contained"
-              sx={{ backgroundColor: '#d83b6a', ':hover': { backgroundColor: '#b03052' } }}
+              size="large"
+              sx={{
+                backgroundColor: '#d83b6a',
+                ':hover': { backgroundColor: '#b03052' },
+                mt: 2
+              }}
             >
               {promocionId ? 'Actualizar Promoción' : 'Crear Promoción'}
             </Button>

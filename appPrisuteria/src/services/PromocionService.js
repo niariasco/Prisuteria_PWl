@@ -39,17 +39,22 @@ class PromocionService{
 
 //Crear promocion
 
-createPromocion(Promocion) {
-    return axios.post(BASE_URL, JSON.stringify(Promocion));
-}
-updateMovie(Promocion) {
-    return axios({
-      method: 'put',
-      url: BASE_URL,
-      data: JSON.stringify(Promocion)
-
-    })
+createPromocion(promocion) {
+    return axios.post(BASE_URL, promocion, {
+  headers: {
+    'Content-Type': 'application/json'
   }
+});
+
+}
+updatePromocion(promocion) {
+  return axios.put(BASE_URL, promocion, {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+}
+
 
 }
 export default new PromocionService();
