@@ -98,42 +98,54 @@ $vSql = "SELECT r.resenasId, r.usuario_id, r.producto_id, r.comentario,
             handleException($e);
         }
 }
- public function create($objeto) {
+public function create($objeto) {
     try {
+        if (!isset($objeto->usuario_id) || empty($objeto->usuario_id)) {
+            throw new Exception('El usuario_id es obligatorio para crear una reseña.');
+        }
 
+        // Escapar comentario con función PHP nativa
+        $comentarioEscapado = addslashes($objeto->comentario);
 
-        // Insertar (igual a tu código)
-        $vSql = "INSERT INTO resenas (...) VALUES (...)";
+        // Insertar reseña
+        $vSql = "INSERT INTO resenas 
+                (usuario_id, producto_id, comentario, calificacion, visible) 
+                VALUES 
+                ('{$objeto->usuario_id}', 
+                 '{$objeto->producto_id}', 
+                 '{$comentarioEscapado}', 
+                 '{$objeto->calificacion}', 
+                 1);";
+
         $idResena = $this->enlace->executeSQL_DML_last($vSql);
 
-        // Obtener la reseña completa (igual a tu código)
-        $sqlResena = "SELECT ... FROM resenas ... WHERE r.resenasId = $idResena";
+        if (!$idResena) {
+            throw new Exception('Error al crear la reseña');
+        }
+
+        // Seleccionar la reseña recién creada con el nombre del usuario
+        $sqlResena = "SELECT r.resenasId, r.usuario_id, r.producto_id, r.comentario, 
+                             r.calificacion, r.fecha, r.visible, u.nombre_usuario AS nombre
+                     FROM resenas r 
+                     INNER JOIN usuarios u ON r.usuario_id = u.usuarioId 
+                     WHERE r.resenasId = {$idResena}";
+
         $resenaResult = $this->enlace->ExecuteSQL($sqlResena);
-        $nuevaResena = $resenaResult[0] ?? null;
+        $nuevaResena = !empty($resenaResult) ? $resenaResult[0] : null;
 
-        // Calcular promedio (igual a tu código)
-        $sqlPromedio = "SELECT AVG(calificacion) FROM resenas WHERE producto_id = $objeto->producto_id";
-        $promedioResult = $this->enlace->ExecuteSQL($sqlPromedio);
-        $promedio = round($promedioResult[0]->promedio, 1);
-
-        // Actualizar producto (igual a tu código)
-        $this->enlace->executeSQL_DML("UPDATE productos SET promedio_valoracion = $promedio WHERE productosId = $objeto->producto_id");
-
-        // Respuesta igual a tu estructura
         return (object)[
             'status' => 'success',
-            'nuevaResena' => $nuevaResena,
-            'promedioValoracion' => $promedio
+            'nuevaResena' => $nuevaResena
         ];
-        
+
     } catch (Exception $e) {
-        // Manejo de error igual a tu código
         return (object)[
             'status' => 'error',
             'message' => $e->getMessage()
         ];
     }
 }
+
 
 
 

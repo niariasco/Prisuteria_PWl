@@ -21,45 +21,9 @@ class ResenaService {
  // getProductoByShopRental(ShopRentalId){
  //   return axios.get(BASE_URL+'/ProductosByShopRental/'+ShopRentalId);
  // }
-/*
+
   createResena(resena) {
     return axios.post(BASE_URL, JSON.stringify(resena));
-  }*/
-  
-    createResena(resenaData) {
-    try {
-      console.log('Enviando reseña a:', `${BASE_URL}`); // Debug
-      console.log('Enviando reseña:', resenaData);
-      
-      const response = axios.post(`${BASE_URL}`, resenaData, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        timeout: 10000 // 10 segundos de timeout
-      });
-      
-      console.log('Respuesta del servidor:', response.data);
-      return response;
-      
-    } catch (error) {
-      console.error('Error completo:', error);
-      
-      if (error.code === 'ECONNABORTED') {
-        throw new Error('Timeout: El servidor tardó demasiado en responder');
-      } else if (error.response) {
-        // El servidor respondió con un error
-        console.error('Error del servidor:', error.response.status, error.response.data);
-        throw new Error(error.response.data.message || `Error del servidor: ${error.response.status}`);
-      } else if (error.request) {
-        // No se recibió respuesta - problema de conexión
-        console.error('No se pudo conectar con el servidor:', error.request);
-        throw new Error('No se pudo conectar con el servidor. Verifica que esté funcionando.');
-      } else {
-        // Error en la configuración de la petición
-        console.error('Error de configuración:', error.message);
-        throw new Error('Error en la petición: ' + error.message);
-      }
-    }
   }
   updateProducto(resena) {
     return axios({

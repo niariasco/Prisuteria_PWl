@@ -42,6 +42,9 @@ class RoutesController
     private function isProtectedRoute($method, $path) {
         return isset($this->protectedRoutes["$method:$path"]);
     }
+
+
+    
     public function index()
     {
         //include "routes/routes.php";

@@ -33,24 +33,16 @@ class resena
     }
 
     //POST Crear
-    public function create()
-    {
-        try {
-            $request = new Request();
-            $response = new Response();
-            //Obtener json enviado
-            $inputJSON = $request->getJSON();
-            //Instancia del modelo
-            $Resena = new ResenaModel($inputJSON);
-            //Acción del modelo a ejecutar
-            $result = $Resena->create($inputJSON);
-            //Dar respuesta
-            $response->toJSON($result);
-        } catch (Exception $e) {
-            handleException($e);
-        }
-    }
+ public function create() {
+        $response = new Response();
+        $request = new Request();
 
+        $data = $request->getJSON();  
+        $resenaModel = new ResenaModel();
+        $result = $resenaModel->create($data);
+
+        $response->toJSON($result);
+    }
     public function porProducto($productoId) {
    
         try {
