@@ -75,7 +75,13 @@ ORDER BY
     public function getByProducto($productoId){
     try {
       //  $userM = new UserModel();
-     $vSql = "SELECT * FROM resenas WHERE producto_id = $productoId ORDER BY fecha DESC";
+     //$vSql = "SELECT * FROM resenas WHERE producto_id = $productoId ORDER BY fecha DESC";
+$vSql = "SELECT r.resenasId, r.usuario_id, r.producto_id, r.comentario, 
+                r.calificacion, r.fecha, u.nombre_usuario AS nombre_usuario
+         FROM resenas r
+         JOIN usuarios u ON r.usuario_id = u.usuarioId
+         WHERE r.producto_id = $productoId
+         ORDER BY r.fecha DESC";
 
        
         $vResultado = $this->enlace->ExecuteSQL($vSql);
@@ -115,11 +121,13 @@ ORDER BY
             }
             
             // Obtener la reseña completa con datos del usuario
-            $sqlResena = "SELECT r.resenasId, r.usuario_id, r.producto_id, r.comentario, 
-                                 r.calificacion, r.fecha, r.visible, u.nombre 
-                         FROM resenas r 
-                         INNER JOIN usuarios u ON r.usuario_id = u.usuarioId 
-                         WHERE r.resenasId = {$idResena}";
+$sqlResena = "SELECT r.resenasId, r.usuario_id, r.producto_id, r.comentario, 
+                     r.calificacion, r.fecha, r.visible, u.nombre_usuario AS nombre_usuario
+              FROM resenas r 
+              INNER JOIN usuarios u ON r.usuario_id = u.usuarioId 
+              WHERE r.resenasId = {$idResena}";
+
+
             
             $resenaResult = $this->enlace->ExecuteSQL($sqlResena);
             $nuevaResena = !empty($resenaResult) ? $resenaResult[0] : null;

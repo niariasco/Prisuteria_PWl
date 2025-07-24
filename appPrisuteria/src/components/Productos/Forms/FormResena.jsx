@@ -27,13 +27,14 @@ export function FormResena({ productoId, onNuevaResena }) {
       return;
     }
 
-    // Debug: verificar datos del usuario
+    // Debuggggg
     console.log('userData completo:', userData);
     console.log('userData.id:', userData?.id);
     console.log('userData.usuarioId:', userData?.usuarioId);
 
     if (!userData || (!userData.id && !userData.usuarioId)) {
       setError('Error: Usuario no autenticado correctamente.');
+      console.log('decodeToken() completo:', userData);
       return;
     }
 
@@ -80,19 +81,19 @@ export function FormResena({ productoId, onNuevaResena }) {
         Escribir una reseña
       </Typography>
       
-      {/* Campo de usuario (solo lectura) */}
-      <TextField
-        fullWidth
-        label="Usuario"
-        value={userData?.nombre || 'Usuario'}
-        InputProps={{
-          readOnly: true,
-        }}
-        margin="normal"
-        variant="outlined"
-        sx={{ mb: 2 }}
-      />
-      
+      {/* SOLO lectura */}
+<TextField
+  fullWidth
+  label="Usuario"
+value={userData?.nombre || userData?.email || 'Usuario'}
+  InputProps={{
+    readOnly: true,
+  }}
+  margin="normal"
+  variant="outlined"
+  sx={{ mb: 2 }}
+/>
+
       {/* Campo de fecha (solo lectura) */}
       <TextField
         fullWidth

@@ -25,29 +25,30 @@ class UserModel
 			die($e->getMessage());
 		}
 	}
+public function get($id)
+{
+    try {
+        $rolM = new RolModel();
 
-	public function get($id)
-	{
-		try {
-			$rolM = new RolModel();
+        $vSql = "SELECT usuarioId, nombre_usuario, correo, rol_id FROM usuarios WHERE usuarioId = $id";
+        $vResultado = $this->enlace->ExecuteSQL($vSql);
 
-			//Consulta sql
-			$vSql = "SELECT * FROM usuarios where usuarioId=$id";
-			//Ejecutar la consulta
-			$vResultado = $this->enlace->ExecuteSQL($vSql);
-			if ($vResultado) {
-				$vResultado = $vResultado[0];
-				$rol = $rolM->getRolUser($id);
-				$vResultado->rol = $rol;
-				// Retornar el objeto
-				return $vResultado;
-			} else {
-				return null;
-			}
-		} catch (Exception $e) {
-			die($e->getMessage());
-		}
-	}
+        if ($vResultado) {
+            $vResultado = $vResultado[0];
+            $rol = $rolM->getRolUser($id);
+            $vResultado->rol = $rol;
+            return $vResultado;
+        }
+        return null;
+
+    } catch (Exception $e) {
+        error_log("Error en UserModel::get(): " . $e->getMessage());
+        return null;  // o lanzar excepción según diseño
+    }
+}
+
+
+
 	public function allCustomer()
 	{
 		try {
@@ -78,20 +79,28 @@ public function login($objeto)
             $inputPasswordHash = hash('sha256', $objeto->password);
 
             if ($inputPasswordHash === $user->contraseña) {
-                $usuario = $this->get($user->usuarioId); 
+$usuario = $this->get($user->usuarioId);
+error_log(print_r($usuario, true)); // debuggg 
+error_log('Usuario antes de token: ' . print_r($usuario, true));
 
                 if (!empty($usuario)) {
                     // Crear payload para JWT
-                    $data = [
-                        'id' => $usuario->usuarioId,
-                        'email' => $usuario->correo,
-                        'rol' => $usuario->rol, 
-                        'iat' => time(),
-                        'exp' => time() + 3600
-                    ];
+$data = [
+    'id' => $usuario->usuarioId,
+    'nombre' => $usuario->nombre_usuario ?: 'SIN NOMBRE',
+    'email' => $usuario->correo,
+    'rol' => $usuario->rol, 
+    'iat' => time(),
+    'exp' => time() + 3600
+];
 
-                    $jwt_token = JWT::encode($data, config::get('SECRET_KEY'), 'HS256');
-                    return ['token' => $jwt_token]; // Devuelve solo token
+error_log('Payload JWT: ' . print_r($data, true));
+
+$jwt_token = JWT::encode($data, config::get('SECRET_KEY'), 'HS256');
+return ['token' => $jwt_token];
+
+
+                   
                 }
             }
         }

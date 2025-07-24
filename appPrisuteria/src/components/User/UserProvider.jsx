@@ -27,25 +27,40 @@ export default function UserProvider({ children }) {
     localStorage.removeItem('user');
     setIsAuthenticated(false);
   };
-
+/*
   const decodeToken = () => {
     if (!user) return {};
     const token = typeof user === 'string' ? user : user.token;
 
     try {
+      
       return jwtDecode(token);
     } catch (error) {
       console.error('Error decoding token:', error);
       return {};
     }
   };
+*/
+const decodeToken = () => {
+  if (!user) return {};
+  const token = typeof user === 'string' ? user : user.token;
+
+  try {
+    const decoded = jwtDecode(token);
+    console.log('Decoded JWT:', decoded);  // <-- agrega esto
+    return decoded;
+  } catch (error) {
+    console.error('Error decoding token:', error);
+    return {};
+  }
+};
 
   const autorize = ({ requiredRoles }) => {
     const userData = decodeToken();
     return (
       userData &&
       userData.rol &&
-      requiredRoles.includes(userData.rol.nombre) // Asegúrate de usar "nombre" como está en la DB
+      requiredRoles.includes(userData.rol.nombre) // "nombre" como está en la DB
     );
   };
 

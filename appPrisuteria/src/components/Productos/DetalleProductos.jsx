@@ -307,13 +307,10 @@ export function DetalleProductos({ addItem }) {
 
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Rating
-                        value={parseInt(resena.calificacion) || 0}
+                        value={parseInt(resena.calificacion)}
                         readOnly
                         size="small"
                       />
-                      <Typography variant="body2" sx={{ ml: 1 }}>
-                        ({resena.calificacion })
-                      </Typography>
                     </Box>
                   </Grid>
                 );

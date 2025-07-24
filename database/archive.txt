@@ -9,3 +9,28 @@ npm install react-hook-form
 7/23/2025 || nicole 
 ALTER TABLE resenas 
 MODIFY fecha DATETIME DEFAULT CURRENT_TIMESTAMP;
+
+
+
+7/24/2025 || nicole 
+
+
+CREATE TABLE resenas_temp (
+   resenasId int NOT NULL AUTO_INCREMENT,
+   usuario_id int NOT NULL,
+   producto_id int NOT NULL,
+   comentario text DEFAULT NULL,
+   calificacion int NOT NULL CHECK (calificacion BETWEEN 1 AND 5),
+   fecha timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   visible tinyint(1) DEFAULT 1,
+   PRIMARY KEY (resenasId),
+   FOREIGN KEY (usuario_id) REFERENCES usuarios(usuarioId),
+   FOREIGN KEY (producto_id) REFERENCES productos(productosId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO resenas_temp (usuario_id, producto_id, comentario, calificacion, fecha, visible)
+SELECT usuario_id, producto_id, comentario, calificacion, fecha, visible FROM resenas;
+SET FOREIGN_KEY_CHECKS = ;
+DROP TABLE resenas;
+SET FOREIGN_KEY_CHECKS = 1;
+RENAME TABLE resenas_temp TO resenas;
