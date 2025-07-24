@@ -3,55 +3,56 @@ import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { UserContext } from '../../context/UserContext';
 
-
-
 export default function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+      setIsAuthenticated(true);
     }
   }, []);
-  const saveUser = (user) => {
-    setUser(user);
-    localStorage.setItem('user', JSON.stringify(user));
+
+  const saveUser = (token) => {
+    // Guardar solo el token
+    setUser(token);
+    localStorage.setItem('user', JSON.stringify(token));
     setIsAuthenticated(true);
   };
 
   const clearUser = () => {
-    setUser({});
+    setUser(null);
     localStorage.removeItem('user');
     setIsAuthenticated(false);
   };
+
   const decodeToken = () => {
-    if (user && Object.keys(user).length > 0) {
-      const decodedToken = jwtDecode(user);
-      
-      return decodedToken;
-    } else {
+    if (!user) return {};
+    const token = typeof user === 'string' ? user : user.token;
+
+    try {
+      return jwtDecode(token);
+    } catch (error) {
+      console.error('Error decoding token:', error);
       return {};
     }
   };
 
-  //requiredRoles=['Administrador','Cliente']
   const autorize = ({ requiredRoles }) => {
     const userData = decodeToken();
-    if (userData && requiredRoles) {
-      console.log(
-        userData && userData.rol && requiredRoles.includes(userData.rol.name),
-      );
-      return (
-        userData && userData.rol && requiredRoles.includes(userData.rol.name)
-      );
-    }
-    return false;
+    return (
+      userData &&
+      userData.rol &&
+      requiredRoles.includes(userData.rol.nombre) // Asegúrate de usar "nombre" como está en la DB
+    );
   };
 
   UserProvider.propTypes = {
     children: PropTypes.node.isRequired,
   };
+
   return (
     <UserContext.Provider
       value={{

@@ -22,7 +22,7 @@ class ResenaService {
  //   return axios.get(BASE_URL+'/ProductosByShopRental/'+ShopRentalId);
  // }
 
-  createProducto(resena) {
+  createResena(resena) {
     return axios.post(BASE_URL, JSON.stringify(resena));
   }
   

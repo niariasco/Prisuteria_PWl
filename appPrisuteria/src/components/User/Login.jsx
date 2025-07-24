@@ -54,7 +54,7 @@ export function Login() {
          ){
           //Usuario válido o identificado
           //Guardar el token
-          saveUser(response.data)
+saveUser(response.data.token); // Guarda solo el token
           toast.success('Bienvenido, usuario',{
             duration:4000
           })

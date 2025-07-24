@@ -92,46 +92,51 @@ ORDER BY
             handleException($e);
         }
 }
- public function create($objeto) {
-        try {
-            //   formato Y-m-d H:i:s 
-            $fechaBD = !empty($objeto->fecha) ? date('Y-m-d H:i:s', strtotime($objeto->fecha)) : date('Y-m-d H:i:s');
-
-            // Insertar reseña
-            $vSql = "INSERT INTO resenas
-                (usuario_id,
-                producto_id,
-                comentario,
-                calificacion,
-                fecha,
-                visible)
-                VALUES
-                ('$objeto->usuario_id',
-                '$objeto->producto_id',
-                '".$this->enlace->addslashes($objeto->comentario)."',
-                '$objeto->calificacion',
-                '$fechaBD',
-                '$objeto->visible');";
-	
-
-            $idResena = $this->enlace->executeSQL_DML_last($vSql);
-
-            //  la reseña creada
-            $nuevaResenaArr = $this->get($idResena);
-            $nuevaResena = !empty($nuevaResenaArr) ? $nuevaResenaArr[0] : null;
-
-            //  promedio actualizado
-            $promedio = $this->getByProducto($objeto->producto_id);
-
-            //  return objeto con reseña y promedio
-            return (object)[
-                'nuevaResena' => $nuevaResena,
-                'promedioValoracion' => $promedio
-            ];
-        } catch (Exception $e) {
-            handleException($e);
+public function create($objeto) {
+    try {
+        if (!isset($objeto->usuario_id) || empty($objeto->usuario_id)) {
+            throw new Exception('El usuario_id es obligatorio para crear una reseña.');
         }
+
+        $fechaBD = !empty($objeto->fecha) 
+            ? date('Y-m-d H:i:s', strtotime($objeto->fecha)) 
+            : date('Y-m-d H:i:s');
+
+        $vSql = "INSERT INTO resenas
+            (usuario_id, producto_id, comentario, calificacion, fecha, visible)
+            VALUES
+            ('{$objeto->usuario_id}',
+             '{$objeto->producto_id}',
+             '".$this->enlace->addslashes($objeto->comentario)."',
+             '{$objeto->calificacion}',
+             '{$fechaBD}',
+             1);";
+
+        $idResena = $this->enlace->executeSQL_DML_last($vSql);
+
+        $nuevaResenaArr = $this->get($idResena);
+        $nuevaResena = !empty($nuevaResenaArr) ? $nuevaResenaArr[0] : null;
+
+        $sqlProm = "SELECT AVG(calificacion) AS promedio 
+                    FROM resenas 
+                    WHERE producto_id = {$objeto->producto_id} AND visible = 1";
+        $prom = $this->enlace->ExecuteSQL($sqlProm);
+        $promedio = !empty($prom) ? round($prom[0]->promedio, 1) : 0;
+
+        return (object)[
+            'nuevaResena' => $nuevaResena,
+            'promedioValoracion' => $promedio
+        ];
+    } catch (Exception $e) {
+        return (object)[
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ];
     }
+}
+
+
+
 
 
     //Ventas por mes x Tienda

@@ -64,42 +64,45 @@ class UserModel
 			die($e->getMessage());
 		}
 	}
-	public function login($objeto)
-	{
-		try {
+public function login($objeto)
+{
+    try {
+        // Buscar usuario por correo
+        $vSql = "SELECT * FROM usuarios WHERE correo='$objeto->email'";
+        $vResultado = $this->enlace->ExecuteSQL($vSql);
 
-			$vSql = "SELECT * from usuarios where correo='$objeto->email'";
+        if (!empty($vResultado) && is_object($vResultado[0])) {
+            $user = $vResultado[0];
 
-			//Ejecutar la consulta
-			$vResultado = $this->enlace->ExecuteSQL($vSql);
-			if (is_object($vResultado[0])) {
-				$user = $vResultado[0];
-				if (password_verify($objeto->password, $user->password)) {
-					$usuario = $this->get($user->id);
-					if (!empty($usuario)) {
-						// Datos para el token JWT
-						$data = [
-							'id' => $usuario->id,
-							'email' => $usuario->email,
-							'rol' => $usuario->rol,
-							'iat' => time(),  // Hora de emisión
-							'exp' => time() + 3600 // Expiración en 1 hora
-						];
+            // Hash del password ingresado
+            $inputPasswordHash = hash('sha256', $objeto->password);
 
-						// Generar el token JWT
-						$jwt_token = JWT::encode($data, config::get('SECRET_KEY'), 'HS256');
+            if ($inputPasswordHash === $user->contraseña) {
+                $usuario = $this->get($user->usuarioId); 
 
-						// Enviar el token como respuesta
-						return $jwt_token;
-					}
-				}
-			} else {
-				return false;
-			}
-		} catch (Exception $e) {
-			handleException($e);
-		}
-	}
+                if (!empty($usuario)) {
+                    // Crear payload para JWT
+                    $data = [
+                        'id' => $usuario->usuarioId,
+                        'email' => $usuario->correo,
+                        'rol' => $usuario->rol, 
+                        'iat' => time(),
+                        'exp' => time() + 3600
+                    ];
+
+                    $jwt_token = JWT::encode($data, config::get('SECRET_KEY'), 'HS256');
+                    return ['token' => $jwt_token]; // Devuelve solo token
+                }
+            }
+        }
+
+        return false; // Usuario o contraseña incorrectos
+    } catch (Exception $e) {
+        error_log('Login error: ' . $e->getMessage());
+        return false;
+    }
+}
+
 	public function create($objeto)
 	{
 		try {

@@ -13,6 +13,7 @@ import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import { useNavigate } from 'react-router-dom';
 import Button from '@mui/material/Button';
+import { FormResena } from './Forms/FormResena';
 
   export function DetalleProductos({ /*isShopping,*/ addItem  }) {
   const routeParams = useParams();
@@ -24,6 +25,7 @@ import Button from '@mui/material/Button';
   const [error /*, setError*/] = useState(''); 
   //Booleano para establecer sí se ha recibido respuesta
   const [loaded, setLoaded] = useState(false);
+
     const navigate = useNavigate();
   useEffect(() => {
     //Llamar al API y obtener una Producto
@@ -39,6 +41,8 @@ ProductoService.getProductoById(routeParams.id)
   .then((response) => {
     const producto = response.data;
     producto.etiquetas = producto.etiquetas || []; // aseguramos array
+  producto.resenas = producto.resenas || [];          
+    producto.promedio_valoracion = producto.promedio_valoracion || 0;  // <-- idem para promedio
     setData(producto);
     setLoaded(true);
   })
@@ -215,27 +219,49 @@ ProductoService.getProductoById(routeParams.id)
   </Typography>
 
 {Array.isArray(data.resenas) && data.resenas.length > 0 ? (
-  data.resenas.map((resena, index) => (
-    <Grid item xs={12} 
-      key={index} 
-      sx={{ mb: 2, borderBottom: '1px solid #d83b6a ', pb: 2 }}> 
-      <Typography variant="subtitle1">
-        <strong>{resena.nombre}</strong> - {new Date(resena.fecha).toLocaleDateString()}
-      </Typography>
-      <Typography variant="body2">{resena.comentario}</Typography>
-      <Typography variant="body2">
-        {'⭐'.repeat(resena.calificacion)} ({resena.calificacion}/5)
-      </Typography>
-    </Grid>
-  ))
-) : (
-  <Typography>No hay reseñas para este producto.</Typography>
-)}
+    data.resenas.map((resena, index) => {
+      if (!resena) return null;  // protección contra undefined o null
+
+      const fecha = new Date(resena.fecha);
+      const fechaFormateada = isNaN(fecha) ? 'Fecha no disponible' : fecha.toLocaleDateString();
+
+      return (
+        <Grid
+          item
+          xs={12}
+          
+          key={index}
+          sx={{ mb: 2, borderBottom: '1px solid #d83b6a ', pb: 2 }}
+        >
+          <Typography variant="subtitle1">
+            <strong>{resena.nombre}</strong> - {fechaFormateada}
+          </Typography>
+          <Typography variant="body2">{resena.comentario}</Typography>
+          <Typography variant="body2">
+            {'⭐'.repeat(resena.calificacion)} ({resena.calificacion}/5)
+          </Typography>
+        </Grid>
+      );
+    })
+  ) : (
+    <Typography>No hay reseñas para este producto.</Typography>
+  )}
 </Grid>
-    
-    </Container>
+<FormResena
+  productoId={parseInt(routeParams.id)}
+  onNuevaResena={(nuevaResena, nuevoPromedio) => {
+    setData((prevData) => ({
+      ...prevData,
+      resenas: [nuevaResena, ...(prevData.resenas || [])],
+      promedio_valoracion: nuevoPromedio,
+    }));
+  }}
+/>
+</Container>
   );
 }
+
+
 /*después de la declaración del componente para que funcione correctamente.*/
   DetalleProductos.propTypes = { /*propiedades correctas en el formato esperado*/
   isShopping: PropTypes.bool.isRequired,
