@@ -57,6 +57,7 @@ export function UpdatePromocion() {
   const [loadingPromo, setLoadingPromo] = useState(false);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [promocionEditable, setPromocionEditable] = useState(true);
+  const [promocionModificadaId, setPromocionModificadaId] = useState(null);
 
   const {
     control,
@@ -103,6 +104,8 @@ export function UpdatePromocion() {
   }, []);
 
   useEffect(() => {
+    setPromocionModificadaId(null); // Limpiar mensaje de éxito al cambiar promoción
+    
     if (promoSeleccionada) {
       const cargarDatosPromocion = async () => {
         setLoadingPromo(true);
@@ -217,6 +220,9 @@ export function UpdatePromocion() {
       console.log("Fecha fin formateada:", datosParaEnvio.fecha_fin);
 
       await PromocionService.updatePromocion(datosParaEnvio);
+      
+      // Establecer ID de promoción modificada para mostrar mensaje de éxito
+      setPromocionModificadaId(promoSeleccionada);
       setMensajeExito(true);
       
       // Opcional: recargar la lista de promociones
@@ -243,6 +249,47 @@ export function UpdatePromocion() {
         <EditIcon color="primary" />
         Modificar Promoción
       </Typography>
+
+      {/* Mensaje de éxito morado estilo promoción creada */}
+      {promocionModificadaId && (
+        <Box sx={{ mb: 3, p: 2, backgroundColor: '#c287d7ff', borderRadius: 2, mt: 8 }}>
+          <Typography variant="h6" color="#d219a4ff">
+            ¡Promoción modificada exitosamente!
+          </Typography>
+          <Typography sx={{ mt: 1 }}>
+            <a
+              href={`/promocion/${promocionModificadaId}`}
+              style={{ color: '#d219a4ff', textDecoration: 'underline' }}
+            >
+              Ver detalle de promoción
+            </a>
+          </Typography>
+        </Box>
+      )}
+
+      {/* Mensaje de error arriba centro */}
+      {mensajeError && (
+        <Box 
+          sx={{ 
+            position: 'fixed',
+            top: 20,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+            mb: 3, 
+            p: 2, 
+            backgroundColor: '#ffebee', 
+            borderRadius: 2,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            minWidth: '300px',
+            textAlign: 'center'
+          }}
+        >
+          <Typography variant="h6" color="error">
+            Error: {mensajeError}
+          </Typography>
+        </Box>
+      )}
 
       <Card sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>1. Seleccionar Promoción</Typography>
@@ -465,9 +512,25 @@ export function UpdatePromocion() {
         open={mensajeExito}
         autoHideDuration={4000}
         onClose={() => setMensajeExito(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        sx={{
+          top: '80px !important', // Posición justo debajo del navbar
+        }}
       >
-        <Alert severity="success" onClose={() => setMensajeExito(false)}>
+        <Alert 
+          severity="success" 
+          onClose={() => setMensajeExito(false)}
+          sx={{
+            backgroundColor: '#4caf50',
+            color: 'white',
+            '& .MuiAlert-icon': {
+              color: 'white'
+            },
+            '& .MuiAlert-action': {
+              color: 'white'
+            }
+          }}
+        >
           ¡Promoción actualizada correctamente!
         </Alert>
       </Snackbar>
