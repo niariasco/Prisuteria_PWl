@@ -30,6 +30,7 @@ export function UpdateProducto() {
   const [error, setError] = useState('');
   const [promedioValoracion, setPromedioValoracion] = useState(null);
   const [totalResenas, setTotalResenas] = useState(0);
+  const [productoActualizadoId, setProductoActualizadoId] = useState(null);
 
   const [imagenesExistentes, setImagenesExistentes] = useState([]);
   const [imagenesAEliminar, setImagenesAEliminar] = useState([]);
@@ -166,6 +167,8 @@ export function UpdateProducto() {
             position: 'top-center',
           });
 
+        setProductoActualizadoId(productoSeleccionado);
+            
           // Reset formulario y estados
           reset({
             nombre: '',
@@ -218,7 +221,22 @@ export function UpdateProducto() {
       <Typography variant="h4" sx={{ mb: 4 }}>
         Editar Producto
       </Typography>
-
+      {/* MENSAJE DE PRODUCTO ACTUALIZADO */}
+      {productoActualizadoId && (
+        <Box sx={{ mb: 3, p: 2, backgroundColor: '#c287d7ff', borderRadius: 2 }}>
+          <Typography variant="h6" color="#d219a4ff">
+            ¡Producto actualizado exitosamente! 
+          </Typography>
+          <Typography sx={{ mt: 1 }}>
+            <a
+              href={`/producto/${productoActualizadoId}`}
+              style={{ color: '#d219a4ff', textDecoration: 'underline' }}
+            >
+              Ver producto
+            </a>
+          </Typography>
+        </Box>
+      )}
       {/* Select inicial para escoger el producto */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6">Selecciona un producto</Typography>
