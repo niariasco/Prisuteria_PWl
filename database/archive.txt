@@ -5,6 +5,7 @@ npm install react-hook-form yup @hookform/resolvers axios
 
 npm install react-hook-form
 
+
 7/23/2025 || nicole 
 ALTER TABLE resenas 
 MODIFY fecha DATETIME DEFAULT CURRENT_TIMESTAMP;

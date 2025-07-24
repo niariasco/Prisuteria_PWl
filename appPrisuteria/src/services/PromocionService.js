@@ -39,17 +39,36 @@ class PromocionService{
 
 //Crear promocion
 
-createPromocion(Promocion) {
-    return axios.post(BASE_URL, JSON.stringify(Promocion));
-}
-updateMovie(Promocion) {
-    return axios({
-      method: 'put',
-      url: BASE_URL,
-      data: JSON.stringify(Promocion)
-
-    })
+createPromocion(promocion) {
+    return axios.post(BASE_URL, promocion, {
+  headers: {
+    'Content-Type': 'application/json'
   }
+});
 
+}
+updatePromocion(promocion) {
+    const urlEstructuraCorrecta = `${BASE_URL}/update/${promocion.id}`;
+    console.log('URL de destino:', urlEstructuraCorrecta);
+    
+    return axios.put(urlEstructuraCorrecta, promocion, {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+}
+
+
+
+
+
+ // Eliminar promoción 
+    deletePromocion(promocionId) {
+        return axios.delete(`${BASE_URL}/${promocionId}`)
+            .catch(error => {
+                console.error('Error al eliminar promoción:', error);
+                throw error;
+            });
+    }
 }
 export default new PromocionService();

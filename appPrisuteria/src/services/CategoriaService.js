@@ -1,33 +1,43 @@
 import axios from 'axios';
-//http://localhost:81/prisuteriapwl/categorias/
+
 const BASE_URL = import.meta.env.VITE_BASE_URL + 'categorias';
+
 class CategoriaService {
-  //Definición para Llamar al API y obtener el listado de categorias
+    getAllCategorias() {
+        return axios.get(BASE_URL + '/', {  // Agrega la barra final
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+    }
 
-  //Listas Categorias
-  //localhost:81//appPrisuteria/categoria
-  getAllCategorias() {
-    return axios.get(BASE_URL);
-  }
-  //Obtener Categoria id
-  //localhost:81//appPrisuteria/categoria/1
-  getCategoriaById(CategoriaId){
-    return axios.get(BASE_URL+'/'+CategoriaId);
-  }
-  //Obtener peliculas por tienda
-  
+    getCategoriaById(categoriaId) {
+        return axios.get(`${BASE_URL}/${categoriaId}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+    }
 
-  createCategoria(Categoria) {
-    return axios.post(BASE_URL, JSON.stringify(Categoria));
-  }
-  
-  updateCategoria(Categoria) {
-    return axios({
-      method: 'put',
-      url: BASE_URL,
-      data: JSON.stringify(Categoria)
+    createCategoria(categoria) {
+        return axios.post(BASE_URL + '/', categoria, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+    }
 
-    })
-  }
+    updateCategoria(categoria) {
+        return axios.put(BASE_URL + '/', categoria, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+    }
 }
+
 export default new CategoriaService();

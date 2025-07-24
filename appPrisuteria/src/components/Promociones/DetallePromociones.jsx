@@ -21,6 +21,15 @@ export function DetallePromociones({ addItem }) {
   const [error, setError] = useState('');
   const [loaded, setLoaded] = useState(false);
 
+  // Función para formatear fechas de YYYY-MM-DD a DD/MM/YYYY (sin horas)
+  const formatearFecha = (fecha) => {
+    if (!fecha) return 'N/A';
+    // Extraer solo la parte de la fecha (antes del espacio o 'T' si hay hora)
+    const soloFecha = fecha.split(' ')[0].split('T')[0];
+    const [year, month, day] = soloFecha.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
   useEffect(() => {
     PromocionService.getPromocionById(id)
       .then((response) => {
@@ -43,7 +52,7 @@ export function DetallePromociones({ addItem }) {
       py: 6,
     }}>
       <Container maxWidth="xl">
-        {/* Heade */}
+        {/* Header */}
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Box sx={{ 
             display: 'inline-flex', 
@@ -73,8 +82,6 @@ export function DetallePromociones({ addItem }) {
             </Typography>
             <StarIcon sx={{ color: '#d83b6a', fontSize: 30 }} />
           </Box>
-          
-        
           
           <Divider sx={{ 
             maxWidth: 200, 
@@ -109,14 +116,13 @@ export function DetallePromociones({ addItem }) {
             </Typography>
 
             <Typography variant="body1" sx={{ mb: 1 }}>
-  <strong>Aplicado en:</strong>{' '}
-  {data.tipo === 'Categoria' && data.nombre_categoria
-    ? data.nombre_categoria
-    : data.tipo === 'Producto' && data.nombre_producto
-    ? data.nombre_producto
-    : 'N/A'}
-</Typography>
-
+              <strong>Aplicado en:</strong>{' '}
+              {data.tipo === 'Categoria' && data.nombre_categoria
+                ? data.nombre_categoria
+                : data.tipo === 'Producto' && data.nombre_producto
+                ? data.nombre_producto
+                : 'N/A'}
+            </Typography>
 
             <Typography
               variant="h5"
@@ -128,12 +134,12 @@ export function DetallePromociones({ addItem }) {
 
             <Typography variant="body1" sx={{ mb: 1, display: 'flex', justifyContent: 'center', gap: 1 }}>
               <CalendarMonthIcon fontSize="small" />
-              <strong>Inicio:</strong> {data.fecha_inicio}
+              <strong>Inicio:</strong> {formatearFecha(data.fecha_inicio)}
             </Typography>
 
             <Typography variant="body1" sx={{ mb: 2, display: 'flex', justifyContent: 'center', gap: 1 }}>
               <CalendarMonthIcon fontSize="small" />
-              <strong>Fin:</strong> {data.fecha_fin}
+              <strong>Fin:</strong> {formatearFecha(data.fecha_fin)}
             </Typography>
 
             <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 1 }}>

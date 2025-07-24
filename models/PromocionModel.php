@@ -169,5 +169,129 @@ class PromocionModel
         handleException($e);
     }
 }
+/**
+ * Inserta una nueva promoción en la base de datos.
+ *
+ * @param object $objeto Objeto que contiene los datos de la promoción:
+ *  - string $nombre        Nombre de la promoción
+ *  - string $tipo          Tipo de promoción ('Producto' o 'Categoria')
+ *  - float $descuento      Porcentaje de descuento
+ *  - string $fecha_inicio  Fecha de inicio (formato 'Y-m-d H:i:s')
+ *  - string $fecha_fin     Fecha de finalización (formato 'Y-m-d H:i:s')
+ *  - bool $activo          Indica si la promoción está activa (true/false)
+ *  - int|null $ProductoID  ID del producto si aplica, o null
+ *  - int|null $CategoriaID ID de la categoría si aplica, o null
+ *
+ * @return object|null Retorna la promoción insertada o null en caso de error.
+ */
+public function create($objeto) {
+    try {
+        $sql = "INSERT INTO promociones (
+                    nombre, tipo, descuento, fecha_inicio, fecha_fin, activo, ProductoID, CategoriaID
+                ) VALUES (
+                    '$objeto->nombre',
+                    '$objeto->tipo',
+                    $objeto->descuento,
+                    '$objeto->fecha_inicio',
+                    '$objeto->fecha_fin',
+                    " . ($objeto->activo ? 1 : 0) . ",
+                    " . ($objeto->ProductoID ?? "NULL") . ",
+                    " . ($objeto->CategoriaID ?? "NULL") . "
+                )";
+
+        $idPromocion = $this->enlace->executeSQL_DML_last($sql);
+        return $this->get($idPromocion);
+    } catch (Exception $e) {
+        handleException($e);
+    }
+}
+/**
+ * Actualiza una promoción existente en la base de datos.
+ *
+ * @param object $objeto Objeto que contiene los datos actualizados de la promoción:
+ *  - int $id                ID de la promoción a actualizar
+ *  - string $nombre         Nombre de la promoción
+ *  - string $tipo           'Producto' o 'Categoria'
+ *  - float $descuento       Valor del descuento
+ *  - string $fecha_inicio   Fecha de inicio (Y-m-d H:i:s)
+ *  - string $fecha_fin      Fecha de fin (Y-m-d H:i:s)
+ *  - bool $activo
+ *  - int|null $ProductoID
+ *  - int|null $CategoriaID
+ *
+ * @return object|null Promoción actualizada o null en caso de error.
+ */
+public function update($objeto)
+{
+    try {
+   // Verificar si la promoción ya terminó
+$promocionActual = $this->get($objeto->id);
+$fechaActual = new DateTime();
+$fechaInicio = DateTime::createFromFormat('Y-m-d H:i:s', $promocionActual->fecha_inicio);
+
+if ($fechaInicio < $fechaActual) {
+    throw new Exception("No se puede modificar una promoción ya aplicada.");
+}
+
+        if ($objeto->tipo !== 'Producto' && $objeto->tipo !== 'Categoria') {
+            throw new Exception("Tipo de promoción inválido.");
+        }
+
+        // Validar que se indique Producto o Categoría según el tipo
+        if ($objeto->tipo === 'Producto' && empty($objeto->ProductoID)) {
+            throw new Exception("Debe seleccionar un producto.");
+        }
+
+        if ($objeto->tipo === 'Categoria' && empty($objeto->CategoriaID)) {
+            throw new Exception("Debe seleccionar una categoría.");
+        }
+
+        // Validación de fechas
+        $fechaActual = new DateTime();
+        $fechaInicio = DateTime::createFromFormat('Y-m-d H:i:s', $objeto->fecha_inicio);
+        $fechaFin = DateTime::createFromFormat('Y-m-d H:i:s', $objeto->fecha_fin);
+
+        if (!$fechaInicio || !$fechaFin) {
+            throw new Exception("Formato de fecha inválido.");
+        }
+
+       if ($fechaInicio < $fechaActual && $fechaInicio != DateTime::createFromFormat('Y-m-d H:i:s', $this->get($objeto->id)->fecha_inicio)) {
+    throw new Exception("La fecha de inicio no puede ser anterior a hoy.");
+}
+
+
+        if ($fechaFin < $fechaInicio) {
+            throw new Exception("La fecha de fin no puede ser anterior a la de inicio.");
+        }
+        if ($objeto->descuento <= 0 || $objeto->descuento > 100) {
+    throw new Exception("El descuento debe estar entre 1 y 100.");
+}
+
+
+        // Construcción de la consulta SQL
+        $sql = "UPDATE promociones SET 
+            nombre = '$objeto->nombre',
+            tipo = '$objeto->tipo',
+            descuento = $objeto->descuento,
+            fecha_inicio = '$objeto->fecha_inicio',
+            fecha_fin = '$objeto->fecha_fin',
+            activo = " . ($objeto->activo ? 1 : 0) . ",
+            ProductoID = " . (isset($objeto->ProductoID) ? $objeto->ProductoID : "NULL") . ",
+            CategoriaID = " . (isset($objeto->CategoriaID) ? $objeto->CategoriaID : "NULL") . "
+        WHERE id = $objeto->id";
+
+
+        // Ejecutar la consulta SQL
+        $resultado = $this->enlace->executeSQL_DML($sql);
+
+        // Retornar la promoción actualizada
+        return $this->get($objeto->id);
+    } catch (Exception $e) {
+        handleException($e);
+        return null;
+    }
+}
+
+
 
 }

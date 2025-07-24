@@ -43,6 +43,53 @@ class promocion
         ]);
     }
 }
+
+public function create()
+{
+    try{
+        $response = new Response();
+    $request = new Request();
+
+    // Obtener el JSON enviado por el frontend
+    $inputJSON = $request->getJSON();
+
+    // Instanciar modelo y crear producto
+    $producto = new PromocionModel();
+    $result = $producto->create($inputJSON);
+
+    // Devolver la respuesta como JSON
+    $response->toJSON($result);
+
+
+    }catch(Exception $e){
+         handleException($e);
+
+    }
+
+
+
+
+}
+
+//PUT actualizar
+   public function update($id)
+{
+    $request = new Request();
+    $response = new Response();
+    
+    $inputJSON = $request->getJSON();
+    $inputJSON->id = $id;
+    
+    $promocionModel = new PromocionModel();
+    $result = $promocionModel->update($inputJSON);
+    
+    $response->toJSON([
+        'success' => true,
+        'message' => 'Promoción actualizada correctamente',
+        'data' => $result
+    ]);
+}
+    
     /*
     public function getActorMovie($id)
     {

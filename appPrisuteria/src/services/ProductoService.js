@@ -81,6 +81,20 @@ class ProductoService {
   getProductoById(ProductoId){
     return axios.get(BASE_URL+'/'+ProductoId);
   }
+ obtenerProductosConPromociones() {
+    return axios
+      .get(`${BASE_URL}/obtenerProductosPromocion`)
+      .then(response => {
+        if (response.data.success) {
+          return response.data.data;
+        } else {
+          throw new Error(response.data.message || 'Error al obtener promociones');
+        }
+      });
+  }
+
+
+
   //Obtener peliculas por tienda
   //localhost:81/apiProducto/Producto/ProductosByShopRental/1
  // getProductoByShopRental(ShopRentalId){
