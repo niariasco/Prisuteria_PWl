@@ -43,12 +43,23 @@ export default function UserProvider({ children }) {
 */
 const decodeToken = () => {
   if (!user) return {};
-  const token = typeof user === 'string' ? user : user.token;
-
+  
   try {
+    // Si el token está en un objeto user.token o es el token directamente
+    const token = typeof user === 'object' ? user.token : user;
+    
+    if (!token) return {};
+    
     const decoded = jwtDecode(token);
-    console.log('Decoded JWT:', decoded);  // <-- agrega esto
-    return decoded;
+    
+    // Normalizar los datos del usuario
+    return {
+      id: decoded.id || decoded.usuarioId,
+      usuarioId: decoded.id || decoded.usuarioId,
+      nombre: decoded.nombre || decoded.nombre_usuario,
+      email: decoded.email || decoded.correo,
+      rol: decoded.rol
+    };
   } catch (error) {
     console.error('Error decoding token:', error);
     return {};

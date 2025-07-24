@@ -39,14 +39,13 @@ class PromocionService{
 
 //Crear promocion
 
-createPromocion(promocion) {
-    return axios.post(BASE_URL, promocion, {
-  headers: {
-    'Content-Type': 'application/json'
+ static createResena(resenaData) {
+    return axios.post(`${config.apiUrl}/resenas`, resenaData, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
   }
-});
-
-}
 updatePromocion(promocion) {
     const urlEstructuraCorrecta = `${BASE_URL}/update/${promocion.id}`;
     console.log('URL de destino:', urlEstructuraCorrecta);

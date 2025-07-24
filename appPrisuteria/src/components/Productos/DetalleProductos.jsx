@@ -267,11 +267,12 @@ export function DetalleProductos({ addItem }) {
           <Divider sx={{ my: 3 }} />
           <Typography variant="h5" gutterBottom sx={{ color: '#d83b6a' }}>
             Reseñas del producto
-        
+
           </Typography>
 
           {/* Lista de reseñas existentes */}
-          <Grid container spacing={2} sx={{ mb: 4 }}>
+          <Grid container spacing={2} sx={{ mb: 4 }}> 
+          
             {Array.isArray(data.resenas) && data.resenas.length > 0 ? (
               data.resenas
                 .filter(resena => resena && !resena.status && resena.resenasId) // Filtrar errores

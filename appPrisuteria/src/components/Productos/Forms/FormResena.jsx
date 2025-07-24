@@ -27,14 +27,9 @@ export function FormResena({ productoId, onNuevaResena }) {
       return;
     }
 
-    // Debuggggg
-    console.log('userData completo:', userData);
-    console.log('userData.id:', userData?.id);
-    console.log('userData.usuarioId:', userData?.usuarioId);
-
-    if (!userData || (!userData.id && !userData.usuarioId)) {
+    const usuarioId = userData?.usuarioId || userData?.id;
+    if (!usuarioId) {
       setError('Error: Usuario no autenticado correctamente.');
-      console.log('decodeToken() completo:', userData);
       return;
     }
 
@@ -42,28 +37,18 @@ export function FormResena({ productoId, onNuevaResena }) {
 
     try {
       const resenaData = {
-        usuario_id: userData.usuarioId || userData.id, // Usar usuarioId si existe, sino id
+        usuario_id: usuarioId,
         producto_id: productoId,
         comentario: comentario.trim(),
         calificacion: valoracion
       };
 
-      console.log('Datos a enviar al backend:', resenaData);
-
       const response = await ResenaService.createResena(resenaData);
       
-      console.log('Respuesta del servidor:', response); // Para debug
-
       if (response.data && response.data.status === 'success') {
-        // Llamar al callback con ambos parámetros
         onNuevaResena(response.data.nuevaResena, response.data.promedioValoracion);
-        
-        // Limpiar el formulario
         setComentario('');
         setValoracion(0);
-        
-        // Mostrar mensaje de éxito
-        alert('Reseña guardada exitosamente');
       } else {
         setError(response.data?.message || 'Error al guardar la reseña');
       }
@@ -81,40 +66,33 @@ export function FormResena({ productoId, onNuevaResena }) {
         Escribir una reseña
       </Typography>
       
-      {/* SOLO lectura */}
-<TextField
-  fullWidth
-  label="Usuario"
-value={userData?.nombre || userData?.email || 'Usuario'}
-  InputProps={{
-    readOnly: true,
-  }}
-  margin="normal"
-  variant="outlined"
-  sx={{ mb: 2 }}
-/>
-
-      {/* Campo de fecha (solo lectura) */}
+      {/* Campos igual que tu implementación actual */}
       <TextField
         fullWidth
-        label="Fecha"
-        value={new Date().toLocaleDateString()}
-        InputProps={{
-          readOnly: true,
-        }}
+        label="Usuario"
+        value={userData?.nombre || userData?.email || 'Usuario'}
+        InputProps={{ readOnly: true }}
         margin="normal"
         variant="outlined"
         sx={{ mb: 2 }}
       />
 
-      {/* Error message */}
+      <TextField
+        fullWidth
+        label="Fecha"
+        value={new Date().toLocaleDateString()}
+        InputProps={{ readOnly: true }}
+        margin="normal"
+        variant="outlined"
+        sx={{ mb: 2 }}
+      />
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      {/* Comentario */}
       <TextField
         fullWidth
         label="Tu reseña *"
@@ -124,11 +102,9 @@ value={userData?.nombre || userData?.email || 'Usuario'}
         rows={4}
         margin="normal"
         variant="outlined"
-        placeholder="Escribe tu opinión sobre este producto..."
         sx={{ mb: 2 }}
       />
 
-      {/* Valoración con estrellas */}
       <Box sx={{ mb: 2 }}>
         <Typography component="legend" sx={{ mb: 1 }}>
           Valoración *
@@ -139,14 +115,8 @@ value={userData?.nombre || userData?.email || 'Usuario'}
           max={5}
           size="large"
         />
-        {valoracion > 0 && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {valoracion} de 5 estrellas
-          </Typography>
-        )}
       </Box>
 
-      {/* Botón enviar */}
       <Button
         type="submit"
         variant="contained"
