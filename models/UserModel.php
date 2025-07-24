@@ -64,25 +64,6 @@ class UserModel
 			die($e->getMessage());
 		}
 	}
-	/*
-	public function customerbyShopRental($idShopRental)
-	{
-		try {
-			//Consulta sql
-			$vSql = "SELECT * FROM movie_rental.user
-					where rol_id=2 and shop_id=$idShopRental;";
-
-			//Ejecutar la consulta
-			$vResultado = $this->enlace->ExecuteSQL($vSql);
-
-			// Retornar el objeto
-			return $vResultado;
-		} catch (Exception $e) {
-			die($e->getMessage());
-		}
-	}
-		*/
-
 	public function login($objeto)
 	{
 		try {

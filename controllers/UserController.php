@@ -35,17 +35,7 @@ class user
         //Dar respuesta
         $response->toJSON($result);
     }
-    /*
-    public function customerbyShopRental($idShopRental)
-    {
-        $response = new Response();
-        //Obtener el listado del Modelo
-        $usuario = new UserModel();
-        $result = $usuario->customerbyShopRental($idShopRental);
-        //Dar respuesta
-        $response->toJSON($result);
-    }
-        */
+
     public function login()
     {
         $response = new Response();
