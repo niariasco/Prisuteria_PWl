@@ -224,7 +224,15 @@ public function create($objeto) {
 public function update($objeto)
 {
     try {
-        // Validar tipo de promoción
+   // Verificar si la promoción ya terminó
+$promocionActual = $this->get($objeto->id);
+$fechaActual = new DateTime();
+$fechaInicio = DateTime::createFromFormat('Y-m-d H:i:s', $promocionActual->fecha_inicio);
+
+if ($fechaInicio < $fechaActual) {
+    throw new Exception("No se puede modificar una promoción ya aplicada.");
+}
+
         if ($objeto->tipo !== 'Producto' && $objeto->tipo !== 'Categoria') {
             throw new Exception("Tipo de promoción inválido.");
         }
@@ -247,25 +255,31 @@ public function update($objeto)
             throw new Exception("Formato de fecha inválido.");
         }
 
-        if ($fechaInicio < $fechaActual) {
-            throw new Exception("La fecha de inicio no puede ser anterior a hoy.");
-        }
+       if ($fechaInicio < $fechaActual && $fechaInicio != DateTime::createFromFormat('Y-m-d H:i:s', $this->get($objeto->id)->fecha_inicio)) {
+    throw new Exception("La fecha de inicio no puede ser anterior a hoy.");
+}
+
 
         if ($fechaFin < $fechaInicio) {
             throw new Exception("La fecha de fin no puede ser anterior a la de inicio.");
         }
+        if ($objeto->descuento <= 0 || $objeto->descuento > 100) {
+    throw new Exception("El descuento debe estar entre 1 y 100.");
+}
+
 
         // Construcción de la consulta SQL
         $sql = "UPDATE promociones SET 
-                    nombre = '$objeto->nombre',
-                    tipo = '$objeto->tipo',
-                    descuento = $objeto->descuento,
-                    fecha_inicio = '{$objeto->fecha_inicio}',
-                    fecha_fin = '{$objeto->fecha_fin}',
-                    activo = " . ($objeto->activo ? 1 : 0) . ",
-                    ProductoID = " . ($objeto->ProductoID ?? "NULL") . ",
-                    CategoriaID = " . ($objeto->CategoriaID ?? "NULL") . "
-                WHERE id = $objeto->id";
+            nombre = '$objeto->nombre',
+            tipo = '$objeto->tipo',
+            descuento = $objeto->descuento,
+            fecha_inicio = '$objeto->fecha_inicio',
+            fecha_fin = '$objeto->fecha_fin',
+            activo = " . ($objeto->activo ? 1 : 0) . ",
+            ProductoID = " . (isset($objeto->ProductoID) ? $objeto->ProductoID : "NULL") . ",
+            CategoriaID = " . (isset($objeto->CategoriaID) ? $objeto->CategoriaID : "NULL") . "
+        WHERE id = $objeto->id";
+
 
         // Ejecutar la consulta SQL
         $resultado = $this->enlace->executeSQL_DML($sql);

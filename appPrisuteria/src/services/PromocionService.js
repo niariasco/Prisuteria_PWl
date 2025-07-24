@@ -48,13 +48,27 @@ createPromocion(promocion) {
 
 }
 updatePromocion(promocion) {
-  return axios.put(BASE_URL, promocion, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  });
+    const urlEstructuraCorrecta = `${BASE_URL}/update/${promocion.id}`;
+    console.log('URL de destino:', urlEstructuraCorrecta);
+    
+    return axios.put(urlEstructuraCorrecta, promocion, {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
 }
 
 
+
+
+
+ // Eliminar promoción 
+    deletePromocion(promocionId) {
+        return axios.delete(`${BASE_URL}/${promocionId}`)
+            .catch(error => {
+                console.error('Error al eliminar promoción:', error);
+                throw error;
+            });
+    }
 }
 export default new PromocionService();

@@ -72,23 +72,24 @@ public function create()
 }
 
 //PUT actualizar
-    public function update()
-    {
-        try {
-            $request = new Request();
-            $response = new Response();
-            //Obtener json enviado
-            $inputJSON = $request->getJSON();
-            //Instancia del modelo
-            $producto = new PromocionModel();
-            //Acción del modelo a ejecutar
-            $result = $producto->update($inputJSON);
-            //Dar respuesta
-            $response->toJSON($result);
-        } catch (Exception $e) {
-            handleException($e);
-        }
-    }
+   public function update($id)
+{
+    $request = new Request();
+    $response = new Response();
+    
+    $inputJSON = $request->getJSON();
+    $inputJSON->id = $id;
+    
+    $promocionModel = new PromocionModel();
+    $result = $promocionModel->update($inputJSON);
+    
+    $response->toJSON([
+        'success' => true,
+        'message' => 'Promoción actualizada correctamente',
+        'data' => $result
+    ]);
+}
+    
     /*
     public function getActorMovie($id)
     {

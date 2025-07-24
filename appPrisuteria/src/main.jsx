@@ -33,6 +33,7 @@ import { DetalleOrder } from "./components/Orders/DetalleOrder";
 import { CreateProducto } from "./components/Productos/CreateProducto";
 import { UpdateProducto } from "./components/Productos/UpdateProducto";
 import { CreatePromocion } from "./components/Promociones/CreatePromocion";
+import { UpdatePromocion } from "./components/Promociones/UpdatePromocion";
 
 
 
@@ -63,7 +64,7 @@ const rutas = createBrowserRouter([
       { path: '/productos/crear', element: <CreateProducto /> },
       { path: '/productos/actualizar', element: <UpdateProducto /> },
       { path: '/promociones/crear', element: <CreatePromocion /> },
-     
+     { path: '/promociones/actualizar', element: <UpdatePromocion /> },
       { path: '/admin/resenas', element: <ListaResenas /> },
       { path: '/admin/promociones', element: <ListaPromociones /> },
       { path: '/admin/ordenes', element: <ListOrders /> },
