@@ -28,6 +28,25 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
   // Observar el tipo de promoción seleccionado
   const tipoPromocion = watch('tipo_promocion');
 
+  // Función para validar que solo contenga letras, espacios, tildes y eñes
+  const validarTextoSoloLetras = (value) => {
+    if (!value) return 'Este campo es requerido';
+    
+    // Expresión regular que permite letras, espacios, tildes, eñes y diéresis
+    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
+    
+    if (!regex.test(value)) {
+      return 'Solo se permiten letras, espacios, tildes y eñes. No se permiten números ni caracteres especiales.';
+    }
+    
+    // Validar que no sea solo espacios
+    if (value.trim().length === 0) {
+      return 'El nombre no puede estar vacío o contener solo espacios';
+    }
+    
+    return true;
+  };
+
   useEffect(() => {
     
   CategoriaService.getAllCategorias()
@@ -97,7 +116,7 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
 
     // Crear objeto JSON en lugar de FormData para coincidir con el backend
     const promocionData = {
-      nombre: data.nombre,
+      nombre: data.nombre.trim(), // Eliminar espacios al inicio y final
       tipo: data.tipo_promocion, // Backend espera 'tipo', no 'tipo_promocion'
       descuento: parseFloat(data.descuento_porcentaje), // Backend espera 'descuento' como número
       fecha_inicio: data.fecha_inicio,
@@ -198,7 +217,10 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
               name="nombre"
               control={control}
               defaultValue=""
-              rules={{ required: 'El nombre de la promoción es requerido' }}
+              rules={{ 
+                required: 'El nombre de la promoción es requerido',
+                validate: validarTextoSoloLetras
+              }}
               render={({ field }) => (
                 <TextField
                   label="Nombre de la promoción"
@@ -206,6 +228,7 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
                   required
                   error={!!errors.nombre}
                   helperText={errors.nombre?.message}
+                  placeholder="Ejemplo: Descuento de Año Nuevo"
                   {...field}
                 />
               )}
