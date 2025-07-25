@@ -91,19 +91,21 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
   const validarFecha = (value, fechaComparacion = null, tipo = 'inicio') => {
     if (!value) return 'Este campo es requerido';
     
-    const fechaSeleccionada = new Date(value);
+    // Para la fecha seleccionada, mantener solo la fecha sin horas
+    const fechaSeleccionada = new Date(value + 'T00:00:00');
     const fechaActual = new Date();
     fechaActual.setHours(0, 0, 0, 0);
     
     if (tipo === 'inicio') {
-      if (fechaSeleccionada < fechaActual) {
+      // Comparar solo fechas, permitiendo fecha actual
+      if (fechaSeleccionada.getTime() < fechaActual.getTime()) {
         return 'La fecha de inicio no puede ser anterior a la fecha actual';
       }
     }
     
     if (tipo === 'fin' && fechaComparacion) {
-      const fechaInicio = new Date(fechaComparacion);
-      if (fechaSeleccionada <= fechaInicio) {
+      const fechaInicio = new Date(fechaComparacion + 'T00:00:00');
+      if (fechaSeleccionada.getTime() <= fechaInicio.getTime()) {
         return 'La fecha de fin debe ser posterior a la fecha de inicio';
       }
     }
