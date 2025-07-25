@@ -325,25 +325,25 @@ export function DetalleProductos({ addItem }) {
             )}
           </Grid>
 
-          {/* Formulario para nueva reseña */}
-          <FormResena
-            productoId={parseInt(routeParams.id)}
-            onNuevaResena={(nuevaResena, nuevoPromedio) => {
-              console.log('Nueva reseña recibida:', nuevaResena);
-              console.log('Nuevo promedio:', nuevoPromedio);
+ {/* Formulario para nueva reseña */}
+<FormResena
+  productoId={parseInt(routeParams.id)}
+  onNuevaResena={(nuevaResena, nuevoPromedio) => {
+    console.log('Nueva reseña recibida:', nuevaResena);
+    console.log('Nuevo promedio:', nuevoPromedio);
 
-              // Solo actualizar si la reseña es válida (no es un error)
-              if (nuevaResena && !nuevaResena.status && nuevaResena.resenasId) {
-                setData((prevData) => ({
-                  ...prevData,
-                  resenas: [nuevaResena, ...(prevData.resenas || [])],
-                  promedio_valoracion: nuevoPromedio || prevData.promedio_valoracion,
-                }));
-              } else {
-                console.error('Error al agregar reseña:', nuevaResena);
-              }
-            }}
-          />
+    // Actualizar solo si es válida la reseña
+    if (nuevaResena && !nuevaResena.status && nuevaResena.resenasId) {
+      setData(prevData => ({
+        ...prevData,
+        resenas: [nuevaResena, ...(prevData.resenas || [])],
+        promedio_valoracion: nuevoPromedio || prevData.promedio_valoracion,
+      }));
+    } else {
+      console.error('Error al agregar reseña:', nuevaResena);
+    }
+  }}
+/>
         </Grid>
       </Grid>
     </Container>

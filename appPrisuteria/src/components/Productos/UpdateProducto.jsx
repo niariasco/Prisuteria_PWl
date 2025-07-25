@@ -40,7 +40,7 @@ export function UpdateProducto() {
 
   // Imagen principal
   const [file, setFile] = useState(null);
-  const [fileURL, setFileURL] = useState(null);
+  //const [fileURL, setFileURL] = useState(null);
 
   // Cargar categorías, etiquetas y lista de productos
   useEffect(() => {
@@ -85,10 +85,10 @@ export function UpdateProducto() {
 
         // Si el producto tiene imagen principal (se asume la primera)
         if (p.imagen_principal_url) {
-          setFileURL(p.imagen_principal_url);
+       //   setFileURL(p.imagen_principal_url);
           setFile(null); // No file selected, solo URL
         } else {
-          setFileURL(null);
+      //    setFileURL(null);
           setFile(null);
         }
 
@@ -104,14 +104,14 @@ export function UpdateProducto() {
   }, [productoSeleccionado, etiquetas, reset]);
 
   // Manejar cambio imagen principal
-  const handleChangeImage = (e) => {
+ /* const handleChangeImage = (e) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
       setFileURL(URL.createObjectURL(selectedFile));
     }
   };
-
+*/
   // Agregar bloque dinámico para imagen extra
   const agregarBloqueImagen = () => {
     setImagenesExtra(prev => [...prev, { file: null, url: null }]);
@@ -178,7 +178,7 @@ export function UpdateProducto() {
             etiquetas: [],
           });
           setFile(null);
-          setFileURL(null);
+        //  setFileURL(null);
           setImagenesAEliminar([]);
           setImagenesExistentes([]);
           setProductoSeleccionado('');
@@ -319,8 +319,10 @@ export function UpdateProducto() {
               />
             </Grid>
 
-            {/* Imagen principal */}
-            <Grid item xs={12}>
+            {/* Imagen principal 
+            
+            
+                       <Grid item xs={12}>
               <Typography variant="h6">Agregar Imagen</Typography>
               <input type="file" onChange={handleChangeImage} />
               {fileURL && (
@@ -340,6 +342,9 @@ export function UpdateProducto() {
                 </Box>
               )}
             </Grid>
+            
+            */}
+
 
             {/* Imágenes existentes */}
             {imagenesExistentes.length > 0 && (

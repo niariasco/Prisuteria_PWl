@@ -133,10 +133,16 @@ public function create($objeto) {
         $resenaResult = $this->enlace->ExecuteSQL($sqlResena);
         $nuevaResena = !empty($resenaResult) ? $resenaResult[0] : null;
 
-        return (object)[
-            'status' => 'success',
-            'nuevaResena' => $nuevaResena
-        ];
+         // Calcular promedio actualizado para ese producto
+$sqlPromedio = "SELECT AVG(calificacion) AS promedio FROM resenas WHERE producto_id = '{$objeto->producto_id}' AND visible = 1";
+$promedioResult = $this->enlace->ExecuteSQL($sqlPromedio);
+$promedioValoracion = $promedioResult[0]->promedio ?? 0;
+
+return (object)[
+    'status' => 'success',
+    'nuevaResena' => $nuevaResena,
+    'promedioValoracion' => round($promedioValoracion, 2)
+];
 
     } catch (Exception $e) {
         return (object)[
@@ -145,8 +151,6 @@ public function create($objeto) {
         ];
     }
 }
-
-
 
 
 
