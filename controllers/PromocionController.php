@@ -72,22 +72,61 @@ public function create()
 }
 
 //PUT actualizar
-   public function update($id)
+//PUT actualizar
+public function update($id)
 {
-    $request = new Request();
-    $response = new Response();
-    
-    $inputJSON = $request->getJSON();
-    $inputJSON->id = $id;
-    
-    $promocionModel = new PromocionModel();
-    $result = $promocionModel->update($inputJSON);
-    
-    $response->toJSON([
-        'success' => true,
-        'message' => 'Promoción actualizada correctamente',
-        'data' => $result
-    ]);
+    try {
+        $request = new Request();
+        $response = new Response();
+        
+        $inputJSON = $request->getJSON();
+        
+        // Validar que se reciba el JSON
+        if (!$inputJSON) {
+            $response->toJSON([
+                'success' => false,
+                'message' => 'No se recibieron datos válidos',
+                'data' => null
+            ], 400);
+            return;
+        }
+        
+        // Asegurar que el ID esté presente
+        $inputJSON->id = $id;
+        
+        // Validar que el ID sea numérico
+        if (!is_numeric($id)) {
+            $response->toJSON([
+                'success' => false,
+                'message' => 'ID de promoción inválido',
+                'data' => null
+            ], 400);
+            return;
+        }
+        
+        $promocionModel = new PromocionModel();
+        $result = $promocionModel->update($inputJSON);
+        
+        if ($result) {
+            $response->toJSON([
+                'success' => true,
+                'message' => 'Promoción actualizada correctamente',
+                'data' => $result
+            ]);
+        } else {
+            $response->toJSON([
+                'success' => false,
+                'message' => 'No se pudo actualizar la promoción',
+                'data' => null
+            ], 500);
+        }
+    } catch (Exception $e) {
+        $response->toJSON([
+            'success' => false,
+            'message' => 'Error interno del servidor: ' . $e->getMessage(),
+            'data' => null
+        ], 500);
+    }
 }
     
     /*

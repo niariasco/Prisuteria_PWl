@@ -23,27 +23,40 @@ const validationSchema = Yup.object().shape({
     .required("El nombre es obligatorio")
     .matches(/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/, "El nombre no debe contener números ni caracteres especiales"),
   tipo: Yup.string().oneOf(["Producto", "Categoria"]).required("El tipo es obligatorio"),
-  descuento: Yup.number()
-    .required("El descuento es obligatorio")
-    .min(1, "El descuento debe ser mínimo 1%")
-    .max(100, "El descuento debe ser máximo 100%"),
-  fecha_inicio: Yup.string().required("La fecha de inicio es obligatoria"),
-  fecha_fin: Yup.string()
-    .required("La fecha de fin es obligatoria")
-    .test('fecha-fin-mayor', 'La fecha de fin debe ser posterior a la fecha de inicio', function(value) {
-      const { fecha_inicio } = this.parent;
-      if (!fecha_inicio || !value) return true;
-      return new Date(value) > new Date(fecha_inicio);
+  tipoDescuento: Yup.string()
+    .oneOf(["Porcentaje", "Monto"])
+    .required("El tipo de descuento es obligatorio"),
+  porcentajeDescuento: Yup.number()
+    .nullable()
+    .when('tipoDescuento', {
+      is: 'Porcentaje',
+      then: (schema) => schema
+        .required("El porcentaje de descuento es obligatorio")
+        .min(1, "El descuento debe ser mínimo 1%")
+        .max(100, "El descuento debe ser máximo 100%"),
+      otherwise: (schema) => schema.nullable().notRequired()
     }),
+  montoDescuento: Yup.number()
+    .nullable()
+    .when('tipoDescuento', {
+      is: 'Monto',
+      then: (schema) => schema
+        .required("El monto de descuento es obligatorio")
+        .min(0.01, "El monto debe ser mayor a 0")
+        .max(999999, "El monto no puede exceder ₡999,999"),
+      otherwise: (schema) => schema.nullable().notRequired()
+    }),
+  fecha_inicio: Yup.string().required("La fecha de inicio es obligatoria"),
+  fecha_fin: Yup.string().required("La fecha de fin es obligatoria"),
   ProductoID: Yup.string().when('tipo', {
     is: 'Producto',
-    then: () => Yup.string().required('Debe seleccionar un producto'),
-    otherwise: () => Yup.string().nullable()
+    then: (schema) => schema.required('Debe seleccionar un producto'),
+    otherwise: (schema) => schema.nullable().notRequired()
   }),
   CategoriaID: Yup.string().when('tipo', {
     is: 'Categoria', 
-    then: () => Yup.string().required('Debe seleccionar una categoría'),
-    otherwise: () => Yup.string().nullable()
+    then: (schema) => schema.required('Debe seleccionar una categoría'),
+    otherwise: (schema) => schema.nullable().notRequired()
   })
 });
 
@@ -73,7 +86,9 @@ export function UpdatePromocion() {
       tipo: "",
       ProductoID: "",
       CategoriaID: "",
-      descuento: "",
+      tipoDescuento: "Porcentaje", // Valor por defecto
+      porcentajeDescuento: null,
+      montoDescuento: null,
       fecha_inicio: "",
       fecha_fin: "",
       activo: true
@@ -81,6 +96,26 @@ export function UpdatePromocion() {
   });
 
   const tipo = watch("tipo");
+  const tipoDescuento = watch("tipoDescuento");
+  const porcentajeDescuento = watch("porcentajeDescuento");
+  const montoDescuento = watch("montoDescuento");
+
+  // Función para determinar si una promoción es editable basada en su estado
+  const esPromocionEditable = (promocion) => {
+    const estadosEditables = ['Vigente', 'Pendiente'];
+    return estadosEditables.includes(promocion.Estado);
+  };
+
+  // Función para obtener el texto del estado con color
+  const obtenerEstadoTexto = (estado) => {
+    const estadosConfig = {
+      'Pendiente': { texto: 'Pendiente', color: '#ADD8E6' },
+      'Vigente': { texto: 'Vigente', color: '#FF4D4D ' },
+      'Aplicado': { texto: 'Aplicado', color: '#D3D3D3 ' }
+    };
+    
+    return estadosConfig[estado] || { texto: estado, color: '#757575' };
+  };
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -95,7 +130,6 @@ export function UpdatePromocion() {
         setProductos(productosRes.data || []);
         setCategorias(categoriasRes.data || []);
       } catch (err) {
-        console.error("Error al cargar datos:", err);
         setMensajeError("Error al cargar los datos iniciales");
       }
     };
@@ -114,13 +148,9 @@ export function UpdatePromocion() {
         try {
           const res = await PromocionService.getPromocionById(promoSeleccionada);
           const promo = res.data;
-          
-          console.log("Datos de promoción cargados:", promo);
 
-          // Verificar si la promoción es editable (no aplicada)
-          const fechaActual = new Date();
-          const fechaInicio = new Date(promo.fecha_inicio);
-          const esEditable = fechaInicio >= fechaActual || promo.Estado === 'Pendiente';
+          // Verificar si la promoción es editable basada en el estado
+          const esEditable = esPromocionEditable(promo);
           
           setPromocionEditable(esEditable);
 
@@ -131,18 +161,52 @@ export function UpdatePromocion() {
             return fechaObj.toISOString().slice(0, 16);
           };
 
+          // Determinar el tipo de descuento basado en los datos existentes
+          // El backend devuelve tipo_descuento, no tipoDescuento
+          let tipoDescuentoDetectado = "Porcentaje"; // valor por defecto
+          
+          if (promo.tipo_descuento) {
+            // Si existe el campo tipo_descuento en la BD, usarlo directamente
+            tipoDescuentoDetectado = promo.tipo_descuento;
+          } else {
+            // Fallback: detectar por valor (si es <= 100 probablemente es porcentaje)
+            tipoDescuentoDetectado = (promo.descuento && promo.descuento <= 100) ? "Porcentaje" : "Monto";
+          }
+
           // Resetear formulario con datos de la promoción
-          reset({
+          const datosFormulario = {
             id: promo.id,
             nombre: promo.nombre || "",
             tipo: promo.tipo || "",
             ProductoID: promo.ProductoID ? String(promo.ProductoID) : "",
             CategoriaID: promo.CategoriaID ? String(promo.CategoriaID) : "",
-            descuento: promo.descuento || "",
+            tipoDescuento: tipoDescuentoDetectado,
+            porcentajeDescuento: "",
+            montoDescuento: "",
             fecha_inicio: formatearFecha(promo.fecha_inicio),
             fecha_fin: formatearFecha(promo.fecha_fin),
             activo: promo.activo !== undefined ? promo.activo : true
-          });
+          };
+
+          // Asignar el valor al campo correspondiente
+          if (tipoDescuentoDetectado === "Porcentaje") {
+            datosFormulario.porcentajeDescuento = String(promo.descuento || "");
+            datosFormulario.montoDescuento = null; // Usar null en lugar de string vacío
+          } else if (tipoDescuentoDetectado === "Monto") {
+            datosFormulario.montoDescuento = String(promo.descuento || "");
+            datosFormulario.porcentajeDescuento = null; // Usar null en lugar de string vacío
+          }
+          
+          reset(datosFormulario);
+
+          // Forzar la actualización de los campos después del reset
+          setTimeout(() => {
+            if (tipoDescuentoDetectado === "Porcentaje" && promo.descuento) {
+              setValue("porcentajeDescuento", String(promo.descuento));
+            } else if (tipoDescuentoDetectado === "Monto" && promo.descuento) {
+              setValue("montoDescuento", String(promo.descuento));
+            }
+          }, 100);
 
           // Limpiar campos según el tipo
           if (promo.tipo === "Producto") {
@@ -154,10 +218,10 @@ export function UpdatePromocion() {
           setMostrarFormulario(true);
           
           if (!esEditable) {
-            setMensajeError("Esta promoción ya no se puede modificar porque ya ha iniciado o ha sido aplicada.");
+            const estadoConfig = obtenerEstadoTexto(promo.Estado);
+            setMensajeError(`Esta promoción no se puede modificar porque tiene estado "${estadoConfig.texto}". Solo se pueden modificar promociones con estado "Pendiente" o "Vigente".`);
           }
         } catch (err) {
-          console.error("Error al cargar promoción:", err);
           setMensajeError("No se pudo cargar la promoción seleccionada");
         } finally {
           setLoadingPromo(false);
@@ -181,15 +245,28 @@ export function UpdatePromocion() {
     }
   }, [tipo, setValue]);
 
+  // Limpiar campos de descuento cuando cambia el tipo de descuento (solo si es cambio manual del usuario)
+  useEffect(() => {
+    // Solo limpiar si hay una promoción seleccionada, no estamos cargando datos,
+    // el formulario está visible Y es un cambio manual (no la carga inicial)
+    if (promoSeleccionada && !loadingPromo && mostrarFormulario) {
+      const promocionActual = promociones.find(p => p.id == promoSeleccionada);
+      
+      // Si la promoción existe y el tipo de descuento cambió del original, limpiar campos
+      if (promocionActual && promocionActual.tipo_descuento !== tipoDescuento) {
+        setValue("porcentajeDescuento", null);
+        setValue("montoDescuento", null);
+      }
+    }
+  }, [tipoDescuento, setValue, promoSeleccionada, loadingPromo, mostrarFormulario, promociones]);
+
   const onSubmit = async (data) => {
     if (!promocionEditable) {
-      setMensajeError("No se puede modificar una promoción que ya ha iniciado o sido aplicada.");
+      setMensajeError("No se puede modificar una promoción con estado 'Aplicado'. Solo se pueden modificar promociones con estado 'Pendiente' o 'Vigente'.");
       return;
     }
 
     try {
-      console.log("Datos a enviar:", data);
-      
       if (!promoSeleccionada) {
         setMensajeError("No se ha seleccionado ninguna promoción");
         return;
@@ -206,8 +283,11 @@ export function UpdatePromocion() {
       const datosParaEnvio = {
         id: parseInt(promoSeleccionada),
         nombre: data.nombre.trim(),
-        tipo: data.tipo,
-        descuento: parseFloat(data.descuento),
+        tipo: data.tipo, // Se mantiene como "Producto"/"Categoria", el service lo convierte
+        tipo_descuento: data.tipoDescuento, // "Porcentaje" o "Monto"
+        descuento: data.tipoDescuento === "Porcentaje" 
+          ? parseFloat(data.porcentajeDescuento) 
+          : parseFloat(data.montoDescuento),
         fecha_inicio: formatearFechaParaMySQL(data.fecha_inicio),
         fecha_fin: formatearFechaParaMySQL(data.fecha_fin),
         activo: data.activo !== undefined ? data.activo : true,
@@ -215,11 +295,7 @@ export function UpdatePromocion() {
         CategoriaID: data.tipo === "Categoria" && data.CategoriaID ? parseInt(data.CategoriaID) : null
       };
 
-      console.log("Datos finales a enviar:", datosParaEnvio);
-      console.log("Fecha inicio formateada:", datosParaEnvio.fecha_inicio);
-      console.log("Fecha fin formateada:", datosParaEnvio.fecha_fin);
-
-      await PromocionService.updatePromocion(datosParaEnvio);
+      const response = await PromocionService.updatePromocion(datosParaEnvio);
       
       // Establecer ID de promoción modificada para mostrar mensaje de éxito
       setPromocionModificadaId(promoSeleccionada);
@@ -230,11 +306,11 @@ export function UpdatePromocion() {
       setPromociones(promosRes.data || []);
       
     } catch (err) {
-      console.error("Error al actualizar promoción:", err);
-      
       // Manejo de errores más específico
       if (err.response?.data?.message) {
         setMensajeError(err.response.data.message);
+      } else if (err.response?.data?.error) {
+        setMensajeError(err.response.data.error);
       } else if (err.message) {
         setMensajeError(err.message);
       } else {
@@ -303,9 +379,8 @@ export function UpdatePromocion() {
             disabled={loadingPromo}
           >
             {promociones.map((promo) => {
-              const fechaInicio = new Date(promo.fecha_inicio);
-              const fechaActual = new Date();
-              const esEditable = fechaInicio >= fechaActual;
+              const esEditable = esPromocionEditable(promo);
+              const estadoConfig = obtenerEstadoTexto(promo.Estado);
               
               return (
                 <MenuItem 
@@ -316,7 +391,33 @@ export function UpdatePromocion() {
                     fontStyle: esEditable ? 'normal' : 'italic'
                   }}
                 >
-                  {promo.nombre} (ID: {promo.id}) {!esEditable && " - No editable"}
+                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <Typography sx={{ flexGrow: 1 }}>
+                      {promo.nombre} (ID: {promo.id})
+                    </Typography>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        ml: 2, 
+                        px: 1, 
+                        py: 0.5, 
+                        borderRadius: 1, 
+                        backgroundColor: estadoConfig.color + '20',
+                        color: estadoConfig.color,
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {estadoConfig.texto}
+                    </Typography>
+                    {!esEditable && (
+                      <Typography 
+                        variant="caption" 
+                        sx={{ ml: 1, fontStyle: 'italic', color: 'text.disabled' }}
+                      >
+                        - No editable
+                      </Typography>
+                    )}
+                  </Box>
                 </MenuItem>
               );
             })}
@@ -336,12 +437,12 @@ export function UpdatePromocion() {
             2. Modificar Datos de la Promoción
             {!promocionEditable && (
               <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-                ⚠️ Esta promoción no se puede modificar porque ya ha iniciado o ha sido aplicada.
+                ⚠ Esta promoción no se puede modificar porque tiene estado "Aplicado". Solo se pueden modificar promociones con estado "Pendiente" o "Vigente".
               </Typography>
             )}
           </Typography>
           
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={handleSubmit(onSubmit)} noValidate>
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <Controller
@@ -435,6 +536,84 @@ export function UpdatePromocion() {
                 </Grid>
               )}
 
+              {/* Nuevo campo: Tipo de Descuento */}
+              <Grid item xs={12}>
+                <Controller
+                  name="tipoDescuento"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl fullWidth error={!!errors.tipoDescuento}>
+                      <InputLabel>Tipo de Descuento</InputLabel>
+                      <Select {...field} label="Tipo de Descuento" disabled={!promocionEditable}>
+                        <MenuItem value="Porcentaje">Porcentaje (%)</MenuItem>
+                        <MenuItem value="Monto">Monto Fijo (₡)</MenuItem>
+                      </Select>
+                      {errors.tipoDescuento && (
+                        <Typography variant="caption" color="error" sx={{ mt: 1, ml: 2 }}>
+                          {errors.tipoDescuento.message}
+                        </Typography>
+                      )}
+                    </FormControl>
+                  )}
+                />
+              </Grid>
+
+              {/* Campo específico para Porcentaje */}
+              {tipoDescuento === "Porcentaje" && (
+                <Grid item xs={12}>
+                  <Controller
+                    name="porcentajeDescuento"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Porcentaje de Descuento"
+                        type="number"
+                        fullWidth
+                        disabled={!promocionEditable}
+                        inputProps={{ min: 1, max: 100, step: 0.01 }}
+                        error={!!errors.porcentajeDescuento}
+                        helperText={
+                          errors.porcentajeDescuento?.message || 
+                          "Ingrese un porcentaje entre 1% y 100%"
+                        }
+                        InputProps={{
+                          endAdornment: "%"
+                        }}
+                      />
+                    )}
+                  />
+                </Grid>
+              )}
+
+              {/* Campo específico para Monto */}
+              {tipoDescuento === "Monto" && (
+                <Grid item xs={12}>
+                  <Controller
+                    name="montoDescuento"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Monto de Descuento"
+                        type="number"
+                        fullWidth
+                        disabled={!promocionEditable}
+                        inputProps={{ min: 0.01, max: 999999, step: 0.01 }}
+                        error={!!errors.montoDescuento}
+                        helperText={
+                          errors.montoDescuento?.message || 
+                          "Ingrese el monto fijo de descuento en colones"
+                        }
+                        InputProps={{
+                          startAdornment: "₡"
+                        }}
+                      />
+                    )}
+                  />
+                </Grid>
+              )}
+
               <Grid item xs={6}>
                 <Controller
                   name="fecha_inicio"
@@ -468,25 +647,6 @@ export function UpdatePromocion() {
                       InputLabelProps={{ shrink: true }}
                       error={!!errors.fecha_fin}
                       helperText={errors.fecha_fin?.message}
-                    />
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <Controller
-                  name="descuento"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Descuento (%)"
-                      type="number"
-                      fullWidth
-                      disabled={!promocionEditable}
-                      inputProps={{ min: 1, max: 100, step: 0.01 }}
-                      error={!!errors.descuento}
-                      helperText={errors.descuento?.message}
                     />
                   )}
                 />

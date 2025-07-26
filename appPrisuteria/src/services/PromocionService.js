@@ -66,43 +66,37 @@ class PromocionService{
         });
     }
 
-    updatePromocion(promocion) {
-        // Validar que los datos requeridos estén presentes
-        if (!promocion.id) {
-            throw new Error('El ID de la promoción es requerido para actualizar');
-        }
-
-        if (!promocion.tipo_descuento) {
-            throw new Error('El tipo de descuento es requerido');
-        }
-
-        // Convertir tipo_descuento al formato esperado por la base de datos
-        const tipoDescuentoDB = promocion.tipo_descuento === 'porcentaje' ? 'Porcentaje' : 'Monto';
-
-        // Preparar datos para envío
-        const promocionData = {
-            id: promocion.id,
-            nombre: promocion.nombre,
-            tipo: promocion.tipo,
-            tipo_descuento: tipoDescuentoDB,
-            descuento: parseFloat(promocion.descuento),
-            fecha_inicio: promocion.fecha_inicio,
-            fecha_fin: promocion.fecha_fin,
-            activo: promocion.activo !== undefined ? promocion.activo : true,
-            ProductoID: promocion.ProductoID || null,
-            CategoriaID: promocion.CategoriaID || null
-        };
-
-        const urlEstructuraCorrecta = `${BASE_URL}/update/${promocion.id}`;
-        console.log('URL de destino:', urlEstructuraCorrecta);
-        console.log('Datos enviados al backend:', promocionData);
-        
-        return axios.put(urlEstructuraCorrecta, promocionData, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+   updatePromocion(promocion) {
+    // Validar que los datos requeridos estén presentes
+    if (!promocion.id) {
+        throw new Error('El ID de la promoción es requerido para actualizar');
     }
+    if (!promocion.tipo_descuento) {
+        throw new Error('El tipo de descuento es requerido');
+    }
+    
+    // Preparar datos para envío - mantener el formato exacto que espera el backend
+    const promocionData = {
+        id: promocion.id,
+        nombre: promocion.nombre,
+        tipo: promocion.tipo.toLowerCase(), // El backend espera 'producto' o 'categoria' en minúsculas
+        tipo_descuento: promocion.tipo_descuento, // Ya viene como 'Porcentaje' o 'Monto'
+        descuento: parseFloat(promocion.descuento),
+        fecha_inicio: promocion.fecha_inicio ? promocion.fecha_inicio.split(' ')[0] : null, // Solo fecha YYYY-MM-DD
+        fecha_fin: promocion.fecha_fin ? promocion.fecha_fin.split(' ')[0] : null, // Solo fecha YYYY-MM-DD
+        activo: promocion.activo !== undefined ? promocion.activo : true,
+        ProductoID: promocion.ProductoID || null,
+        CategoriaID: promocion.CategoriaID || null
+    };
+    
+    const urlEstructuraCorrecta = `${BASE_URL}/update/${promocion.id}`;
+    
+    return axios.put(urlEstructuraCorrecta, promocionData, {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+}
 
     // Eliminar promoción 
     deletePromocion(promocionId) {
