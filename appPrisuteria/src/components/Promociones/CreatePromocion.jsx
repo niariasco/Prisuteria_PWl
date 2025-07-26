@@ -25,8 +25,9 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
   const [promocionCreadaId, setPromocionCreadaId] = useState(null);
   const [error, setError] = useState(null);
 
-  // Observar el tipo de promoción seleccionado
+  // Observar el tipo de promoción y tipo de descuento seleccionado
   const tipoPromocion = watch('tipo_promocion');
+  const tipoDescuento = watch('tipo_descuento');
 
   // Función para validar que solo contenga letras, espacios, tildes y eñes
   const validarTextoSoloLetras = (value) => {
@@ -78,8 +79,9 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
           nombre: p.nombre,
           tipo_promocion: p.tipo_promocion,
           aplica_a: p.aplica_a,
+          tipo_descuento: p.tipo_descuento || 'porcentaje', // Valor por defecto
           descuento_porcentaje: p.descuento_porcentaje,
-
+          descuento_monto: p.descuento_monto,
           fecha_inicio: p.fecha_inicio,
           fecha_fin: p.fecha_fin,
         });
@@ -113,6 +115,29 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
     return true;
   };
 
+  // Función para validar el descuento según el tipo
+  const validarDescuento = (value, tipoDescuento) => {
+    if (!value) return 'Este campo es requerido';
+    
+    const numValue = parseFloat(value);
+    
+    if (isNaN(numValue) || numValue <= 0) {
+      return 'El valor debe ser un número positivo';
+    }
+    
+    if (tipoDescuento === 'porcentaje') {
+      if (numValue < 1 || numValue > 100) {
+        return 'El porcentaje debe estar entre 1 y 100';
+      }
+    } else if (tipoDescuento === 'monto') {
+      if (numValue < 0.01) {
+        return 'El monto debe ser mayor a 0.01';
+      }
+    }
+    
+    return true;
+  };
+
   const onSubmit = (data) => {
     console.log('Datos del formulario:', data); // Debug
 
@@ -120,7 +145,11 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
     const promocionData = {
       nombre: data.nombre.trim(), // Eliminar espacios al inicio y final
       tipo: data.tipo_promocion, // Backend espera 'tipo', no 'tipo_promocion'
-      descuento: parseFloat(data.descuento_porcentaje), // Backend espera 'descuento' como número
+      tipo_descuento: data.tipo_descuento, // Tipo de descuento (porcentaje o monto)
+      // Enviar el descuento según el tipo seleccionado
+      descuento: data.tipo_descuento === 'porcentaje' 
+        ? parseFloat(data.descuento_porcentaje) 
+        : parseFloat(data.descuento_monto),
       fecha_inicio: data.fecha_inicio,
       fecha_fin: data.fecha_fin,
       activo: true, // Campo requerido por el backend
@@ -301,34 +330,79 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
             />
           </Grid>
 
-          {/* Descuento por porcentaje */}
-          <Grid item xs={12}>
+          {/* Tipo de descuento */}
+          <Grid item xs={12} sm={6}>
             <Controller
-              name="descuento_porcentaje"
+              name="tipo_descuento"
               control={control}
-              defaultValue=""
-              rules={{
-                required: 'El descuento por porcentaje es requerido',
-                validate: (value) => {
-                  if (value && (value < 1 || value > 100)) {
-                    return 'El porcentaje debe estar entre 1 y 100';
-                  }
-                  return true;
-                }
-              }}
+              defaultValue="porcentaje"
+              rules={{ required: 'Seleccione el tipo de descuento' }}
               render={({ field }) => (
-                <TextField
-                  label="Descuento (%)"
-                  fullWidth
-                  type="number"
-                  required
-                  inputProps={{ min: 1, max: 100, step: 0.01 }}
-                  error={!!errors.descuento_porcentaje}
-                  helperText={errors.descuento_porcentaje?.message}
-                  {...field}
-                />
+                <FormControl fullWidth required error={!!errors.tipo_descuento}>
+                  <InputLabel>Tipo de descuento</InputLabel>
+                  <Select label="Tipo de descuento" {...field}>
+                    <MenuItem value="porcentaje">Porcentaje (%)</MenuItem>
+                    <MenuItem value="monto">Monto fijo (₡)</MenuItem>
+                  </Select>
+                  {errors.tipo_descuento && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                      {errors.tipo_descuento.message}
+                    </Typography>
+                  )}
+                </FormControl>
               )}
             />
+          </Grid>
+
+          {/* Campo de descuento dinámico */}
+          <Grid item xs={12} sm={6}>
+            {tipoDescuento === 'porcentaje' ? (
+              <Controller
+                name="descuento_porcentaje"
+                control={control}
+                defaultValue=""
+                rules={{
+                  required: 'El descuento por porcentaje es requerido',
+                  validate: (value) => validarDescuento(value, 'porcentaje')
+                }}
+                render={({ field }) => (
+                  <TextField
+                    label="Descuento (%)"
+                    fullWidth
+                    type="number"
+                    required
+                    inputProps={{ min: 1, max: 100, step: 0.01 }}
+                    error={!!errors.descuento_porcentaje}
+                    helperText={errors.descuento_porcentaje?.message || 'Ingrese un porcentaje entre 1 y 100'}
+                    placeholder="Ejemplo: 25"
+                    {...field}
+                  />
+                )}
+              />
+            ) : (
+              <Controller
+                name="descuento_monto"
+                control={control}
+                defaultValue=""
+                rules={{
+                  required: 'El monto de descuento es requerido',
+                  validate: (value) => validarDescuento(value, 'monto')
+                }}
+                render={({ field }) => (
+                  <TextField
+                    label="Monto de descuento (₡)"
+                    fullWidth
+                    type="number"
+                    required
+                    inputProps={{ min: 0.01, step: 0.01 }}
+                    error={!!errors.descuento_monto}
+                    helperText={errors.descuento_monto?.message || 'Ingrese el monto en colones'}
+                    placeholder="Ejemplo: 5000"
+                    {...field}
+                  />
+                )}
+              />
+            )}
           </Grid>
 
           {/* Fecha de inicio */}

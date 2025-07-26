@@ -34,3 +34,18 @@ SET FOREIGN_KEY_CHECKS = ;
 DROP TABLE resenas;
 SET FOREIGN_KEY_CHECKS = 1;
 RENAME TABLE resenas_temp TO resenas;
+
+
+
+
+25/7/2025 -Priscilla Sánchez
+
+ALTER TABLE `promociones` 
+ADD COLUMN `tipo_descuento` ENUM('Porcentaje', 'Monto') NOT NULL DEFAULT 'Porcentaje' AFTER `tipo`;
+
+-- Modificar la columna descuento para permitir valores más grandes (para montos)
+ALTER TABLE `promociones` 
+MODIFY COLUMN `descuento` DECIMAL(10,2) NOT NULL;
+
+-- Actualizar registros existentes para establecer tipo_descuento como 'porcentaje'
+UPDATE `promociones` SET `tipo_descuento` = 'Porcentaje' WHERE `tipo_descuento` IS NULL;
