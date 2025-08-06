@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
+import "./i18n"; // Importar configuración de i18n AQUÍ
 import App from "./App.jsx";
 import { createBrowserRouter } from "react-router-dom";
 import { Home } from "./components/Home/Home";
@@ -34,6 +35,7 @@ import { CreateProducto } from "./components/Productos/CreateProducto";
 import { UpdateProducto } from "./components/Productos/UpdateProducto";
 import { CreatePromocion } from "./components/Promociones/CreatePromocion";
 import { UpdatePromocion } from "./components/Promociones/UpdatePromocion";
+
 
 
 

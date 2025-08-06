@@ -1,0 +1,114 @@
+{
+  "header": {
+    "user": {
+      "login": "Login",
+      "register": "Register",
+      "logout": "Logout"
+    },
+    "nav": {
+      "products": "Products",
+      "promotions": "Promotions",
+      "orders": "Orders",
+      "maintenance": "Maintenance",
+      "reviews": "Reviews",
+      "users": "Users"
+    },
+    "actions": {
+      "create": "Create",
+      "update": "Update",
+      "delete": "Delete"
+    },
+    "mobile": {
+      "shopping": "Shopping",
+      "notifications": "Notifications"
+    },
+    "tooltip": {
+      "home": "Shop our Products"
+    }
+  },
+  "home": {
+    "title": "We are Prisuteria Accesorios",
+    "description": "Prisutería Accesorios is a SME dedicated to the creation and sale of handmade jewelry, jewelry and accessories, offering unique and personalized designs. We specialize in handmade accessories with high-quality materials, ideal to enhance your style and express your personality. Each piece is crafted with love and attention to detail, providing elegance and originality in every accessory.",
+    "features": {
+      "quality": {
+        "title": "LASTING QUALITY",
+        "description": "All our jewelry is made from the finest materials.",
+        "alt": "Quality"
+      },
+      "contact": {
+        "title": "CONTACT US",
+        "description": "You can contact us 24/7 on social media or WhatsApp.",
+        "alt": "Contact"
+      },
+      "warranty": {
+        "title": "WARRANTY",
+        "description": "30-day warranty for any manufacturing defect.",
+        "alt": "Warranty"
+      }
+    },
+    "reviews_button": "What Our Customers Say"
+  },
+  "promocion": {
+    "title": {
+      "create": "Create Promotion",
+      "edit": "Edit Promotion"
+    },
+    "fields": {
+      "name": "Promotion Name",
+      "type": "Promotion Type",
+      "discount_type": "Discount Type",
+      "discount_percentage": "Discount (%)",
+      "discount_amount": "Discount Amount ($)",
+      "start_date": "Start Date",
+      "end_date": "End Date"
+    },
+    "options": {
+      "category": "Category",
+      "product": "Product",
+      "percentage": "Percentage (%)",
+      "fixed_amount": "Fixed Amount ($)"
+    },
+    "buttons": {
+      "create": "Create Promotion",
+      "update": "Update Promotion"
+    },
+    "validation": {
+      "required": "This field is required",
+      "letters_only": "Only letters, spaces, accents and tildes are allowed. Numbers and special characters are not permitted.",
+      "not_empty": "Name cannot be empty or contain only spaces",
+      "start_date": "Start date cannot be earlier than current date",
+      "end_date": "End date must be after start date",
+      "positive_number": "Value must be a positive number",
+      "percentage_range": "Percentage must be between 1 and 100",
+      "min_amount": "Amount must be greater than 0.01",
+      "name_required": "Promotion name is required",
+      "select_type": "Select promotion type",
+      "select_applies_to": "Select a category or product",
+      "select_discount_type": "Select discount type",
+      "percentage_required": "Percentage discount is required",
+      "amount_required": "Discount amount is required",
+      "start_date_required": "Start date is required",
+      "end_date_required": "End date is required"
+    },
+    "placeholders": {
+      "name": "Example: New Year Discount",
+      "percentage": "Example: 25",
+      "amount": "Example: 50"
+    },
+    "helpers": {
+      "percentage": "Enter a percentage between 1 and 100",
+      "amount": "Enter amount in dollars"
+    },
+    "success": {
+      "saved": "Promotion saved successfully",
+      "created": "Promotion created successfully!"
+    },
+    "errors": {
+      "load_products": "Error loading products",
+      "save": "Error saving promotion."
+    },
+    "error_label": "Error",
+    "view_promotion": "View promotion",
+    "select_type_first": "Select type first"
+  }
+}

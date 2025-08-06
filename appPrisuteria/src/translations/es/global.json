@@ -1,0 +1,114 @@
+{
+  "header": {
+    "user": {
+      "login": "Iniciar Sesión",
+      "register": "Registrarse",
+      "logout": "Cerrar Sesión"
+    },
+    "nav": {
+      "products": "Productos",
+      "promotions": "Promociones",
+      "orders": "Órdenes",
+      "maintenance": "Mantenimientos",
+      "reviews": "Reseñas",
+      "users": "Usuarios"
+    },
+    "actions": {
+      "create": "Crear",
+      "update": "Actualizar",
+      "delete": "Eliminar"
+    },
+    "mobile": {
+      "shopping": "Compras",
+      "notifications": "Notificaciones"
+    },
+    "tooltip": {
+      "home": "Compra nuestros Productos"
+    }
+  },
+  "home": {
+    "title": "Somos Prisuteria Accesorios",
+    "description": "Prisutería Accesorios es una PYME dedicada a la creación y venta de bisutería artesanal, Joyeria y accesorios, ofreciendo diseños únicos y personalizados. Nos especializamos en accesorios hechos a mano con materiales de alta calidad, ideales para realzar tu estilo y expresar tu personalidad. Cada pieza está elaborada con amor y atención al detalle, brindando elegancia y originalidad en cada accesorio.",
+    "features": {
+      "quality": {
+        "title": "CALIDAD DURADERA",
+        "description": "Todas nuestras joyas son de los mejores materiales.",
+        "alt": "Calidad"
+      },
+      "contact": {
+        "title": "CONTÁCTANOS",
+        "description": "Puedes contactarnos 24/7 en redes sociales o WhatsApp.",
+        "alt": "Contacto"
+      },
+      "warranty": {
+        "title": "GARANTÍA",
+        "description": "30 días de garantía por cualquier defecto de fábrica.",
+        "alt": "Garantía"
+      }
+    },
+    "reviews_button": "Lo que opinan Nuestros Clientes"
+  },
+  "promocion": {
+    "title": {
+      "create": "Crear Promoción",
+      "edit": "Editar Promoción"
+    },
+    "fields": {
+      "name": "Nombre de la promoción",
+      "type": "Tipo de promoción",
+      "discount_type": "Tipo de descuento",
+      "discount_percentage": "Descuento (%)",
+      "discount_amount": "Monto de descuento (₡)",
+      "start_date": "Fecha de inicio",
+      "end_date": "Fecha de fin"
+    },
+    "options": {
+      "category": "Categoría",
+      "product": "Producto",
+      "percentage": "Porcentaje (%)",
+      "fixed_amount": "Monto fijo (₡)"
+    },
+    "buttons": {
+      "create": "Crear Promoción",
+      "update": "Actualizar Promoción"
+    },
+    "validation": {
+      "required": "Este campo es requerido",
+      "letters_only": "Solo se permiten letras, espacios, tildes y eñes. No se permiten números ni caracteres especiales.",
+      "not_empty": "El nombre no puede estar vacío o contener solo espacios",
+      "start_date": "La fecha de inicio no puede ser anterior a la fecha actual",
+      "end_date": "La fecha de fin debe ser posterior a la fecha de inicio",
+      "positive_number": "El valor debe ser un número positivo",
+      "percentage_range": "El porcentaje debe estar entre 1 y 100",
+      "min_amount": "El monto debe ser mayor a 0.01",
+      "name_required": "El nombre de la promoción es requerido",
+      "select_type": "Seleccione el tipo de promoción",
+      "select_applies_to": "Seleccione una categoría o producto",
+      "select_discount_type": "Seleccione el tipo de descuento",
+      "percentage_required": "El descuento por porcentaje es requerido",
+      "amount_required": "El monto de descuento es requerido",
+      "start_date_required": "La fecha de inicio es requerida",
+      "end_date_required": "La fecha de fin es requerida"
+    },
+    "placeholders": {
+      "name": "Ejemplo: Descuento de Año Nuevo",
+      "percentage": "Ejemplo: 25",
+      "amount": "Ejemplo: 5000"
+    },
+    "helpers": {
+      "percentage": "Ingrese un porcentaje entre 1 y 100",
+      "amount": "Ingrese el monto en colones"
+    },
+    "success": {
+      "saved": "Promoción guardada correctamente",
+      "created": "¡Promoción creada exitosamente!"
+    },
+    "errors": {
+      "load_products": "Error al cargar productos",
+      "save": "Error al guardar la promoción."
+    },
+    "error_label": "Error",
+    "view_promotion": "Ver promoción",
+    "select_type_first": "Seleccione tipo primero"
+  }
+}

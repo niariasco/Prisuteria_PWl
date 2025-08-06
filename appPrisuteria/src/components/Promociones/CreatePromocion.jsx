@@ -17,8 +17,14 @@ import ProductoService from '../../services/ProductoService';
 import CategoriaService from '../../services/CategoriaService';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
+
+// Importar las traducciones de categorías y productos
+import categoryTranslations from '../../translations/categoryTranslations.json';
+import productTranslations from '../../translations/productTranslations.json';
 
 export function CreatePromocion({ promocionId = null, onSuccess }) {
+  const { t, i18n } = useTranslation();
   const { control, handleSubmit, reset, watch, formState: { errors } } = useForm();
   const [categorias, setCategorias] = useState([]);
   const [productos, setProductos] = useState([]);
@@ -29,20 +35,64 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
   const tipoPromocion = watch('tipo_promocion');
   const tipoDescuento = watch('tipo_descuento');
 
+  // Función para obtener el símbolo de moneda según el idioma
+  const getCurrencySymbol = () => {
+    return i18n.language === 'en' ? '$' : '₡';
+  };
+
+  // Función para obtener el nombre de la moneda según el idioma
+  const getCurrencyName = () => {
+    return i18n.language === 'en' ? 'dollars' : 'colones';
+  };
+
+  // Función para obtener el nombre de la categoría traducido
+  const getCategoryName = (categoria) => {
+    // Si hay traducciones disponibles en la categoría desde la API
+    if (categoria.translations && categoria.translations[i18n.language]) {
+      return categoria.translations[i18n.language];
+    }
+    
+    // Usar mapeo manual de traducciones desde el archivo JSON
+    const categoryName = categoria.nombreSCategoria;
+    if (categoryTranslations.categories[categoryName] && categoryTranslations.categories[categoryName][i18n.language]) {
+      return categoryTranslations.categories[categoryName][i18n.language];
+    }
+    
+    // Si no hay traducción, usar el nombre por defecto
+    return categoria.nombreSCategoria;
+  };
+
+  // Función para obtener el nombre del producto traducido
+  const getProductName = (producto) => {
+    // Si hay traducciones disponibles en el producto desde la API
+    if (producto.translations && producto.translations[i18n.language]) {
+      return producto.translations[i18n.language];
+    }
+    
+    // Usar mapeo manual de traducciones desde el archivo JSON
+    const productName = producto.nombre;
+    if (productTranslations.products[productName] && productTranslations.products[productName][i18n.language]) {
+      return productTranslations.products[productName][i18n.language];
+    }
+    
+    // Si no hay traducción, usar el nombre por defecto
+    return producto.nombre;
+  };
+
   // Función para validar que solo contenga letras, espacios, tildes y eñes
   const validarTextoSoloLetras = (value) => {
-    if (!value) return 'Este campo es requerido';
+    if (!value) return t('promocion.validation.required');
     
     // Expresión regular que permite letras, espacios, tildes, eñes y diéresis
     const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
     
     if (!regex.test(value)) {
-      return 'Solo se permiten letras, espacios, tildes y eñes. No se permiten números ni caracteres especiales.';
+      return t('promocion.validation.letters_only');
     }
     
     // Validar que no sea solo espacios
     if (value.trim().length === 0) {
-      return 'El nombre no puede estar vacío o contener solo espacios';
+      return t('promocion.validation.not_empty');
     }
     
     return true;
@@ -64,12 +114,12 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
       })
       .catch(err => {
         console.error('Error al cargar productos:', err);
-        toast.error('Error al cargar productos', {
+        toast.error(t('promocion.errors.load_products'), {
           duration: 3000,
           position: 'top-center',
         });
       });
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (promocionId) {
@@ -91,7 +141,7 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
 
   // Función para validar fechas
   const validarFecha = (value, fechaComparacion = null, tipo = 'inicio') => {
-    if (!value) return 'Este campo es requerido';
+    if (!value) return t('promocion.validation.required');
     
     // Para la fecha seleccionada, mantener solo la fecha sin horas
     const fechaSeleccionada = new Date(value + 'T00:00:00');
@@ -101,14 +151,14 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
     if (tipo === 'inicio') {
       // Comparar solo fechas, permitiendo fecha actual
       if (fechaSeleccionada.getTime() < fechaActual.getTime()) {
-        return 'La fecha de inicio no puede ser anterior a la fecha actual';
+        return t('promocion.validation.start_date');
       }
     }
     
     if (tipo === 'fin' && fechaComparacion) {
       const fechaInicio = new Date(fechaComparacion + 'T00:00:00');
       if (fechaSeleccionada.getTime() <= fechaInicio.getTime()) {
-        return 'La fecha de fin debe ser posterior a la fecha de inicio';
+        return t('promocion.validation.end_date');
       }
     }
     
@@ -117,21 +167,21 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
 
   // Función para validar el descuento según el tipo
   const validarDescuento = (value, tipoDescuento) => {
-    if (!value) return 'Este campo es requerido';
+    if (!value) return t('promocion.validation.required');
     
     const numValue = parseFloat(value);
     
     if (isNaN(numValue) || numValue <= 0) {
-      return 'El valor debe ser un número positivo';
+      return t('promocion.validation.positive_number');
     }
     
     if (tipoDescuento === 'porcentaje') {
       if (numValue < 1 || numValue > 100) {
-        return 'El porcentaje debe estar entre 1 y 100';
+        return t('promocion.validation.percentage_range');
       }
     } else if (tipoDescuento === 'monto') {
       if (numValue < 0.01) {
-        return 'El monto debe ser mayor a 0.01';
+        return t('promocion.validation.min_amount');
       }
     }
     
@@ -178,7 +228,7 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
             reset();
           }
 
-          toast.success('Promoción guardada correctamente', {
+          toast.success(t('promocion.success.saved'), {
             duration: 4000,
             position: 'top-center',
           });
@@ -192,7 +242,7 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
         console.error('Error completo:', err); // Debug más detallado
         console.error('Error response:', err.response); // Debug respuesta del servidor
         
-        let errorMessage = 'Error al guardar la promoción.';
+        let errorMessage = t('promocion.errors.save');
         
         if (err.response?.data?.message) {
           errorMessage = err.response.data.message;
@@ -213,13 +263,13 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Typography variant="h4" sx={{ mb: 4 }}>
-        {promocionId ? 'Editar Promoción' : 'Crear Promoción'}
+        {promocionId ? t('promocion.title.edit') : t('promocion.title.create')}
       </Typography>
 
       {error && (
         <Box sx={{ mb: 3, p: 2, backgroundColor: '#ffebee', borderRadius: 2 }}>
           <Typography variant="h6" color="error">
-            Error: {error}
+            {t('promocion.error_label')}: {error}
           </Typography>
         </Box>
       )}
@@ -227,14 +277,14 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
       {promocionCreadaId && (
         <Box sx={{ mb: 3, p: 2, backgroundColor: '#c287d7ff', borderRadius: 2 }}>
           <Typography variant="h6" color="#d219a4ff">
-            ¡Promoción creada exitosamente!
+            {t('promocion.success.created')}
           </Typography>
           <Typography sx={{ mt: 1 }}>
             <a
               href={`/promocion/${promocionCreadaId}`}
               style={{ color: '#d219a4ff', textDecoration: 'underline' }}
             >
-              Ver promoción
+              {t('promocion.view_promotion')}
             </a>
           </Typography>
         </Box>
@@ -249,17 +299,17 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
               control={control}
               defaultValue=""
               rules={{ 
-                required: 'El nombre de la promoción es requerido',
+                required: t('promocion.validation.name_required'),
                 validate: validarTextoSoloLetras
               }}
               render={({ field }) => (
                 <TextField
-                  label="Nombre de la promoción"
+                  label={t('promocion.fields.name')}
                   fullWidth
                   required
                   error={!!errors.nombre}
                   helperText={errors.nombre?.message}
-                  placeholder="Ejemplo: Descuento de Año Nuevo"
+                  placeholder={t('promocion.placeholders.name')}
                   {...field}
                 />
               )}
@@ -272,13 +322,13 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
               name="tipo_promocion"
               control={control}
               defaultValue=""
-              rules={{ required: 'Seleccione el tipo de promoción' }}
+              rules={{ required: t('promocion.validation.select_type') }}
               render={({ field }) => (
                 <FormControl fullWidth required error={!!errors.tipo_promocion}>
-                  <InputLabel>Tipo de promoción</InputLabel>
-                  <Select label="Tipo de promoción" {...field}>
-                    <MenuItem value="categoria">Categoría</MenuItem>
-                    <MenuItem value="producto">Producto</MenuItem>
+                  <InputLabel>{t('promocion.fields.type')}</InputLabel>
+                  <Select label={t('promocion.fields.type')} {...field}>
+                    <MenuItem value="categoria">{t('promocion.options.category')}</MenuItem>
+                    <MenuItem value="producto">{t('promocion.options.product')}</MenuItem>
                   </Select>
                   {errors.tipo_promocion && (
                     <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
@@ -296,27 +346,31 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
               name="aplica_a"
               control={control}
               defaultValue=""
-              rules={{ required: `Seleccione ${tipoPromocion === 'categoria' ? 'una categoría' : 'un producto'}` }}
+              rules={{ required: t('promocion.validation.select_applies_to', `${t('promocion.select')} ${tipoPromocion === 'categoria' ? t('promocion.options.category').toLowerCase() : t('promocion.options.product').toLowerCase()}`) }}
               render={({ field }) => (
                 <FormControl fullWidth required error={!!errors.aplica_a} disabled={!tipoPromocion}>
                   <InputLabel>
-                    {tipoPromocion === 'categoria' ? 'Categoría' : tipoPromocion === 'producto' ? 'Producto' : 'Seleccione tipo primero'}
+                    {tipoPromocion === 'categoria' ? t('promocion.options.category') : 
+                     tipoPromocion === 'producto' ? t('promocion.options.product') : 
+                     t('promocion.select_type_first')}
                   </InputLabel>
                   <Select
-                    label={tipoPromocion === 'categoria' ? 'Categoría' : tipoPromocion === 'producto' ? 'Producto' : 'Seleccione tipo primero'}
+                    label={tipoPromocion === 'categoria' ? t('promocion.options.category') : 
+                           tipoPromocion === 'producto' ? t('promocion.options.product') : 
+                           t('promocion.select_type_first')}
                     {...field}
                   >
                     {tipoPromocion === 'categoria' &&
-  categorias.map((cat) => (
-    <MenuItem key={cat.categoriaId} value={cat.categoriaId}>
-      {cat.nombreSCategoria}
-    </MenuItem>
-  ))}
+                      categorias.map((cat) => (
+                        <MenuItem key={cat.categoriaId} value={cat.categoriaId}>
+                          {getCategoryName(cat)}
+                        </MenuItem>
+                      ))}
 
                     {tipoPromocion === 'producto' &&
                       productos.map((prod) => (
                         <MenuItem key={prod.id} value={prod.id}>
-                          {prod.nombre}
+                          {getProductName(prod)}
                         </MenuItem>
                       ))}
                   </Select>
@@ -336,13 +390,13 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
               name="tipo_descuento"
               control={control}
               defaultValue="porcentaje"
-              rules={{ required: 'Seleccione el tipo de descuento' }}
+              rules={{ required: t('promocion.validation.select_discount_type') }}
               render={({ field }) => (
                 <FormControl fullWidth required error={!!errors.tipo_descuento}>
-                  <InputLabel>Tipo de descuento</InputLabel>
-                  <Select label="Tipo de descuento" {...field}>
-                    <MenuItem value="porcentaje">Porcentaje (%)</MenuItem>
-                    <MenuItem value="monto">Monto fijo (₡)</MenuItem>
+                  <InputLabel>{t('promocion.fields.discount_type')}</InputLabel>
+                  <Select label={t('promocion.fields.discount_type')} {...field}>
+                    <MenuItem value="porcentaje">{t('promocion.options.percentage')}</MenuItem>
+                    <MenuItem value="monto">{t('promocion.options.fixed_amount', `Fixed Amount (${getCurrencySymbol()})`)}</MenuItem>
                   </Select>
                   {errors.tipo_descuento && (
                     <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
@@ -362,19 +416,19 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
                 control={control}
                 defaultValue=""
                 rules={{
-                  required: 'El descuento por porcentaje es requerido',
+                  required: t('promocion.validation.percentage_required'),
                   validate: (value) => validarDescuento(value, 'porcentaje')
                 }}
                 render={({ field }) => (
                   <TextField
-                    label="Descuento (%)"
+                    label={t('promocion.fields.discount_percentage')}
                     fullWidth
                     type="number"
                     required
                     inputProps={{ min: 1, max: 100, step: 0.01 }}
                     error={!!errors.descuento_porcentaje}
-                    helperText={errors.descuento_porcentaje?.message || 'Ingrese un porcentaje entre 1 y 100'}
-                    placeholder="Ejemplo: 25"
+                    helperText={errors.descuento_porcentaje?.message || t('promocion.helpers.percentage')}
+                    placeholder={t('promocion.placeholders.percentage')}
                     {...field}
                   />
                 )}
@@ -385,19 +439,19 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
                 control={control}
                 defaultValue=""
                 rules={{
-                  required: 'El monto de descuento es requerido',
+                  required: t('promocion.validation.amount_required'),
                   validate: (value) => validarDescuento(value, 'monto')
                 }}
                 render={({ field }) => (
                   <TextField
-                    label="Monto de descuento (₡)"
+                    label={t('promocion.fields.discount_amount', `Discount Amount (${getCurrencySymbol()})`)}
                     fullWidth
                     type="number"
                     required
                     inputProps={{ min: 0.01, step: 0.01 }}
                     error={!!errors.descuento_monto}
-                    helperText={errors.descuento_monto?.message || 'Ingrese el monto en colones'}
-                    placeholder="Ejemplo: 5000"
+                    helperText={errors.descuento_monto?.message || t('promocion.helpers.amount', `Enter amount in ${getCurrencyName()}`)}
+                    placeholder={t('promocion.placeholders.amount', i18n.language === 'en' ? 'Example: 50' : 'Ejemplo: 5000')}
                     {...field}
                   />
                 )}
@@ -412,12 +466,12 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
               control={control}
               defaultValue=""
               rules={{
-                required: 'La fecha de inicio es requerida',
+                required: t('promocion.validation.start_date_required'),
                 validate: (value) => validarFecha(value, null, 'inicio')
               }}
               render={({ field }) => (
                 <TextField
-                  label="Fecha de inicio"
+                  label={t('promocion.fields.start_date')}
                   fullWidth
                   type="date"
                   required
@@ -437,12 +491,12 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
               control={control}
               defaultValue=""
               rules={{
-                required: 'La fecha de fin es requerida',
+                required: t('promocion.validation.end_date_required'),
                 validate: (value) => validarFecha(value, watch('fecha_inicio'), 'fin')
               }}
               render={({ field }) => (
                 <TextField
-                  label="Fecha de fin"
+                  label={t('promocion.fields.end_date')}
                   fullWidth
                   type="date"
                   required
@@ -467,7 +521,7 @@ export function CreatePromocion({ promocionId = null, onSuccess }) {
                 mt: 2
               }}
             >
-              {promocionId ? 'Actualizar Promoción' : 'Crear Promoción'}
+              {promocionId ? t('promocion.buttons.update') : t('promocion.buttons.create')}
             </Button>
           </Grid>
         </Grid>
