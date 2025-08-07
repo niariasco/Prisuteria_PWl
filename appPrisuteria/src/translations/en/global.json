@@ -110,5 +110,25 @@
     "error_label": "Error",
     "view_promotion": "View promotion",
     "select_type_first": "Select type first"
+  },
+  "promotion_detail": {
+    "page_title": "Prisuteria Accessories Promotions",
+    "detail_title": "Promotion Details",
+    "fields": {
+      "name": "Name",
+      "type": "Type",
+      "applied_to": "Applied to",
+      "start": "Start",
+      "end": "End",
+      "status": "Status"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "error": "Error",
+      "not_available": "N/A"
+    },
+    "buttons": {
+      "back": "← Back"
+    }
   }
 }

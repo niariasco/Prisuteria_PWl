@@ -1,0 +1,34 @@
+{
+  "status_mappings": {
+    "es": {
+      "Vigente": "promocion.status_active",
+      "Activo": "promocion.status_active", 
+      "Inactivo": "promocion.status_inactive",
+      "Expirado": "promocion.status_expired",
+      "Vencido": "promocion.status_expired",
+      "Pendiente": "promocion.status_pending"
+    },
+    "en": {
+      "Vigente": "promocion.status_active",
+      "Activo": "promocion.status_active",
+      "Inactivo": "promocion.status_inactive", 
+      "Expirado": "promocion.status_expired",
+      "Vencido": "promocion.status_expired",
+      "Pendiente": "promocion.status_pending"
+    }
+  },
+  "default_translations": {
+    "es": {
+      "promocion.status_active": "Vigente",
+      "promocion.status_inactive": "Inactivo",
+      "promocion.status_expired": "Expirado", 
+      "promocion.status_pending": "Pendiente"
+    },
+    "en": {
+      "promocion.status_active": "Active",
+      "promocion.status_inactive": "Inactive",
+      "promocion.status_expired": "Expired",
+      "promocion.status_pending": "Pending"
+    }
+  }
+}

@@ -10,20 +10,69 @@ import StarIcon from '@mui/icons-material/Star';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import DiscountIcon from '@mui/icons-material/Discount';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import { useTranslation } from 'react-i18next';
 
 import PromocionService from '../../services/PromocionService';
 
 export function DetallePromociones({ addItem }) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [loaded, setLoaded] = useState(false);
 
+  // Función para traducir categorías usando la estructura anidada
+  const translateCategory = (categoryName) => {
+    if (!categoryName) return t('promotion_detail.messages.not_available', 'N/A');
+    
+    const categoryData = t(`categories.${categoryName}`, { returnObjects: true });
+    if (typeof categoryData === 'object' && categoryData[i18n.language]) {
+      return categoryData[i18n.language];
+    }
+    return categoryName; // Fallback al nombre original
+  };
+
+  // Función para traducir productos usando la estructura anidada
+  const translateProduct = (productName) => {
+    if (!productName) return t('promotion_detail.messages.not_available', 'N/A');
+    
+    const productData = t(`products.${productName}`, { returnObjects: true });
+    if (typeof productData === 'object' && productData[i18n.language]) {
+      return productData[i18n.language];
+    }
+    return productName; // Fallback al nombre original
+  };
+
+  // Función para traducir estados usando el mapeo complejo
+  const translateStatus = (status) => {
+    if (!status) return t('promotion_detail.messages.not_available', 'N/A');
+    
+    // Primero buscar el mapeo del estado
+    const statusMapping = t(`status_mappings.${status}`, status);
+    
+    // Luego buscar la traducción correspondiente
+    const translatedStatus = t(`status_translations.${statusMapping}`, status);
+    
+    return translatedStatus;
+  };
+
+  // Función para traducir tipos
+  const translateType = (type) => {
+    if (!type) return t('promotion_detail.messages.not_available', 'N/A');
+    
+    const typeTranslations = {
+      'Categoria': t('promocion.options.category', 'Categoría'),
+      'Producto': t('promocion.options.product', 'Producto')
+    };
+    
+    return typeTranslations[type] || type;
+  };
+
   // Función para formatear fechas de YYYY-MM-DD a DD/MM/YYYY (sin horas)
   const formatearFecha = (fecha) => {
-    if (!fecha) return 'N/A';
+    if (!fecha) return t('promotion_detail.messages.not_available', 'N/A');
     // Extraer solo la parte de la fecha (antes del espacio o 'T' si hay hora)
     const soloFecha = fecha.split(' ')[0].split('T')[0];
     const [year, month, day] = soloFecha.split('-');
@@ -42,8 +91,8 @@ export function DetallePromociones({ addItem }) {
       });
   }, [id]);
 
-  if (!loaded) return <p>Cargando...</p>;
-  if (error) return <p>Error: {error.message}</p>;
+  if (!loaded) return <p>{t('promotion_detail.messages.loading', 'Cargando...')}</p>;
+  if (error) return <p>{t('promotion_detail.messages.error', 'Error')}: {error.message}</p>;
 
   return (
     <Box sx={{ 
@@ -78,7 +127,7 @@ export function DetallePromociones({ addItem }) {
                 WebkitTextFillColor: 'transparent',
               }}
             >
-              Promociones Prisutería Accesorios
+              {t('promotion_detail.page_title', 'Promociones Prisutería Accesorios')}
             </Typography>
             <StarIcon sx={{ color: '#d83b6a', fontSize: 30 }} />
           </Box>
@@ -104,24 +153,24 @@ export function DetallePromociones({ addItem }) {
             }}
           >
             <Typography variant="h4" sx={{ color: '#d83b6a', fontWeight: 'bold', mb: 3 }}>
-              Detalle de la Promoción
+              {t('promotion_detail.detail_title', 'Detalle de la Promoción')}
             </Typography>
 
             <Typography variant="h6" sx={{ mb: 1 }}>
-              <strong>Nombre:</strong> {data.nombre}
+              <strong>{t('promotion_detail.fields.name', 'Nombre')}:</strong> {data.nombre}
             </Typography>
 
             <Typography variant="body1" sx={{ mb: 1 }}>
-              <strong>Tipo:</strong> {data.tipo}
+              <strong>{t('promotion_detail.fields.type', 'Tipo')}:</strong> {translateType(data.tipo)}
             </Typography>
 
             <Typography variant="body1" sx={{ mb: 1 }}>
-              <strong>Aplicado en:</strong>{' '}
+              <strong>{t('promotion_detail.fields.applied_to', 'Aplicado en')}:</strong>{' '}
               {data.tipo === 'Categoria' && data.nombre_categoria
-                ? data.nombre_categoria
+                ? translateCategory(data.nombre_categoria)
                 : data.tipo === 'Producto' && data.nombre_producto
-                ? data.nombre_producto
-                : 'N/A'}
+                ? translateProduct(data.nombre_producto)
+                : t('promotion_detail.messages.not_available', 'N/A')}
             </Typography>
 
             <Typography
@@ -134,20 +183,20 @@ export function DetallePromociones({ addItem }) {
 
             <Typography variant="body1" sx={{ mb: 1, display: 'flex', justifyContent: 'center', gap: 1 }}>
               <CalendarMonthIcon fontSize="small" />
-              <strong>Inicio:</strong> {formatearFecha(data.fecha_inicio)}
+              <strong>{t('promotion_detail.fields.start', 'Inicio')}:</strong> {formatearFecha(data.fecha_inicio)}
             </Typography>
 
             <Typography variant="body1" sx={{ mb: 2, display: 'flex', justifyContent: 'center', gap: 1 }}>
               <CalendarMonthIcon fontSize="small" />
-              <strong>Fin:</strong> {formatearFecha(data.fecha_fin)}
+              <strong>{t('promotion_detail.fields.end', 'Fin')}:</strong> {formatearFecha(data.fecha_fin)}
             </Typography>
 
             <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 1 }}>
-              Estado:
+              {t('promotion_detail.fields.status', 'Estado')}:
             </Typography>
 
             <Chip
-              label={data.Estado}
+              label={translateStatus(data.Estado)}
               icon={<LocalOfferIcon />}
               sx={{
                 backgroundColor: data.color_estado || '#ccc',
@@ -163,7 +212,7 @@ export function DetallePromociones({ addItem }) {
             <Divider sx={{ my: 3 }} />
 
             <Button variant="outlined" color="secondary" onClick={() => navigate(-1)}>
-              ← Volver
+              {t('promotion_detail.buttons.back', '← Volver')}
             </Button>
           </Box>
         </Container>

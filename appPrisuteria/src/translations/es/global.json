@@ -110,5 +110,25 @@
     "error_label": "Error",
     "view_promotion": "Ver promoción",
     "select_type_first": "Seleccione tipo primero"
+  },
+  "promotion_detail": {
+    "page_title": "Promociones Prisutería Accesorios",
+    "detail_title": "Detalle de la Promoción",
+    "fields": {
+      "name": "Nombre",
+      "type": "Tipo",
+      "applied_to": "Aplicado en",
+      "start": "Inicio",
+      "end": "Fin",
+      "status": "Estado"
+    },
+    "messages": {
+      "loading": "Cargando...",
+      "error": "Error",
+      "not_available": "N/A"
+    },
+    "buttons": {
+      "back": "← Volver"
+    }
   }
 }
