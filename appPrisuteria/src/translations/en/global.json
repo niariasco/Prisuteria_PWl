@@ -51,7 +51,8 @@
   "promocion": {
     "title": {
       "create": "Create Promotion",
-      "edit": "Edit Promotion"
+      "edit": "Edit Promotion",
+      "update": "Update Promotion"
     },
     "fields": {
       "name": "Promotion Name",
@@ -60,7 +61,10 @@
       "discount_percentage": "Discount (%)",
       "discount_amount": "Discount Amount ($)",
       "start_date": "Start Date",
-      "end_date": "End Date"
+      "end_date": "End Date",
+      "product": "Product",
+      "category": "Category",
+      "promotion": "Promotion"
     },
     "options": {
       "category": "Category",
@@ -70,7 +74,9 @@
     },
     "buttons": {
       "create": "Create Promotion",
-      "update": "Update Promotion"
+      "update": "Update Promotion",
+      "save_changes": "Save Changes",
+      "not_editable": "Not Editable"
     },
     "validation": {
       "required": "This field is required",
@@ -88,12 +94,18 @@
       "percentage_required": "Percentage discount is required",
       "amount_required": "Discount amount is required",
       "start_date_required": "Start date is required",
-      "end_date_required": "End date is required"
+      "end_date_required": "End date is required",
+      "select_product": "Select a product",
+      "select_category": "Select a category",
+      "percentage_helper": "Enter a percentage between 1% and 100%",
+      "amount_helper": "Enter the fixed discount amount in dollars"
     },
     "placeholders": {
       "name": "Example: New Year Discount",
       "percentage": "Example: 25",
-      "amount": "Example: 50"
+      "amount": "Example: 50",
+      "select_product": "Select a product",
+      "select_category": "Select a category"
     },
     "helpers": {
       "percentage": "Enter a percentage between 1 and 100",
@@ -101,18 +113,40 @@
     },
     "success": {
       "saved": "Promotion saved successfully",
-      "created": "Promotion created successfully!"
+      "created": "Promotion created successfully!",
+      "updated": "Promotion updated successfully!",
+      "modified": "Promotion modified successfully!"
     },
     "errors": {
       "load_products": "Error loading products",
-      "save": "Error saving promotion."
+      "save": "Error saving promotion.",
+      "load_initial_data": "Error loading initial data",
+      "load_selected": "Could not load the selected promotion",
+      "no_selection": "No promotion has been selected",
+      "update_failed": "Could not update the promotion. Please try again.",
+      "not_editable": "Cannot modify a promotion with 'Applied' status. Only promotions with 'Pending' or 'Active' status can be modified."
     },
     "error_label": "Error",
     "view_promotion": "View promotion",
-    "select_type_first": "Select type first"
+    "select_type_first": "Select type first",
+    "steps": {
+      "select": "1. Select Promotion",
+      "modify": "2. Modify Promotion Data"
+    },
+    "status": {
+      "active": "Active",
+      "pending": "Pending", 
+      "applied": "Applied",
+      "inactive": "Inactive",
+      "expired": "Expired"
+    },
+    "warnings": {
+      "not_editable": "⚠ This promotion cannot be modified because it has 'Applied' status. Only promotions with 'Pending' or 'Active' status can be modified.",
+      "state_restriction": "This promotion cannot be modified because it has status \"{status}\". Only promotions with 'Pending' or 'Active' status can be modified."
+    }
   },
   "promotion_detail": {
-    "page_title": "Prisuteria Accessories Promotions",
+    "page_title": "Prisuteria Accesorios Promotions",
     "detail_title": "Promotion Details",
     "fields": {
       "name": "Name",

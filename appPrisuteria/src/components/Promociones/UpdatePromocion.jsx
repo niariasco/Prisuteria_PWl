@@ -7,6 +7,7 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as Yup from "yup";
+import { useTranslation } from "react-i18next";
 import PromocionService from "../../services/PromocionService";
 import ProductoService from "../../services/ProductoService";
 import CategoriaService from "../../services/CategoriaService";
@@ -18,49 +19,55 @@ const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
-const validationSchema = Yup.object().shape({
-  nombre: Yup.string()
-    .required("El nombre es obligatorio")
-    .matches(/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/, "El nombre no debe contener números ni caracteres especiales"),
-  tipo: Yup.string().oneOf(["Producto", "Categoria"]).required("El tipo es obligatorio"),
-  tipoDescuento: Yup.string()
-    .oneOf(["Porcentaje", "Monto"])
-    .required("El tipo de descuento es obligatorio"),
-  porcentajeDescuento: Yup.number()
-    .nullable()
-    .when('tipoDescuento', {
-      is: 'Porcentaje',
-      then: (schema) => schema
-        .required("El porcentaje de descuento es obligatorio")
-        .min(1, "El descuento debe ser mínimo 1%")
-        .max(100, "El descuento debe ser máximo 100%"),
-      otherwise: (schema) => schema.nullable().notRequired()
-    }),
-  montoDescuento: Yup.number()
-    .nullable()
-    .when('tipoDescuento', {
-      is: 'Monto',
-      then: (schema) => schema
-        .required("El monto de descuento es obligatorio")
-        .min(0.01, "El monto debe ser mayor a 0")
-        .max(999999, "El monto no puede exceder ₡999,999"),
-      otherwise: (schema) => schema.nullable().notRequired()
-    }),
-  fecha_inicio: Yup.string().required("La fecha de inicio es obligatoria"),
-  fecha_fin: Yup.string().required("La fecha de fin es obligatoria"),
-  ProductoID: Yup.string().when('tipo', {
-    is: 'Producto',
-    then: (schema) => schema.required('Debe seleccionar un producto'),
-    otherwise: (schema) => schema.nullable().notRequired()
-  }),
-  CategoriaID: Yup.string().when('tipo', {
-    is: 'Categoria', 
-    then: (schema) => schema.required('Debe seleccionar una categoría'),
-    otherwise: (schema) => schema.nullable().notRequired()
-  })
-});
-
 export function UpdatePromocion() {
+  const { t, i18n } = useTranslation();
+
+  // Crear esquema de validación dinámico basado en el idioma actual
+  const createValidationSchema = () => {
+    return Yup.object().shape({
+      nombre: Yup.string()
+        .required(t("promocion.validation.name_required"))
+        .matches(/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/, t("promocion.validation.letters_only")),
+      tipo: Yup.string().oneOf(["Producto", "Categoria"]).required(t("promocion.validation.select_type")),
+      tipoDescuento: Yup.string()
+        .oneOf(["Porcentaje", "Monto"])
+        .required(t("promocion.validation.select_discount_type")),
+      porcentajeDescuento: Yup.number()
+        .nullable()
+        .when('tipoDescuento', {
+          is: 'Porcentaje',
+          then: (schema) => schema
+            .required(t("promocion.validation.percentage_required"))
+            .min(1, t("promocion.validation.percentage_range"))
+            .max(100, t("promocion.validation.percentage_range")),
+          otherwise: (schema) => schema.nullable().notRequired()
+        }),
+      montoDescuento: Yup.number()
+        .nullable()
+        .when('tipoDescuento', {
+          is: 'Monto',
+          then: (schema) => schema
+            .required(t("promocion.validation.amount_required"))
+            .min(0.01, t("promocion.validation.min_amount"))
+            .max(999999, "El monto no puede exceder ₡999,999"),
+          otherwise: (schema) => schema.nullable().notRequired()
+        }),
+      fecha_inicio: Yup.string().required(t("promocion.validation.start_date_required")),
+      fecha_fin: Yup.string().required(t("promocion.validation.end_date_required")),
+      ProductoID: Yup.string().when('tipo', {
+        is: 'Producto',
+        then: (schema) => schema.required(t("promocion.validation.select_product")),
+        otherwise: (schema) => schema.nullable().notRequired()
+      }),
+      CategoriaID: Yup.string().when('tipo', {
+        is: 'Categoria', 
+        then: (schema) => schema.required(t("promocion.validation.select_category")),
+        otherwise: (schema) => schema.nullable().notRequired()
+      })
+    });
+  };
+
+  const [validationSchema, setValidationSchema] = useState(createValidationSchema());
   const [promociones, setPromociones] = useState([]);
   const [promoSeleccionada, setPromoSeleccionada] = useState("");
   const [productos, setProductos] = useState([]);
@@ -97,24 +104,74 @@ export function UpdatePromocion() {
 
   const tipo = watch("tipo");
   const tipoDescuento = watch("tipoDescuento");
-  const porcentajeDescuento = watch("porcentajeDescuento");
-  const montoDescuento = watch("montoDescuento");
+
+  // Actualizar esquema de validación cuando cambie el idioma
+  useEffect(() => {
+    const newSchema = createValidationSchema();
+    setValidationSchema(newSchema);
+  }, [i18n.language, t]);
+
+  // Función para obtener la traducción de categorías
+  const getCategoryTranslation = (categoryName) => {
+    if (!categoryName) return categoryName;
+    
+    // Buscar en las traducciones de categorías
+    const categoryKey = Object.keys(t("categories", { returnObjects: true }) || {})
+      .find(key => key === categoryName);
+    
+    if (categoryKey) {
+      const translations = t("categories", { returnObjects: true })[categoryKey];
+      return translations[i18n.language] || translations.es || categoryName;
+    }
+    
+    return categoryName;
+  };
+
+  // Función para obtener la traducción de productos
+  const getProductTranslation = (productName) => {
+    if (!productName) return productName;
+    
+    // Buscar en las traducciones de productos
+    const productKey = Object.keys(t("products", { returnObjects: true }) || {})
+      .find(key => key === productName);
+    
+    if (productKey) {
+      const translations = t("products", { returnObjects: true })[productKey];
+      return translations[i18n.language] || translations.es || productName;
+    }
+    
+    return productName;
+  };
+
+  // Función para obtener la traducción de estados
+  const getStatusTranslation = (status) => {
+    if (!status) return status;
+    
+    // Buscar en las traducciones de estados
+    const statusTranslations = t("status_translations", { returnObjects: true }) || {};
+    const statusKey = `promocion.status_${status.toLowerCase()}`;
+    
+    return statusTranslations[statusKey] || t(`promocion.status.${status.toLowerCase()}`, status);
+  };
 
   // Función para determinar si una promoción es editable basada en su estado
   const esPromocionEditable = (promocion) => {
-    const estadosEditables = ['Vigente', 'Pendiente'];
+    const estadosEditables = ['Vigente', 'Pendiente', 'Active', 'Pending'];
     return estadosEditables.includes(promocion.Estado);
   };
 
   // Función para obtener el texto del estado con color
   const obtenerEstadoTexto = (estado) => {
     const estadosConfig = {
-      'Pendiente': { texto: 'Pendiente', color: '#ADD8E6' },
-      'Vigente': { texto: 'Vigente', color: '#FF4D4D ' },
-      'Aplicado': { texto: 'Aplicado', color: '#D3D3D3 ' }
+      'Pendiente': { texto: getStatusTranslation('Pendiente'), color: '#ADD8E6' },
+      'Pending': { texto: getStatusTranslation('Pending'), color: '#ADD8E6' },
+      'Vigente': { texto: getStatusTranslation('Vigente'), color: '#FF4D4D' },
+      'Active': { texto: getStatusTranslation('Active'), color: '#FF4D4D' },
+      'Aplicado': { texto: getStatusTranslation('Aplicado'), color: '#D3D3D3' },
+      'Applied': { texto: getStatusTranslation('Applied'), color: '#D3D3D3' }
     };
     
-    return estadosConfig[estado] || { texto: estado, color: '#757575' };
+    return estadosConfig[estado] || { texto: getStatusTranslation(estado) || estado, color: '#757575' };
   };
 
   useEffect(() => {
@@ -130,12 +187,12 @@ export function UpdatePromocion() {
         setProductos(productosRes.data || []);
         setCategorias(categoriasRes.data || []);
       } catch (err) {
-        setMensajeError("Error al cargar los datos iniciales");
+        setMensajeError(t("promocion.errors.load_initial_data"));
       }
     };
 
     cargarDatos();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     setPromocionModificadaId(null); // Limpiar mensaje de éxito al cambiar promoción
@@ -162,14 +219,11 @@ export function UpdatePromocion() {
           };
 
           // Determinar el tipo de descuento basado en los datos existentes
-          // El backend devuelve tipo_descuento, no tipoDescuento
-          let tipoDescuentoDetectado = "Porcentaje"; // valor por defecto
+          let tipoDescuentoDetectado = "Porcentaje";
           
           if (promo.tipo_descuento) {
-            // Si existe el campo tipo_descuento en la BD, usarlo directamente
             tipoDescuentoDetectado = promo.tipo_descuento;
           } else {
-            // Fallback: detectar por valor (si es <= 100 probablemente es porcentaje)
             tipoDescuentoDetectado = (promo.descuento && promo.descuento <= 100) ? "Porcentaje" : "Monto";
           }
 
@@ -191,10 +245,10 @@ export function UpdatePromocion() {
           // Asignar el valor al campo correspondiente
           if (tipoDescuentoDetectado === "Porcentaje") {
             datosFormulario.porcentajeDescuento = String(promo.descuento || "");
-            datosFormulario.montoDescuento = null; // Usar null en lugar de string vacío
+            datosFormulario.montoDescuento = null;
           } else if (tipoDescuentoDetectado === "Monto") {
             datosFormulario.montoDescuento = String(promo.descuento || "");
-            datosFormulario.porcentajeDescuento = null; // Usar null en lugar de string vacío
+            datosFormulario.porcentajeDescuento = null;
           }
           
           reset(datosFormulario);
@@ -219,10 +273,10 @@ export function UpdatePromocion() {
           
           if (!esEditable) {
             const estadoConfig = obtenerEstadoTexto(promo.Estado);
-            setMensajeError(`Esta promoción no se puede modificar porque tiene estado "${estadoConfig.texto}". Solo se pueden modificar promociones con estado "Pendiente" o "Vigente".`);
+            setMensajeError(t("promocion.warnings.state_restriction", { status: estadoConfig.texto }));
           }
         } catch (err) {
-          setMensajeError("No se pudo cargar la promoción seleccionada");
+          setMensajeError(t("promocion.errors.load_selected"));
         } finally {
           setLoadingPromo(false);
         }
@@ -234,7 +288,7 @@ export function UpdatePromocion() {
       setMostrarFormulario(false);
       setPromocionEditable(true);
     }
-  }, [promoSeleccionada, reset, setValue]);
+  }, [promoSeleccionada, reset, setValue, t]);
 
   // Limpiar campos cuando cambia el tipo
   useEffect(() => {
@@ -245,14 +299,11 @@ export function UpdatePromocion() {
     }
   }, [tipo, setValue]);
 
-  // Limpiar campos de descuento cuando cambia el tipo de descuento (solo si es cambio manual del usuario)
+  // Limpiar campos de descuento cuando cambia el tipo de descuento
   useEffect(() => {
-    // Solo limpiar si hay una promoción seleccionada, no estamos cargando datos,
-    // el formulario está visible Y es un cambio manual (no la carga inicial)
     if (promoSeleccionada && !loadingPromo && mostrarFormulario) {
       const promocionActual = promociones.find(p => p.id == promoSeleccionada);
       
-      // Si la promoción existe y el tipo de descuento cambió del original, limpiar campos
       if (promocionActual && promocionActual.tipo_descuento !== tipoDescuento) {
         setValue("porcentajeDescuento", null);
         setValue("montoDescuento", null);
@@ -262,20 +313,19 @@ export function UpdatePromocion() {
 
   const onSubmit = async (data) => {
     if (!promocionEditable) {
-      setMensajeError("No se puede modificar una promoción con estado 'Aplicado'. Solo se pueden modificar promociones con estado 'Pendiente' o 'Vigente'.");
+      setMensajeError(t("promocion.errors.not_editable"));
       return;
     }
 
     try {
       if (!promoSeleccionada) {
-        setMensajeError("No se ha seleccionado ninguna promoción");
+        setMensajeError(t("promocion.errors.no_selection"));
         return;
       }
 
       // Función para convertir datetime-local a formato MySQL
       const formatearFechaParaMySQL = (fechaDatetimeLocal) => {
         if (!fechaDatetimeLocal) return null;
-        // Convertir "2024-01-15T14:30" a "2024-01-15 14:30:00"
         return fechaDatetimeLocal.replace('T', ' ') + ':00';
       };
 
@@ -283,8 +333,8 @@ export function UpdatePromocion() {
       const datosParaEnvio = {
         id: parseInt(promoSeleccionada),
         nombre: data.nombre.trim(),
-        tipo: data.tipo, // Se mantiene como "Producto"/"Categoria", el service lo convierte
-        tipo_descuento: data.tipoDescuento, // "Porcentaje" o "Monto"
+        tipo: data.tipo,
+        tipo_descuento: data.tipoDescuento,
         descuento: data.tipoDescuento === "Porcentaje" 
           ? parseFloat(data.porcentajeDescuento) 
           : parseFloat(data.montoDescuento),
@@ -314,7 +364,7 @@ export function UpdatePromocion() {
       } else if (err.message) {
         setMensajeError(err.message);
       } else {
-        setMensajeError("No se pudo actualizar la promoción. Intente nuevamente.");
+        setMensajeError(t("promocion.errors.update_failed"));
       }
     }
   };
@@ -323,21 +373,21 @@ export function UpdatePromocion() {
     <Box sx={{ maxWidth: 800, mx: "auto", mt: 3, p: 2 }}>
       <Typography variant="h4" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <EditIcon color="primary" />
-        Modificar Promoción
+        {t("promocion.title.update")}
       </Typography>
 
       {/* Mensaje de éxito morado estilo promoción creada */}
       {promocionModificadaId && (
         <Box sx={{ mb: 3, p: 2, backgroundColor: '#c287d7ff', borderRadius: 2, mt: 8 }}>
           <Typography variant="h6" color="#d219a4ff">
-            ¡Promoción modificada exitosamente!
+            {t("promocion.success.modified")}
           </Typography>
           <Typography sx={{ mt: 1 }}>
             <a
               href={`/promocion/${promocionModificadaId}`}
               style={{ color: '#d219a4ff', textDecoration: 'underline' }}
             >
-              Ver detalle de promoción
+              {t("promocion.view_promotion")}
             </a>
           </Typography>
         </Box>
@@ -362,19 +412,19 @@ export function UpdatePromocion() {
           }}
         >
           <Typography variant="h6" color="error">
-            Error: {mensajeError}
+            {t("promocion.error_label")}: {mensajeError}
           </Typography>
         </Box>
       )}
 
       <Card sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>1. Seleccionar Promoción</Typography>
+        <Typography variant="h6" gutterBottom>{t("promocion.steps.select")}</Typography>
         <FormControl fullWidth>
-          <InputLabel id="promocion-label">Promoción</InputLabel>
+          <InputLabel id="promocion-label">{t("promocion.fields.promotion")}</InputLabel>
           <Select
             labelId="promocion-label"
             value={promoSeleccionada}
-            label="Promoción"
+            label={t("promocion.fields.promotion")}
             onChange={(e) => setPromoSeleccionada(e.target.value)}
             disabled={loadingPromo}
           >
@@ -414,7 +464,7 @@ export function UpdatePromocion() {
                         variant="caption" 
                         sx={{ ml: 1, fontStyle: 'italic', color: 'text.disabled' }}
                       >
-                        - No editable
+                        - {t("promocion.buttons.not_editable")}
                       </Typography>
                     )}
                   </Box>
@@ -434,10 +484,10 @@ export function UpdatePromocion() {
       {mostrarFormulario && (
         <Card sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>
-            2. Modificar Datos de la Promoción
+            {t("promocion.steps.modify")}
             {!promocionEditable && (
               <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-                ⚠ Esta promoción no se puede modificar porque tiene estado "Aplicado". Solo se pueden modificar promociones con estado "Pendiente" o "Vigente".
+                {t("promocion.warnings.not_editable")}
               </Typography>
             )}
           </Typography>
@@ -451,7 +501,7 @@ export function UpdatePromocion() {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Nombre"
+                      label={t("promocion.fields.name")}
                       fullWidth
                       disabled={!promocionEditable}
                       error={!!errors.nombre}
@@ -467,10 +517,10 @@ export function UpdatePromocion() {
                   control={control}
                   render={({ field }) => (
                     <FormControl fullWidth error={!!errors.tipo}>
-                      <InputLabel>Tipo</InputLabel>
-                      <Select {...field} label="Tipo" disabled={!promocionEditable}>
-                        <MenuItem value="Producto">Producto</MenuItem>
-                        <MenuItem value="Categoria">Categoría</MenuItem>
+                      <InputLabel>{t("promocion.fields.type")}</InputLabel>
+                      <Select {...field} label={t("promocion.fields.type")} disabled={!promocionEditable}>
+                        <MenuItem value="Producto">{t("promocion.options.product")}</MenuItem>
+                        <MenuItem value="Categoria">{t("promocion.options.category")}</MenuItem>
                       </Select>
                       {errors.tipo && (
                         <Typography variant="caption" color="error" sx={{ mt: 1, ml: 2 }}>
@@ -489,12 +539,12 @@ export function UpdatePromocion() {
                     control={control}
                     render={({ field }) => (
                       <FormControl fullWidth error={!!errors.ProductoID}>
-                        <InputLabel>Producto</InputLabel>
-                        <Select {...field} label="Producto" disabled={!promocionEditable}>
-                          <MenuItem value="">Seleccione un producto</MenuItem>
+                        <InputLabel>{t("promocion.fields.product")}</InputLabel>
+                        <Select {...field} label={t("promocion.fields.product")} disabled={!promocionEditable}>
+                          <MenuItem value="">{t("promocion.placeholders.select_product")}</MenuItem>
                           {productos.map((p) => (
                             <MenuItem key={p.productosId} value={String(p.productosId)}>
-                              {p.nombre}
+                              {getProductTranslation(p.nombre)}
                             </MenuItem>
                           ))}
                         </Select>
@@ -516,12 +566,12 @@ export function UpdatePromocion() {
                     control={control}
                     render={({ field }) => (
                       <FormControl fullWidth error={!!errors.CategoriaID}>
-                        <InputLabel>Categoría</InputLabel>
-                        <Select {...field} label="Categoría" disabled={!promocionEditable}>
-                          <MenuItem value="">Seleccione una categoría</MenuItem>
+                        <InputLabel>{t("promocion.fields.category")}</InputLabel>
+                        <Select {...field} label={t("promocion.fields.category")} disabled={!promocionEditable}>
+                          <MenuItem value="">{t("promocion.placeholders.select_category")}</MenuItem>
                           {categorias.map((cat) => (
                             <MenuItem key={cat.categoriaId} value={String(cat.categoriaId)}>
-                              {cat.nombreSCategoria}
+                              {getCategoryTranslation(cat.nombreSCategoria)}
                             </MenuItem>
                           ))}
                         </Select>
@@ -543,10 +593,10 @@ export function UpdatePromocion() {
                   control={control}
                   render={({ field }) => (
                     <FormControl fullWidth error={!!errors.tipoDescuento}>
-                      <InputLabel>Tipo de Descuento</InputLabel>
-                      <Select {...field} label="Tipo de Descuento" disabled={!promocionEditable}>
-                        <MenuItem value="Porcentaje">Porcentaje (%)</MenuItem>
-                        <MenuItem value="Monto">Monto Fijo (₡)</MenuItem>
+                      <InputLabel>{t("promocion.fields.discount_type")}</InputLabel>
+                      <Select {...field} label={t("promocion.fields.discount_type")} disabled={!promocionEditable}>
+                        <MenuItem value="Porcentaje">{t("promocion.options.percentage")}</MenuItem>
+                        <MenuItem value="Monto">{t("promocion.options.fixed_amount")}</MenuItem>
                       </Select>
                       {errors.tipoDescuento && (
                         <Typography variant="caption" color="error" sx={{ mt: 1, ml: 2 }}>
@@ -567,7 +617,7 @@ export function UpdatePromocion() {
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        label="Porcentaje de Descuento"
+                        label={t("promocion.fields.discount_percentage")}
                         type="number"
                         fullWidth
                         disabled={!promocionEditable}
@@ -575,7 +625,7 @@ export function UpdatePromocion() {
                         error={!!errors.porcentajeDescuento}
                         helperText={
                           errors.porcentajeDescuento?.message || 
-                          "Ingrese un porcentaje entre 1% y 100%"
+                          t("promocion.validation.percentage_helper")
                         }
                         InputProps={{
                           endAdornment: "%"
@@ -595,7 +645,7 @@ export function UpdatePromocion() {
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        label="Monto de Descuento"
+                        label={t("promocion.fields.discount_amount")}
                         type="number"
                         fullWidth
                         disabled={!promocionEditable}
@@ -603,10 +653,10 @@ export function UpdatePromocion() {
                         error={!!errors.montoDescuento}
                         helperText={
                           errors.montoDescuento?.message || 
-                          "Ingrese el monto fijo de descuento en colones"
+                          t("promocion.validation.amount_helper")
                         }
                         InputProps={{
-                          startAdornment: "₡"
+                          startAdornment: i18n.language === 'es' ? "₡" : "$"
                         }}
                       />
                     )}
@@ -621,7 +671,7 @@ export function UpdatePromocion() {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Fecha Inicio"
+                      label={t("promocion.fields.start_date")}
                       type="datetime-local"
                       fullWidth
                       disabled={!promocionEditable}
@@ -640,7 +690,7 @@ export function UpdatePromocion() {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Fecha Fin"
+                      label={t("promocion.fields.end_date")}
                       type="datetime-local"
                       fullWidth
                       disabled={!promocionEditable}
@@ -661,7 +711,7 @@ export function UpdatePromocion() {
                 startIcon={<SaveIcon />}
                 disabled={!isDirty || !promocionEditable || loadingPromo}
               >
-                {promocionEditable ? "Guardar Cambios" : "No Editable"}
+                {promocionEditable ? t("promocion.buttons.save_changes") : t("promocion.buttons.not_editable")}
               </Button>
             </Box>
           </form>
@@ -674,7 +724,7 @@ export function UpdatePromocion() {
         onClose={() => setMensajeExito(false)}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
         sx={{
-          top: '80px !important', // Posición justo debajo del navbar
+          top: '80px !important',
         }}
       >
         <Alert 
@@ -691,7 +741,7 @@ export function UpdatePromocion() {
             }
           }}
         >
-          ¡Promoción actualizada correctamente!
+          {t("promocion.success.updated")}
         </Alert>
       </Snackbar>
 
