@@ -14,6 +14,9 @@ import 'slick-carousel/slick/slick-theme.css';
 import { useNavigate } from 'react-router-dom';
 import Button from '@mui/material/Button';
 import { FormResena } from './Forms/FormResena';
+import productTranslations from '../../translations/productTranslations.json';
+import categoryTranslations from '../../translations/categoryTranslations.json';
+import { useTranslation } from 'react-i18next';
 
 export function DetalleProductos({ addItem }) {
   const routeParams = useParams();
@@ -28,10 +31,62 @@ export function DetalleProductos({ addItem }) {
 
   const navigate = useNavigate();
 
+//traduccion
+const { t, i18n } = useTranslation(); //traduccion 
+
+  // Función para obtener el nombre del producto traducido
+  const getProductName = (producto) => {
+    // Si hay traducciones disponibles en el producto desde la API
+    if (producto.translations && producto.translations[i18n.language]) {
+      return producto.translations[i18n.language];
+    }
+    
+    // Usar mapeo manual de traducciones desde el archivo JSON
+    const productName = producto.nombre;
+    if (productTranslations.products[productName] && productTranslations.products[productName][i18n.language]) {
+      return productTranslations.products[productName][i18n.language];
+    }
+    
+    // Si no hay traducción, usar el nombre por defecto
+    return producto.nombre;
+  };
+
+const getProductDescription = (producto) => {
+  if (producto.translations && producto.translations[i18n.language]?.description) {
+    return producto.translations[i18n.language].description;
+  }
+  if (
+    productTranslations.products[producto.nombre] &&
+    productTranslations.products[producto.nombre].description &&
+    productTranslations.products[producto.nombre].description[i18n.language]
+  ) {
+    return productTranslations.products[producto.nombre].description[i18n.language];
+  }
+  return producto.descripcion; // default en API
+};
+
+  //categoria
+    // Función para obtener el nombre de la categoría traducido
+    const getCategoryName = (categoria) => {
+      // Si hay traducciones disponibles en la categoría desde la API
+      if (categoria.translations && categoria.translations[i18n.language]) {
+        return categoria.translations[i18n.language];
+      }
+      
+      // Usar mapeo manual de traducciones desde el archivo JSON
+      const categoryName = categoria.nombreSCategoria;
+      if (categoryTranslations.categories[categoryName] && categoryTranslations.categories[categoryName][i18n.language]) {
+        return categoryTranslations.categories[categoryName][i18n.language];
+      }
+      
+   // Si no hay traducción, usar el nombre por defecto
+    return categoria.nombreSCategoria;
+  };
+
   // Función para formatear fecha correctamente
   const formatearFecha = (fecha) => {
     console.log('Fecha recibida:', fecha, 'Tipo:', typeof fecha);
-    
+  
     if (!fecha) return 'Fecha no disponible';
 
     try {
@@ -75,6 +130,9 @@ export function DetalleProductos({ addItem }) {
       return 'Fecha no disponible';
     }
   };
+
+
+  
 
   useEffect(() => {
     ProductoService.getProductoById(routeParams.id)
@@ -147,16 +205,16 @@ export function DetalleProductos({ addItem }) {
             gutterBottom
             sx={{ fontWeight: 'bold', color: '#d83b6a' }}
           >
-            {data.nombre}
+            {getProductName(data)}
           </Typography>
 
           {data.precio_con_descuento && data.precio_con_descuento !== data.precio ? (
             <>
               <Typography sx={{ textDecoration: 'line-through', color: 'gray' }}>
-                ₡{Number(data.precio).toLocaleString()}
+                {Number(data.precio).toLocaleString()}
               </Typography>
               <Typography variant="h5" sx={{ color: '#d83b6a', fontWeight: 'bold' }}>
-                ₡{Math.round(data.precio_con_descuento).toLocaleString()}
+               {Math.round(data.precio_con_descuento).toLocaleString()}
               </Typography>
 
               {(data.descuento_producto || data.descuento_categoria) && (
@@ -175,17 +233,17 @@ export function DetalleProductos({ addItem }) {
             </>
           ) : (
             <Typography variant="h5">
-              ₡{Number(data.precio).toLocaleString()}
+              {Number(data.precio).toLocaleString()}
             </Typography>
           )}
 
           <Typography variant="subtitle1" gutterBottom color="text.secondary">
-            {data.descripcion}
+             {getProductDescription(data)}
           </Typography>
 
           <Typography variant="body1" gutterBottom>
-            <strong>Categoría:</strong> {data.nombreSCategoria}
-          </Typography>
+     <strong>{t('promocion.options.category')}</strong>     <strong>:</strong> {getCategoryName(data)}
+    </Typography>
 
           {typeof data.etiquetas === 'string' && data.etiquetas.length > 0 ? (
             data.etiquetas.split(',').map((etiqueta, index) => (
@@ -236,7 +294,7 @@ export function DetalleProductos({ addItem }) {
           >
             <AddShoppingCartIcon sx={{ mr: 1 }} />
             <Typography component="span" variant="body1">
-              Agregar al carrito
+              {t('agregarAlCarrito')}
             </Typography>
           </IconButton>
 

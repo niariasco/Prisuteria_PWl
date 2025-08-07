@@ -14,6 +14,8 @@ import { Info } from '@mui/icons-material';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import PropTypes from 'prop-types';
 import { useCart } from '../../hooks/useCart';
+import productTranslations from '../../translations/productTranslations.json';
+import { useTranslation } from 'react-i18next';
 
 ListaCartasProductos.propTypes = {
   data: PropTypes.array,
@@ -23,6 +25,41 @@ ListaCartasProductos.propTypes = {
 export function ListaCartasProductos({ data, isShopping }) {
   const { addItem } = useCart();
   const BASE_URL = import.meta.env.VITE_BASE_URL + 'uploads';
+    const {  i18n } = useTranslation(); //traduccion 
+  
+//traduccion 
+
+  // Función para obtener el nombre del producto traducido
+  const getProductName = (producto) => {
+    // Si hay traducciones disponibles en el producto desde la API
+    if (producto.translations && producto.translations[i18n.language]) {
+      return producto.translations[i18n.language];
+    }
+    
+    // Usar mapeo manual de traducciones desde el archivo JSON
+    const productName = producto.nombre;
+    if (productTranslations.products[productName] && productTranslations.products[productName][i18n.language]) {
+      return productTranslations.products[productName][i18n.language];
+    }
+    
+    // Si no hay traducción, usar el nombre por defecto
+    return producto.nombre;
+  };
+
+const getProductDescription = (producto) => {
+  if (producto.translations && producto.translations[i18n.language]?.description) {
+    return producto.translations[i18n.language].description;
+  }
+  if (
+    productTranslations.products[producto.nombre] &&
+    productTranslations.products[producto.nombre].description &&
+    productTranslations.products[producto.nombre].description[i18n.language]
+  ) {
+    return productTranslations.products[producto.nombre].description[i18n.language];
+  }
+  return producto.descripcion; // default en API
+};
+
 
   return (
     <Grid container sx={{ p: 2 }} spacing={3}>
@@ -35,46 +72,69 @@ export function ListaCartasProductos({ data, isShopping }) {
 
           return (
             <Grid key={item.id} xs={12} sm={6} md={4}>
-              <Card>
-                <CardHeader
+              <Card
+                sx={{
+                  borderRadius: 4,
+                  boxShadow: 3,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  transition: 'transform 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'scale(1.02)',
+                    boxShadow: 6,
+                  },
+                }}
+              >
+  <CardHeader
                   sx={{
-                    p: 0,
-                         backgroundColor: '#ce9fc4', 
-                    color: '#f5f0f8',
+                    p: 1.5,
+                    background: 'linear-gradient(135deg, #F8BBD0 0%, #D1C4E9 100%)',
+                    color: '#fff',
+                    textAlign: 'center',
+                    fontWeight: 'bold',
                   }}
-                  style={{ textAlign: 'center' }}
-                  title={item.nombre}
-                  subheader={item.categoria || ''}
+                  titleTypographyProps={{ variant: 'h6', fontWeight: 'bold' }}
+                  subheaderTypographyProps={{ variant: 'subtitle2' }}
+                  // Usamos getProductName para el título
+                  title={getProductName(item)}
                 />
                 <CardMedia
-                 component="img"
-                  height="150"
-                 image={`${BASE_URL}/${item.imagen || 'default.jpg'}`}
-                alt={item.nombre}
-                />              
-                <CardContent>
+                  component="img"
+                  height="180"
+                  image={`${BASE_URL}/${item.imagen || 'default.jpg'}`}
+                  alt={item.nombre}
+                  sx={{
+                    objectFit: 'cover',
+                  }}
+                />
+                <CardContent sx={{ backgroundColor: '#fff', minHeight: 130 }}>
                   <Typography variant="body2" color="text.secondary">
-                    {item.descripcion}
+                    {getProductDescription(item)}
                   </Typography>
 
                   {isShopping && (
-                <Typography variant="h6" align="right" gutterBottom>
-                  {tienePromo ? (
-                    <>
-                    <Typography
-                      variant="body2"
-                      sx={{ textDecoration: 'line-through', color: '#ce9fc4', display: 'inline', mr: 1 }}
-                    >
-                         ₡{Number(item.precio).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} 
-                     </Typography>
-                     <Typography variant="h6" color="error" display="inline">
-                         ₡{Number(precioConDescuento).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                    </Typography>
-                     </>
-                    ) : (
-                       <> ₡{Number(item.precio).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}  </>
-                     )}
-                    </Typography>
+  <Typography variant="h6" align="right" mt={2}>
+    {tienePromo ? (
+      <>
+        <Typography
+          variant="body2"
+          sx={{
+            textDecoration: 'line-through',
+            color: '#BA68C8',
+            display: 'inline',
+            mr: 1,
+          }}
+        >
+          {(item.precio)}
+        </Typography>
+        <Typography variant="h6" color="error" display="inline">
+          {(precioConDescuento)}
+        </Typography>
+      </>
+    ) : (
+      <>{(item.precio)}</>
+    )}
+  </Typography>
                   )}
                 </CardContent>
 
@@ -82,22 +142,37 @@ export function ListaCartasProductos({ data, isShopping }) {
                   <Chip
                     label={`¡${item.promocion}% de descuento!`}
                     color="secondary"
-                    sx={{ position: 'absolute', top: 16, right: 16 }}
+                    sx={{
+                      position: 'absolute',
+                      top: 12,
+                      right: 12,
+                      backgroundColor: '#F06292',
+                      color: '#fff',
+                      fontWeight: 'bold',
+                    }}
                   />
                 )}
 
                 <CardActions
                   disableSpacing
                   sx={{
-      backgroundColor: '#ce9fc4',
-                          color: '#d83b6a',
+                    background: 'linear-gradient(135deg, #F8BBD0 0%, #E1BEE7 100%)',
+                    color: '#fff',
+                    justifyContent: 'space-between',
+                    px: 1,
                   }}
                 >
                   <IconButton
                     component={Link}
                     to={`/producto/${item.id}`}
                     aria-label="Detalle"
-                    sx={{ ml: 'auto' }}
+                    sx={{
+                      color: '#fff',
+                      '&:hover': {
+                        color: '#fff',
+                        backgroundColor: '#BA68C8',
+                      },
+                    }}
                   >
                     <Info />
                   </IconButton>
@@ -105,6 +180,13 @@ export function ListaCartasProductos({ data, isShopping }) {
                     <IconButton
                       aria-label="Agregar al carrito"
                       onClick={() => addItem(item)}
+                      sx={{
+                        color: '#fff',
+                        '&:hover': {
+                          color: '#fff',
+                          backgroundColor: '#F06292',
+                        },
+                      }}
                     >
                       <AddShoppingCartIcon />
                     </IconButton>

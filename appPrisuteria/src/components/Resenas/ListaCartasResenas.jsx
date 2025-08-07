@@ -18,48 +18,75 @@ export function ListaCartasResenas({ data }) {
     <Grid container sx={{ p: 2 }} spacing={3}>
       {data && data.map((resena) => (
         <Grid item xs={12} sm={6} md={4} key={resena.resenasId}>
-          <Card>
+          <Card
+            sx={{
+              borderRadius: 4,
+              boxShadow: 3,
+              transition: 'transform 0.2s ease-in-out',
+              '&:hover': {
+                transform: 'scale(1.015)',
+                boxShadow: 6,
+              },
+            }}
+          >
             <CardHeader
-              title={`${resena.nombre_usuario}`}
+              title={
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                  {resena.nombre_usuario}
+                </Typography>
+              }
               sx={{
-                backgroundColor: '#d83b6a',
-                color: 'white',
-                textAlign: 'center'
+                background: 'linear-gradient(135deg, #F8BBD0 0%, #D1C4E9 100%)',
+                color: '#fff',
+                textAlign: 'center',
+                py: 2,
               }}
             />
-            <CardContent>
-                <Typography variant="body1" gutterBottom>
-                <strong>Producto : </strong>
+            <CardContent sx={{ backgroundColor: '#fff', minHeight: 200 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#d83b6a' }}>
+                Producto:
               </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-              {resena.nombre}
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                {resena.nombre}
               </Typography>
-              <Typography variant="body1" gutterBottom>
-                <strong>Comentario:</strong>
+
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#d83b6a', mt: 2 }}>
+                Comentario:
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 {resena.comentario}
               </Typography>
-              <Typography variant="body2" gutterBottom>
-                <strong>Valoración:</strong>
+
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#d83b6a', mt: 2 }}>
+                Valoración:
               </Typography>
               <Rating
                 value={resena.calificacion || 0}
-                max={5} // Cambiar a 10 si se desea usar una escala de 1 a 10
-                precision={1}
+                max={5}
+                precision={0.5}
                 readOnly
+                sx={{ color: '#f06292', mt: 0.5 }}
               />
-<Grid container justifyContent="flex-end">
-  <Grid item>
-    <IconButton
-      component={Link}
-      to={`/resena/${resena.resenasId}`}
-      aria-label="Detalle"
-    >
-      <Info />
-    </IconButton>
-  </Grid>
-</Grid>
+
+              <Grid container justifyContent="flex-end" mt={2}>
+                <IconButton
+                  component={Link}
+                  to={`/resena/${resena.resenasId}`}
+                  aria-label="Detalle"
+                  sx={{
+                    color: '#d83b6a',
+                    border: '1px solid #f8bbd0',
+                    borderRadius: 2,
+                    transition: '0.2s ease',
+                    '&:hover': {
+                      backgroundColor: '#f8bbd0',
+                      color: '#fff',
+                    },
+                  }}
+                >
+                  <Info />
+                </IconButton>
+              </Grid>
             </CardContent>
           </Card>
         </Grid>

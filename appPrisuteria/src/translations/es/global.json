@@ -110,5 +110,15 @@
     "error_label": "Error",
     "view_promotion": "Ver promoción",
     "select_type_first": "Seleccione tipo primero"
-  }
+  },
+ "tags": {
+  "exclusivo": "Exclusive",
+  "limitado": "Limited",
+  "nuevo": "New",
+  "oferta": "Sale",
+  "popular": "Popular",
+  "recomendado": "Recommended",
+  "verano": "Summer"
+},
+  "agregarAlCarrito": "Agregar al carrito"
 }

@@ -1,7 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-// Cambiar la ruta para coincidir con tu estructura
 import esTranslations from './translations/es/global.json';
 import enTranslations from './translations/en/global.json';
 

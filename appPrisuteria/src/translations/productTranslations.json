@@ -1,45 +1,76 @@
 {
   "products": {
-    "Aretes Corazón Dorado Plateado": {
-      "en": "Gold Plated Heart Earrings",
-      "es": "Aretes Corazón Dorado Plateado"
-    },
-    "Aretes lazo chispita plateados": {
-      "en": "Silver Plated Sparkle Bow Earrings",
-      "es": "Aretes lazo chispita plateados"
-    },
-    "Aretes Trebol negro": {
-      "en": "Black Clover Earrings",
-      "es": "Aretes Trebol negro"
-    },
-    "Aretes Trebol rojo": {
-      "en": "Red Clover Earrings",
-      "es": "Aretes Trebol rojo"
-    },
-    "Collar Corazon Chispa dorado acero": {
-      "en": "Gold Steel Heart Spark Necklace",
-      "es": "Collar Corazon Chispa dorado acero"
-    },
     "Collar Girasol Giratorio": {
       "en": "Rotating Sunflower Necklace",
-      "es": "Collar Girasol Giratorio"
+      "es": "Collar Girasol Giratorio",
+      "description": {
+        "en": "With gold plating and a rotating design, this necklace is a unique jewel.",
+        "es": "Con baño de oro y diseño giratorio, este collar es una joya única."
+      }
+    },
+    "Aretes Corazón Dorado Plateado": {
+      "en": "Gold and Silver Heart Earrings",
+      "es": "Aretes Corazón Dorado Plateado",
+      "description": {
+        "en": "Elegance and style in a charming piece. Perfect for any occasion.",
+        "es": "Elegancia y estilo en una pieza encantadora. Perfectos para toda ocasión."
+      }
+    },
+    "Aretes lazo chispita plateados": {
+      "en": "Silver Sparkle Bow Earrings",
+      "es": "Aretes lazo chispita plateados",
+      "description": {
+        "en": "Elegance and style in a charming piece. Perfect for any occasion.",
+        "es": "Elegancia y estilo en una pieza encantadora. Perfectos para toda ocasión."
+      }
+    },
+    "Collar Carita Feliz": {
+      "en": "Happy Face Necklace",
+      "es": "Collar Carita Feliz",
+      "description": {
+        "en": "This colorful necklace is designed to highlight any outfit with a vibrant and cheerful touch.",
+        "es": "Este collar colorido está diseñado para destacar cualquier atuendo con un toque vibrante y alegre."
+      }
     },
     "Pulsera Trébol Negro": {
       "en": "Black Clover Bracelet",
-      "es": "Pulsera Trébol Negro"
+      "es": "Pulsera Trébol Negro",
+      "description": {
+        "en": "A lucky design with delicate golden finish.",
+        "es": "Un diseño de buena suerte con acabado dorado delicado."
+      }
     },
     "Pulsera Trebol rojo con baño de oro": {
       "en": "Gold Plated Red Clover Bracelet",
-      "es": "Pulsera Trebol rojo con baño de oro"
+      "es": "Pulsera Trebol rojo con baño de oro",
+      "description": {
+        "en": "A lucky design with delicate golden finish.",
+        "es": "Un diseño de buena suerte con acabado dorado delicado."
+      }
     },
-
-    "Anillo Corazón Plateado": {
-      "en": "Silver Heart Ring",
-      "es": "Anillo Corazón Plateado"
+    "Aretes Trebol negro": {
+      "en": "Black Clover Earrings",
+      "es": "Aretes Trebol negro",
+      "description": {
+        "en": "A lucky design with delicate golden finish.",
+        "es": "Un diseño de buena suerte con acabado dorado delicado."
+      }
     },
-    "Cadena Oro Rosa": {
-      "en": "Rose Gold Chain",
-      "es": "Cadena Oro Rosa"
+    "Aretes Trebol rojo": {
+      "en": "Red Clover Earrings",
+      "es": "Aretes Trebol rojo",
+      "description": {
+        "en": "A lucky design with delicate golden finish.",
+        "es": "Un diseño de buena suerte con acabado dorado delicado."
+      }
+    },
+    "Collar Corazon Chispa dorado acero": {
+      "en": "Gold Steel Heart Spark Necklace",
+      "es": "Collar Corazon Chispa dorado acero",
+      "description": {
+        "en": "A unique design to enhance your beauty with this necklace.",
+        "es": "Un diseño único para que puedas realzar tu belleza con este collar."
+      }
     }
   }
 }

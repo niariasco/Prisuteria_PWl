@@ -30,16 +30,16 @@ const LanguageSelector = () => {
       name: 'Español', 
       flag: '🇪🇸',
       shortName: 'ES',
-      color: '#FF4444',
-      bgColor: 'linear-gradient(135deg, #FF4444 0%, #FF6B6B 100%)'
+    color: '#FF69B4', // rosado fuerte  
+    bgColor: 'linear-gradient(135deg, #FF69B4 0%, #E6A8D7 100%)' // rosado a lila claro
     },
     { 
       code: 'en', 
       name: 'English', 
       flag: '🇺🇸',
       shortName: 'EN',
-      color: '#4A90E2',
-      bgColor: 'linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)'
+ color: '#DA70D6', // lila  
+    bgColor: 'linear-gradient(135deg, #DA70D6 0%, #FFC0CB 100%)' // lila a rosado claro
     }
   ];
 
