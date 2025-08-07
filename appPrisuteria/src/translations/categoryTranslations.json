@@ -1,0 +1,32 @@
+{
+  "categories": {
+    "Pulseras": {
+      "en": "Bracelets",
+      "es": "Pulseras"
+    },
+    "Collares": {
+      "en": "Necklaces",
+      "es": "Collares"
+    },
+    "Aretes": {
+      "en": "Earrings",
+      "es": "Aretes"
+    },
+    "Anillos": {
+      "en": "Rings",
+      "es": "Anillos"
+    },
+    "Cadenas": {
+      "en": "Chains",
+      "es": "Cadenas"
+    },
+    "Relojes": {
+      "en": "Watches",
+      "es": "Relojes"
+    },
+    "Broches": {
+      "en": "Brooches",
+      "es": "Broches"
+    }
+  }
+}

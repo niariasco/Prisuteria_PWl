@@ -1,0 +1,45 @@
+{
+  "products": {
+    "Aretes Corazón Dorado Plateado": {
+      "en": "Gold Plated Heart Earrings",
+      "es": "Aretes Corazón Dorado Plateado"
+    },
+    "Aretes lazo chispita plateados": {
+      "en": "Silver Plated Sparkle Bow Earrings",
+      "es": "Aretes lazo chispita plateados"
+    },
+    "Aretes Trebol negro": {
+      "en": "Black Clover Earrings",
+      "es": "Aretes Trebol negro"
+    },
+    "Aretes Trebol rojo": {
+      "en": "Red Clover Earrings",
+      "es": "Aretes Trebol rojo"
+    },
+    "Collar Corazon Chispa dorado acero": {
+      "en": "Gold Steel Heart Spark Necklace",
+      "es": "Collar Corazon Chispa dorado acero"
+    },
+    "Collar Girasol Giratorio": {
+      "en": "Rotating Sunflower Necklace",
+      "es": "Collar Girasol Giratorio"
+    },
+    "Pulsera Trébol Negro": {
+      "en": "Black Clover Bracelet",
+      "es": "Pulsera Trébol Negro"
+    },
+    "Pulsera Trebol rojo con baño de oro": {
+      "en": "Gold Plated Red Clover Bracelet",
+      "es": "Pulsera Trebol rojo con baño de oro"
+    },
+
+    "Anillo Corazón Plateado": {
+      "en": "Silver Heart Ring",
+      "es": "Anillo Corazón Plateado"
+    },
+    "Cadena Oro Rosa": {
+      "en": "Rose Gold Chain",
+      "es": "Cadena Oro Rosa"
+    }
+  }
+}

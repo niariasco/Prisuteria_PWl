@@ -6,7 +6,7 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
-import { Menu, MenuItem } from "@mui/material";
+import { Menu, MenuItem, FormControl, Select, ListItemIcon, ListItemText } from "@mui/material";
 import { Link } from "react-router-dom";
 import Badge from "@mui/material/Badge";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -18,8 +18,169 @@ import { faHouse } from '@fortawesome/free-solid-svg-icons';
 import Tooltip from "@mui/material/Tooltip";
 import { useCart } from "../../hooks/useCart";
 import { UserContext } from "../../context/UserContext";
+import { useTranslation } from 'react-i18next';
 
-export default function Header() {
+
+const LanguageSelector = () => {
+  const { i18n, t } = useTranslation();
+  
+  const languages = [
+    { 
+      code: 'es', 
+      name: 'Español', 
+      flag: '🇪🇸',
+      shortName: 'ES',
+      color: '#FF4444',
+      bgColor: 'linear-gradient(135deg, #FF4444 0%, #FF6B6B 100%)'
+    },
+    { 
+      code: 'en', 
+      name: 'English', 
+      flag: '🇺🇸',
+      shortName: 'EN',
+      color: '#4A90E2',
+      bgColor: 'linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)'
+    }
+  ];
+
+  const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0];
+
+  const handleLanguageChange = (event) => {
+    const selectedLanguage = event.target.value;
+    i18n.changeLanguage(selectedLanguage);
+  };
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', mx: 1 }}>
+      <FormControl size="small" sx={{ minWidth: 120 }}>
+        <Select
+          value={i18n.language}
+          onChange={handleLanguageChange}
+          displayEmpty
+          renderValue={(selected) => {
+            const selectedLang = languages.find(lang => lang.code === selected);
+            return (
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center',
+                background: selectedLang?.bgColor || currentLanguage.bgColor,
+                borderRadius: '8px',
+                px: 1.5,
+                py: 0.5,
+                minWidth: '80px'
+              }}>
+                <Box sx={{ 
+                  fontSize: '1.2rem', 
+                  mr: 1,
+                  filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))'
+                }}>
+                  {selectedLang?.flag || currentLanguage.flag}
+                </Box>
+                <Typography sx={{ 
+                  color: 'white', 
+                  fontWeight: 'bold',
+                  fontSize: '0.875rem',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                }}>
+                  {selectedLang?.shortName || currentLanguage.shortName}
+                </Typography>
+              </Box>
+            );
+          }}
+          sx={{
+            '& .MuiOutlinedInput-notchedOutline': {
+              border: 'none'
+            },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              border: 'none'
+            },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              border: 'none'
+            },
+            '& .MuiSvgIcon-root': {
+              color: 'white',
+              right: '8px'
+            }
+          }}
+          MenuProps={{
+            PaperProps: {
+              sx: {
+                bgcolor: '#2C3E50', // Fondo oscuro como en la imagen
+                borderRadius: '12px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                mt: 1,
+                minWidth: '160px',
+                '& .MuiMenuItem-root': {
+                  padding: 0,
+                  margin: '4px 8px',
+                  borderRadius: '8px',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    transform: 'translateX(4px)'
+                  },
+                  '&.Mui-selected': {
+                    backgroundColor: 'rgba(255,255,255,0.15)',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255,255,255,0.2)'
+                    }
+                  }
+                },
+              },
+            },
+          }}
+        >
+          {languages.map((language) => (
+            <MenuItem key={language.code} value={language.code}>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                width: '100%',
+                background: language.bgColor,
+                borderRadius: '8px',
+                px: 1.5,
+                py: 1,
+                margin: '2px 0'
+              }}>
+                <Box sx={{ 
+                  fontSize: '1.3rem', 
+                  mr: 1.5,
+                  filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))'
+                }}>
+                  {language.flag}
+                </Box>
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography sx={{ 
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '0.875rem',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                    mb: -0.2
+                  }}>
+                    {language.shortName}
+                  </Typography>
+                  <Typography sx={{ 
+                    color: 'rgba(255,255,255,0.9)',
+                    fontSize: '0.75rem',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                  }}>
+                    {language.name}
+                  </Typography>
+                </Box>
+              </Box>
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    </Box>
+  );
+};
+
+// Componente Header principal
+function Header() {
+  const { t } = useTranslation(); // Hook de traducción para el header
+  
   // Estados para manejo de menús
   const [anchorElSubmenu, setAnchorElSubmenu] = useState(null);
   const [anchorElUser, setAnchorElUser] = useState(null);
@@ -93,18 +254,18 @@ export default function Header() {
     setter(null);
   };
 
-  // Configuración de elementos del menú
+  // Configuración de elementos del menú (con traducciones)
   const userItems = [
-    { name: "Login", link: "/user/login", login: false },
-    { name: "Registrarse", link: "/user/create", login: false },
-    { name: "Logout", link: "/user/logout", login: true },
+    { name: t('header.user.login', 'Login'), link: "/user/login", login: false },
+    { name: t('header.user.register', 'Registrarse'), link: "/user/create", login: false },
+    { name: t('header.user.logout', 'Logout'), link: "/user/logout", login: true },
   ];
 
   const navItems = [
-    { name: "Productos", link: "/producto", roles: null },
-    { name: "Promociones", link: "/promocion", roles: null },
-    { name: "Ordenes", link: "/orden", roles: null },
-    { name: "Mantenimientos", link: "", roles: ['Administrador'] },
+    { name: t('header.nav.products', 'Productos'), link: "/producto", roles: null },
+    { name: t('header.nav.promotions', 'Promociones'), link: "/promocion", roles: null },
+    { name: t('header.nav.orders', 'Ordenes'), link: "/orden", roles: null },
+    { name: t('header.nav.maintenance', 'Mantenimientos'), link: "", roles: ['Administrador'] },
   ];
 
   // Booleanos para control de menús
@@ -117,7 +278,7 @@ export default function Header() {
     <Box sx={{ display: { xs: "none", sm: "block" } }}>
       {navItems &&
         navItems.map((item, index) => {
-          if (item.name === "Mantenimientos") {
+          if (item.name === t('header.nav.maintenance', 'Mantenimientos')) {
             return (
               <Box key={index} sx={{ display: "inline-block", mx: 1 }}>
                 <Button
@@ -140,7 +301,7 @@ export default function Header() {
                     onMouseEnter={handleOpen(setAnchorElProductos)}
                     onMouseLeave={handleClose(setAnchorElProductos)}
                   >
-                    Productos
+                    {t('header.nav.products', 'Productos')}
                     <Menu
                       anchorEl={anchorElProductos}
                       open={Boolean(anchorElProductos)}
@@ -150,13 +311,13 @@ export default function Header() {
                       MenuListProps={{ onMouseLeave: handleClose(setAnchorElProductos) }}
                     >
                       <MenuItem component={Link} to="/productos/crear" onClick={handleSubmenuClose}>
-                        Crear
+                        {t('header.actions.create', 'Crear')}
                       </MenuItem>
                       <MenuItem component={Link} to="/productos/actualizar" onClick={handleSubmenuClose}>
-                        Actualizar
+                        {t('header.actions.update', 'Actualizar')}
                       </MenuItem>
                       <MenuItem component={Link} to="/productos/eliminar" onClick={handleSubmenuClose}>
-                        Eliminar
+                        {t('header.actions.delete', 'Eliminar')}
                       </MenuItem>
                     </Menu>
                   </MenuItem>
@@ -166,7 +327,7 @@ export default function Header() {
                     onMouseEnter={handleOpen(setAnchorElResenas)}
                     onMouseLeave={handleClose(setAnchorElResenas)}
                   >
-                    Reseñas
+                    {t('header.nav.reviews', 'Reseñas')}
                     <Menu
                       anchorEl={anchorElResenas}
                       open={Boolean(anchorElResenas)}
@@ -176,13 +337,13 @@ export default function Header() {
                       MenuListProps={{ onMouseLeave: handleClose(setAnchorElResenas) }}
                     >
                       <MenuItem component={Link} to="/resenas/crear" onClick={handleSubmenuClose}>
-                        Crear
+                        {t('header.actions.create', 'Crear')}
                       </MenuItem>
                       <MenuItem component={Link} to="/resenas/actualizar" onClick={handleSubmenuClose}>
-                        Actualizar
+                        {t('header.actions.update', 'Actualizar')}
                       </MenuItem>
                       <MenuItem component={Link} to="/resenas/eliminar" onClick={handleSubmenuClose}>
-                        Eliminar
+                        {t('header.actions.delete', 'Eliminar')}
                       </MenuItem>
                     </Menu>
                   </MenuItem>
@@ -192,7 +353,7 @@ export default function Header() {
                     onMouseEnter={handleOpen(setAnchorElPromociones)}
                     onMouseLeave={handleClose(setAnchorElPromociones)}
                   >
-                    Promociones
+                    {t('header.nav.promotions', 'Promociones')}
                     <Menu
                       anchorEl={anchorElPromociones}
                       open={Boolean(anchorElPromociones)}
@@ -202,13 +363,13 @@ export default function Header() {
                       MenuListProps={{ onMouseLeave: handleClose(setAnchorElPromociones) }}
                     >
                       <MenuItem component={Link} to="/promociones/crear" onClick={handleSubmenuClose}>
-                        Crear
+                        {t('header.actions.create', 'Crear')}
                       </MenuItem>
                       <MenuItem component={Link} to="/promociones/actualizar" onClick={handleSubmenuClose}>
-                        Actualizar
+                        {t('header.actions.update', 'Actualizar')}
                       </MenuItem>
                       <MenuItem component={Link} to="/promociones/eliminar" onClick={handleSubmenuClose}>
-                        Eliminar
+                        {t('header.actions.delete', 'Eliminar')}
                       </MenuItem>
                     </Menu>
                   </MenuItem>
@@ -218,7 +379,7 @@ export default function Header() {
                     onMouseEnter={handleOpen(setAnchorElOrdenes)}
                     onMouseLeave={handleClose(setAnchorElOrdenes)}
                   >
-                    Órdenes
+                    {t('header.nav.orders', 'Órdenes')}
                     <Menu
                       anchorEl={anchorElOrdenes}
                       open={Boolean(anchorElOrdenes)}
@@ -228,13 +389,13 @@ export default function Header() {
                       MenuListProps={{ onMouseLeave: handleClose(setAnchorElOrdenes) }}
                     >
                       <MenuItem component={Link} to="/ordenes/crear" onClick={handleSubmenuClose}>
-                        Crear
+                        {t('header.actions.create', 'Crear')}
                       </MenuItem>
                       <MenuItem component={Link} to="/ordenes/actualizar" onClick={handleSubmenuClose}>
-                        Actualizar
+                        {t('header.actions.update', 'Actualizar')}
                       </MenuItem>
                       <MenuItem component={Link} to="/ordenes/eliminar" onClick={handleSubmenuClose}>
-                        Eliminar
+                        {t('header.actions.delete', 'Eliminar')}
                       </MenuItem>
                     </Menu>
                   </MenuItem>
@@ -244,7 +405,7 @@ export default function Header() {
                     onMouseEnter={handleOpen(setAnchorElUsuarios)}
                     onMouseLeave={handleClose(setAnchorElUsuarios)}
                   >
-                    Usuarios
+                    {t('header.nav.users', 'Usuarios')}
                     <Menu
                       anchorEl={anchorElUsuarios}
                       open={Boolean(anchorElUsuarios)}
@@ -254,13 +415,13 @@ export default function Header() {
                       MenuListProps={{ onMouseLeave: handleClose(setAnchorElUsuarios) }}
                     >
                       <MenuItem component={Link} to="/usuarios/crear" onClick={handleSubmenuClose}>
-                        Crear
+                        {t('header.actions.create', 'Crear')}
                       </MenuItem>
                       <MenuItem component={Link} to="/usuarios/actualizar" onClick={handleSubmenuClose}>
-                        Actualizar
+                        {t('header.actions.update', 'Actualizar')}
                       </MenuItem>
                       <MenuItem component={Link} to="/usuarios/eliminar" onClick={handleSubmenuClose}>
-                        Eliminar
+                        {t('header.actions.delete', 'Eliminar')}
                       </MenuItem>
                     </Menu>
                   </MenuItem>
@@ -378,7 +539,7 @@ export default function Header() {
             <ShoppingCartIcon />
           </Badge>
         </IconButton>
-        <p>Compras</p>
+        <p>{t('header.mobile.shopping', 'Compras')}</p>
       </MenuItem>
       <MenuItem onClick={handleOpcionesMenuClose}>
         <IconButton size="large" color="inherit">
@@ -386,7 +547,11 @@ export default function Header() {
             <NotificationsIcon />
           </Badge>
         </IconButton>
-        <p>Notificaciones</p>
+        <p>{t('header.mobile.notifications', 'Notificaciones')}</p>
+      </MenuItem>
+      {/* Selector de idioma en móvil */}
+      <MenuItem>
+        <LanguageSelector />
       </MenuItem>
     </Menu>
   );
@@ -429,13 +594,13 @@ export default function Header() {
           </Menu>
 
           {/* Enlace página inicio */}
-          <Tooltip title="Compra nuestros Productos">
+          <Tooltip title={t('header.tooltip.home', 'Compra nuestros Productos')}>
             <IconButton
               size="medium"
               edge="start"
               component={Link}
               to="/"
-              aria-label="Compra nuestros Productos"
+              aria-label={t('header.tooltip.home', 'Compra nuestros Productos')}
               color="inherit"
             >
               <FontAwesomeIcon icon={faHouse} />
@@ -446,6 +611,11 @@ export default function Header() {
           {menuPrincipal}
 
           <Box sx={{ flexGrow: 1 }} />
+
+          {/* Selector de idioma para desktop */}
+          <Box sx={{ display: { xs: "none", md: "flex" } }}>
+            <LanguageSelector />
+          </Box>
 
           {/* Opciones para desktop */}
           <Box sx={{ display: { xs: "none", md: "flex" } }}>
@@ -488,3 +658,6 @@ export default function Header() {
     </Box>
   );
 }
+
+
+export default Header;
