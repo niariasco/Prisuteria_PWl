@@ -51,7 +51,8 @@
   "promocion": {
     "title": {
       "create": "Crear Promoción",
-      "edit": "Editar Promoción"
+      "edit": "Editar Promoción",
+      "update": "Modificar Promoción"
     },
     "fields": {
       "name": "Nombre de la promoción",
@@ -60,7 +61,10 @@
       "discount_percentage": "Descuento (%)",
       "discount_amount": "Monto de descuento (₡)",
       "start_date": "Fecha de inicio",
-      "end_date": "Fecha de fin"
+      "end_date": "Fecha de fin",
+      "product": "Producto",
+      "category": "Categoría",
+      "promotion": "Promoción"
     },
     "options": {
       "category": "Categoría",
@@ -70,7 +74,9 @@
     },
     "buttons": {
       "create": "Crear Promoción",
-      "update": "Actualizar Promoción"
+      "update": "Actualizar Promoción",
+      "save_changes": "Guardar Cambios",
+      "not_editable": "No Editable"
     },
     "validation": {
       "required": "Este campo es requerido",
@@ -88,12 +94,18 @@
       "percentage_required": "El descuento por porcentaje es requerido",
       "amount_required": "El monto de descuento es requerido",
       "start_date_required": "La fecha de inicio es requerida",
-      "end_date_required": "La fecha de fin es requerida"
+      "end_date_required": "La fecha de fin es requerida",
+      "select_product": "Debe seleccionar un producto",
+      "select_category": "Debe seleccionar una categoría",
+      "percentage_helper": "Ingrese un porcentaje entre 1% y 100%",
+      "amount_helper": "Ingrese el monto fijo de descuento en colones"
     },
     "placeholders": {
       "name": "Ejemplo: Descuento de Año Nuevo",
       "percentage": "Ejemplo: 25",
-      "amount": "Ejemplo: 5000"
+      "amount": "Ejemplo: 5000",
+      "select_product": "Seleccione un producto",
+      "select_category": "Seleccione una categoría"
     },
     "helpers": {
       "percentage": "Ingrese un porcentaje entre 1 y 100",
@@ -101,11 +113,18 @@
     },
     "success": {
       "saved": "Promoción guardada correctamente",
-      "created": "¡Promoción creada exitosamente!"
+      "created": "¡Promoción creada exitosamente!",
+      "updated": "¡Promoción actualizada correctamente!",
+      "modified": "¡Promoción modificada exitosamente!"
     },
     "errors": {
       "load_products": "Error al cargar productos",
-      "save": "Error al guardar la promoción."
+      "save": "Error al guardar la promoción.",
+      "load_initial_data": "Error al cargar los datos iniciales",
+      "load_selected": "No se pudo cargar la promoción seleccionada",
+      "no_selection": "No se ha seleccionado ninguna promoción",
+      "update_failed": "No se pudo actualizar la promoción. Intente nuevamente.",
+      "not_editable": "No se puede modificar una promoción con estado 'Aplicado'. Solo se pueden modificar promociones con estado 'Pendiente' o 'Vigente'."
     },
     "error_label": "Error",
     "view_promotion": "Ver promoción",
@@ -156,5 +175,44 @@
 "Cargando" : "Cargando....",
 "FEdit_ProductoMant" : "Editar Producto",
 "FSeleccionar_ProductoMant" : "Selecciona un producto",
-"FActualizar_ProductoMant" : "Actualizar Producto"
+"FActualizar_ProductoMant" : "Actualizar Producto",
+
+    "view_promotion": "Ver detalle de promoción",
+    "select_type_first": "Seleccione tipo primero",
+    "steps": {
+      "select": "1. Seleccionar Promoción",
+      "modify": "2. Modificar Datos de la Promoción"
+    },
+    "status": {
+      "active": "Vigente",
+      "pending": "Pendiente",
+      "applied": "Aplicado",
+      "inactive": "Inactivo",
+      "expired": "Vencido"
+    },
+    "warnings": {
+      "not_editable": "⚠ Esta promoción no se puede modificar porque tiene estado \"Aplicado\". Solo se pueden modificar promociones con estado \"Pendiente\" o \"Vigente\".",
+      "state_restriction": "Esta promoción no se puede modificar porque tiene estado \"{status}\". Solo se pueden modificar promociones con estado \"Pendiente\" o \"Vigente\"."
+    },
+  
+  "promotion_detail": {
+    "page_title": "Promociones Prisutería Accesorios",
+    "detail_title": "Detalle de la Promoción",
+    "fields": {
+      "name": "Nombre",
+      "type": "Tipo",
+      "applied_to": "Aplicado en",
+      "start": "Inicio",
+      "end": "Fin",
+      "status": "Estado"
+    },
+    "messages": {
+      "loading": "Cargando...",
+      "error": "Error",
+      "not_available": "N/A"
+    },
+    "buttons": {
+      "back": "← Volver"
+    }
+  }
 }
