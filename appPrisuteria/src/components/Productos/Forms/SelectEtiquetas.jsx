@@ -3,6 +3,7 @@ import Select from '@mui/material/Select';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 SelectEtiquetas.propTypes = {
   data: PropTypes.array,
@@ -11,9 +12,11 @@ SelectEtiquetas.propTypes = {
 };
 
 export function SelectEtiquetas({ field, data, error }) {
+    const { t } = useTranslation(); //traduccion 
+
   return (
     <FormControl fullWidth margin="normal" error={error}>
-      <InputLabel id="etiquetas-label">Etiquetas</InputLabel>
+      <InputLabel id="etiquetas-label">{t('FEtiquetas_ProductoMant')}</InputLabel>
       <Select
         {...field}
         labelId="etiquetas-label"

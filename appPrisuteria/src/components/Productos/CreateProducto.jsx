@@ -19,6 +19,7 @@ import { SelectEtiquetas } from './Forms/SelectEtiquetas';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
 import AddIcon from '@mui/icons-material/Add';
+import { useTranslation } from 'react-i18next';
 
 export function CreateProducto({ productoId = null, onSuccess }) {
   const { control, handleSubmit, reset } = useForm();
@@ -32,6 +33,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
   const [file, setFile] = useState(null); // imagen principal
   const [fileURL, setFileURL] = useState(null);
   const [setError] = useState(null);
+  const { t } = useTranslation(); //traduccion 
 
   useEffect(() => {
     CategoriaService.getAllCategorias().then(res => setCategorias(res.data));
@@ -170,7 +172,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
             setFileURL(null);
           }
 
-          toast.success('Producto guardado correctamente', {
+          toast.success(t('FSuccess_ProductoMant'), {
             duration: 4000,
             position: 'top-center',
           });
@@ -180,26 +182,26 @@ export function CreateProducto({ productoId = null, onSuccess }) {
       })
       .catch(err => {
         console.error('Error al guardar producto:', err);
-        setError('Error al guardar el producto.');
+        setError(t('FError_ProductoMant'));
       });
   };
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Typography variant="h4" sx={{ mb: 4 }}>
-        {productoId ? 'Editar Producto' : 'Crear Producto'}
+        {productoId ? 'Editar Producto' : t('FCreate_ProductoMant')}
       </Typography>
 
       {productoCreadoId && (
         <Box sx={{ mb: 3, p: 2, backgroundColor: '#c287d7ff', borderRadius: 2 }}>
           <Typography variant="h6" color="#d219a4ff">
-            ¡Producto creado exitosamente!
+            {t('FSuccess_ProductoMant')}
           </Typography>
           <Typography sx={{ mt: 1 }}>
             <a
               href={`/producto/${productoCreadoId}`}
               style={{ color: '#d219a4ff', textDecoration: 'underline' }}
             >
-              Ver producto
+              {t('FVer_ProductoMant')}
             </a>
           </Typography>
         </Box>
@@ -213,7 +215,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
               control={control}
               defaultValue=""
               render={({ field }) => (
-                <TextField label="Nombre" fullWidth required {...field} />
+                <TextField label= {t('FNombre_ProductoMant')}fullWidth required {...field} />
               )}
             />
           </Grid>
@@ -225,7 +227,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
               defaultValue=""
               render={({ field }) => (
                 <TextField
-                  label="Descripción"
+                  label={t('FDescripcion_ProductoMant')}
                   fullWidth
                   multiline
                   rows={4}
@@ -242,7 +244,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
               control={control}
               defaultValue=""
               render={({ field }) => (
-                <TextField label="Precio" fullWidth type="number" required {...field} />
+                <TextField label={t('FPrecio_ProductoMant')} fullWidth type="number" required {...field} />
               )}
             />
           </Grid>
@@ -266,7 +268,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
 
           {/* Imagen principal */}
           <Grid item xs={12}>
-            <Typography variant="h6">Agregar Imagen</Typography>
+            <Typography variant="h6">{t('FAgregarImagen_ProductoMant')} </Typography>
             <input type="file" onChange={handleChangeImage} />
             {fileURL && (
               <Box sx={{ position: 'relative', mt: 1, display: 'inline-block' }}>
@@ -289,7 +291,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
           {/* Imágenes existentes */}
           {imagenesExistentes.length > 0 && (
             <Grid item xs={12}>
-              <Typography variant="h6">Imágenes existentes</Typography>
+              <Typography variant="h6">{t('FActivesImagenes_ProductoMant')}</Typography>
               <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
                 {imagenesExistentes.map((img, i) => (
                   <Box key={i} sx={{ position: 'relative' }}>
@@ -314,7 +316,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
 
           {/* Imágenes dinámicas */}
           <Grid item xs={12}>
-            <Typography variant="h6">Otras imágenes</Typography>
+            <Typography variant="h6">{t('FOtrasImagenes_ProductoMant')}</Typography>
             {imagenesExtra.map((img, index) => (
               <Box key={index} sx={{ position: 'relative', mb: 2 }}>
                 <input type="file" onChange={e => handleAddImage(e, index)} />
@@ -334,7 +336,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
 
             <IconButton
               color="primary"
-              aria-label="Agregar imagen"
+              aria-label={t('FAgregarImagen_ProductoMant')}
               onClick={agregarBloqueImagen}
               sx={{ mt: 1 }}
             >
@@ -351,7 +353,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
                 ':hover': { backgroundColor: '#b03052' },
               }}
             >
-              {productoId ? 'Actualizar Producto' : 'Crear Producto'}
+              {productoId ? 'Actualizar Producto' :   t('FCreate_ProductoMant')}
             </Button>
           </Grid>
         </Grid>

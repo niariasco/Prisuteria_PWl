@@ -195,7 +195,7 @@ const getProductDescription = (producto) => {
               </Slider>
             )
           ) : (
-            <Typography variant="body2">Sin imágenes disponibles</Typography>
+              <strong> {t('NoImages')}</strong>
           )}
         </Grid>
 
@@ -245,22 +245,24 @@ const getProductDescription = (producto) => {
      <strong>{t('promocion.options.category')}</strong>     <strong>:</strong> {getCategoryName(data)}
     </Typography>
 
-          {typeof data.etiquetas === 'string' && data.etiquetas.length > 0 ? (
-            data.etiquetas.split(',').map((etiqueta, index) => (
-              <Chip
-                key={index}
-                label={etiqueta.trim()}
-                variant="outlined"
-                color="primary"
-                sx={{ mr: 1, mb: 1 }}
-              />
-            ))
-          ) : <Typography variant="body2"></Typography>}
+{typeof data.etiquetas === 'string' && data.etiquetas.length > 0 ? (
+  data.etiquetas.split(',').map((etiqueta, index) => (
+    <Chip
+      key={index}
+      label={t(`tags.${etiqueta.trim()}`, { defaultValue: etiqueta.trim() })}
+      variant="outlined"
+      color="primary"
+      sx={{ mr: 1, mb: 1 }}
+    />
+  ))
+) : (
+  <Typography variant="body2"></Typography>
+)}
 
-          {/* Valoración promedio */}
+          {/* Valoración promedio   {t('valoracion')} */  }
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Typography variant="body1" sx={{ mr: 1 }}>
-              <strong>Valoración promedio:</strong>
+              <strong> {t('valoracion')}</strong> <strong> : </strong>
             </Typography>
             {data.promedio_valoracion > 0 ? (
               <>
@@ -273,7 +275,7 @@ const getProductDescription = (producto) => {
               </>
             ) : (
               <Typography variant="body2" color="text.secondary">
-                Sin valoraciones
+                 <strong> {t('NoValoracion')}</strong> 
               </Typography>
             )}
           </Box>
@@ -302,10 +304,10 @@ const getProductDescription = (producto) => {
             {'_________________________________________________'}
           </Typography>
           <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
-            {'Retiro disponible en Retiro en Heredia'}
+              {t('msjEnvio')}
           </Typography>
           <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
-            {'Normalmente está listo en 24 horas'}
+            {t('msjEnvio2')}
           </Typography>
         </Grid>
 
@@ -316,7 +318,7 @@ const getProductDescription = (producto) => {
             onClick={() => navigate(-1)}
             sx={{ mt: 2 }}
           >
-            ← Volver
+           {t('Return')}
           </Button>
         </Grid>
 
@@ -324,7 +326,7 @@ const getProductDescription = (producto) => {
         <Grid item xs={12}>
           <Divider sx={{ my: 3 }} />
           <Typography variant="h5" gutterBottom sx={{ color: '#d83b6a' }}>
-            Reseñas del producto
+            {t('FProduct_Reviews')}
 
           </Typography>
 
@@ -353,7 +355,7 @@ const getProductDescription = (producto) => {
                     }}
                   >
                     <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                      {resena.nombre || resena.usuario_nombre || 'Usuario anónimo'}
+                      {resena.nombre || resena.usuario_nombre}
                     </Typography>
 
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -361,7 +363,7 @@ const getProductDescription = (producto) => {
                     </Typography>
 
                     <Typography variant="body1" sx={{ mb: 1 }}>
-                      {resena.comentario || 'Sin comentario'}
+                      {resena.comentario }
                     </Typography>
 
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -377,7 +379,7 @@ const getProductDescription = (producto) => {
             ) : (
               <Grid item xs={12}>
                 <Typography variant="body1" color="text.secondary">
-                  No hay reseñas para este producto. ¡Sé el primero en escribir una!
+              {t('FNoreview')}
                 </Typography>
               </Grid>
             )}

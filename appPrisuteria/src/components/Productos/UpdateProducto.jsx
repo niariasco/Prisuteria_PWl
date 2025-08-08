@@ -19,6 +19,7 @@ import { SelectEtiquetas } from './Forms/SelectEtiquetas';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
 import AddIcon from '@mui/icons-material/Add';
+import { useTranslation } from 'react-i18next';
 
 export function UpdateProducto() {
   const { control, handleSubmit, reset } = useForm();
@@ -31,6 +32,7 @@ export function UpdateProducto() {
   const [promedioValoracion, setPromedioValoracion] = useState(null);
   const [totalResenas, setTotalResenas] = useState(0);
   const [productoActualizadoId, setProductoActualizadoId] = useState(null);
+  const { t } = useTranslation(); //traduccion 
 
   const [imagenesExistentes, setImagenesExistentes] = useState([]);
   const [imagenesAEliminar, setImagenesAEliminar] = useState([]);
@@ -98,7 +100,7 @@ export function UpdateProducto() {
       })
       .catch(err => {
         console.error('Error al cargar producto:', err);
-        setError('No se pudo cargar el producto');
+        setError( t('FErrorCargar_ProductoMant'));
         setLoading(false);
       });
   }, [productoSeleccionado, etiquetas, reset]);
@@ -162,7 +164,7 @@ export function UpdateProducto() {
     ProductoService.updateProducto(formData)
       .then(res => {
         if (res.status === 200) {
-          toast.success('Producto actualizado correctamente', {
+          toast.success( t('FSuccess_ProductoMant'), {
             duration: 4000,
             position: 'top-center',
           });
@@ -209,43 +211,43 @@ export function UpdateProducto() {
       })
       .catch(err => {
         console.error('Error al actualizar producto:', err);
-        setError('Error al actualizar el producto.');
+        setError(t('FError_ProductoMant'));
       });
   };
 
-  if (loading) return <p>Cargando producto...</p>;
+  if (loading) return <p>{t('Cargando')}</p>;
   if (error) return <p>{error}</p>;
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Typography variant="h4" sx={{ mb: 4 }}>
-        Editar Producto
+        {t('FEdit_ProductoMant')}
       </Typography>
       {/* MENSAJE DE PRODUCTO ACTUALIZADO */}
       {productoActualizadoId && (
         <Box sx={{ mb: 3, p: 2, backgroundColor: '#c287d7ff', borderRadius: 2 }}>
           <Typography variant="h6" color="#d219a4ff">
-            ¡Producto actualizado exitosamente! 
+             {t('FSuccess_ProductoMant')}
           </Typography>
           <Typography sx={{ mt: 1 }}>
             <a
               href={`/producto/${productoActualizadoId}`}
               style={{ color: '#d219a4ff', textDecoration: 'underline' }}
             >
-              Ver producto
+               {t('FVer_ProductoMant')}
             </a>
           </Typography>
         </Box>
       )}
       {/* Select inicial para escoger el producto */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h6">Selecciona un producto</Typography>
+        <Typography variant="h6">  {t('FSeleccionar_ProductoMant')}</Typography>
         <select
           value={productoSeleccionado}
           onChange={e => setProductoSeleccionado(e.target.value)}
           style={{ padding: '8px', width: '100%', marginTop: '8px' }}
         >
-          <option value="">-- Selecciona --</option>
+          <option value="">{t('FSeleccionar_ProductoMant')}</option>
           {productos.map(prod => (
             <option key={prod.productosId} value={prod.productosId}>
               {prod.nombre}
@@ -263,7 +265,7 @@ export function UpdateProducto() {
                 control={control}
                 defaultValue=""
                 render={({ field }) => (
-                  <TextField label="Nombre" fullWidth required {...field} />
+                  <TextField label={t('FNombre_ProductoMant')} fullWidth required {...field} />
                 )}
               />
             </Grid>
@@ -275,7 +277,7 @@ export function UpdateProducto() {
                 defaultValue=""
                 render={({ field }) => (
                   <TextField
-                    label="Descripción"
+                    label={t('FDescripcion_ProductoMant')}
                     fullWidth
                     multiline
                     rows={4}
@@ -292,7 +294,7 @@ export function UpdateProducto() {
                 control={control}
                 defaultValue=""
                 render={({ field }) => (
-                  <TextField label="Precio" fullWidth type="number" required {...field} />
+                  <TextField label={t('FPrecio_ProductoMant')} fullWidth type="number" required {...field} />
                 )}
               />
             </Grid>
@@ -349,7 +351,7 @@ export function UpdateProducto() {
             {/* Imágenes existentes */}
             {imagenesExistentes.length > 0 && (
               <Grid item xs={12}>
-                <Typography variant="h6">Imágenes actuales</Typography>
+                <Typography variant="h6">{t('FActivesImagenes_ProductoMant')}</Typography>
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
                   {imagenesExistentes.map((img, i) => (
                     <Box key={i} sx={{ position: 'relative' }}>
@@ -374,7 +376,7 @@ export function UpdateProducto() {
 
             {/* Imágenes dinámicas */}
             <Grid item xs={12}>
-              <Typography variant="h6">Otras imágenes</Typography>
+              <Typography variant="h6">{t('FOtrasImagenes_ProductoMant')}</Typography>
               {imagenesExtra.map((img, index) => (
                 <Box key={index} sx={{ position: 'relative', mb: 2 }}>
                   <input type="file" onChange={e => handleAddImage(e, index)} />
@@ -394,7 +396,7 @@ export function UpdateProducto() {
 
               <IconButton
                 color="primary"
-                aria-label="Agregar imagen"
+                aria-label={t('FAgregarImagen_ProductoMant')}
                 onClick={agregarBloqueImagen}
                 sx={{ mt: 1 }}
               >
@@ -404,8 +406,8 @@ export function UpdateProducto() {
 
             <Grid item xs={12}>
               <TextField
-                label="Promedio de valoraciones"
-                value={`${promedioValoracion} / 5 (${totalResenas} reseñas)`}
+                label={t('valoracion')}
+                  value={`${promedioValoracion} / 5 (${totalResenas}) ${t('Review')}`}
                 InputProps={{ readOnly: true }}
                 fullWidth
               />
@@ -420,7 +422,7 @@ export function UpdateProducto() {
                   ':hover': { backgroundColor: '#b03052' },
                 }}
               >
-                Actualizar Producto
+              {t('FActualizar_ProductoMant')}
               </Button>
             </Grid>
           </Grid>

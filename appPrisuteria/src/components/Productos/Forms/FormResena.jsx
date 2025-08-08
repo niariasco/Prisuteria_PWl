@@ -8,11 +8,12 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
+import { useTranslation } from 'react-i18next';
 
 export function FormResena({ productoId, onNuevaResena }) {
   const { decodeToken } = useContext(UserContext);
   const userData = decodeToken();
-  
+  const { t } = useTranslation(); //traduccion 
   const [comentario, setComentario] = useState('');
   const [valoracion, setValoracion] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -21,15 +22,16 @@ export function FormResena({ productoId, onNuevaResena }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+//traduccion
 
     if (comentario.trim() === '' || valoracion === 0) {
-      setError('Por favor, escriba un comentario y seleccione una valoración.');
+      setError(t('FUser_Review'));
       return;
     }
 
     const usuarioId = userData?.usuarioId || userData?.id;
     if (!usuarioId) {
-      setError('Error: Usuario no autenticado correctamente.');
+      setError(t('FErrorUsuariio_Review'));
       return;
     }
 
@@ -50,11 +52,11 @@ export function FormResena({ productoId, onNuevaResena }) {
         setComentario('');
         setValoracion(0);
       } else {
-        setError(response.data?.message || 'Error al guardar la reseña');
+        setError(response.data?.message ||(t('FError_Review')));
       }
     } catch (error) {
       console.error('Error al guardar reseña:', error);
-      setError('Error de conexión. Por favor, intenta nuevamente.');
+      setError(t('FError_Review'));
     } finally {
       setLoading(false);
     }
@@ -63,14 +65,14 @@ export function FormResena({ productoId, onNuevaResena }) {
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, p: 2, border: '1px solid #ddd', borderRadius: 2 }}>
       <Typography variant="h6" gutterBottom>
-        Escribir una reseña
+        {t('FWrite_Review')}
       </Typography>
       
       {/* Campos igual que tu implementación actual */}
       <TextField
         fullWidth
-        label="Usuario"
-        value={userData?.nombre || userData?.email || 'Usuario'}
+        label={t('FUser_Review')}
+        value={userData?.nombre || userData?.email }
         InputProps={{ readOnly: true }}
         margin="normal"
         variant="outlined"
@@ -79,7 +81,7 @@ export function FormResena({ productoId, onNuevaResena }) {
 
       <TextField
         fullWidth
-        label="Fecha"
+        label={t('FDate_Review')}
         value={new Date().toLocaleDateString()}
         InputProps={{ readOnly: true }}
         margin="normal"
@@ -95,7 +97,7 @@ export function FormResena({ productoId, onNuevaResena }) {
 
       <TextField
         fullWidth
-        label="Tu reseña *"
+        label={t('FYour_Review')}
         value={comentario}
         onChange={(e) => setComentario(e.target.value)}
         multiline
@@ -107,7 +109,7 @@ export function FormResena({ productoId, onNuevaResena }) {
 
       <Box sx={{ mb: 2 }}>
         <Typography component="legend" sx={{ mb: 1 }}>
-          Valoración *
+         {t('FRate_Review')}
         </Typography>
         <Rating
           value={valoracion}
@@ -124,7 +126,7 @@ export function FormResena({ productoId, onNuevaResena }) {
         disabled={loading}
         sx={{ mt: 2 }}
       >
-        {loading ? 'Guardando...' : 'Enviar Reseña'}
+        {loading ? t('FSaving_Review') : t('FSend_Review')}
       </Button>
     </Box>
   );
