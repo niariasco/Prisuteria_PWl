@@ -6,7 +6,7 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
-import { Menu, MenuItem, FormControl, Select, ListItemIcon, ListItemText } from "@mui/material";
+import { Menu, MenuItem, FormControl, Select  } from "@mui/material";
 import { Link } from "react-router-dom";
 import Badge from "@mui/material/Badge";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -22,7 +22,7 @@ import { useTranslation } from 'react-i18next';
 
 
 const LanguageSelector = () => {
-  const { i18n, t } = useTranslation();
+  const { i18n } = useTranslation();
   
   const languages = [
     { 
@@ -47,6 +47,8 @@ const LanguageSelector = () => {
 
   const handleLanguageChange = (event) => {
     const selectedLanguage = event.target.value;
+    i18n.changeLanguage(selectedLanguage);
+    localStorage.setItem('lang', selectedLanguage);//
     i18n.changeLanguage(selectedLanguage);
   };
 
