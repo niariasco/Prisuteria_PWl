@@ -114,8 +114,9 @@ export function CreateProducto({ productoId = null, onSuccess }) {
     if (productoId) formData.append('producto_id', productoId);
 
     const submitAction = productoId
-      ? ProductoService.updateProducto(formData)
-      : ProductoService.createProducto(formData);
+      //? ProductoService.updateProducto(formData) 
+     // : 
+     ProductoService.createProducto(formData);
 
     submitAction
       .then((res) => {
