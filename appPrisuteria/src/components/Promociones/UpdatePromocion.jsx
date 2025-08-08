@@ -22,24 +22,34 @@ const Alert = React.forwardRef(function Alert(props, ref) {
 export function UpdatePromocion() {
   const { t, i18n } = useTranslation();
 
+  // Función helper para obtener texto con fallback
+  const getTextWithFallback = (key, fallbackEs, fallbackEn) => {
+    const translation = t(key);
+    if (translation === key) {
+      // Si la traducción devuelve la misma clave, usar fallback
+      return i18n.language === 'en' ? fallbackEn : fallbackEs;
+    }
+    return translation;
+  };
+
   // Crear esquema de validación dinámico basado en el idioma actual
   const createValidationSchema = () => {
     return Yup.object().shape({
       nombre: Yup.string()
-        .required(t("promocion.validation.name_required"))
-        .matches(/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/, t("promocion.validation.letters_only")),
-      tipo: Yup.string().oneOf(["Producto", "Categoria"]).required(t("promocion.validation.select_type")),
+        .required(getTextWithFallback("promocion.validation.name_required", "El nombre es requerido", "Name is required"))
+        .matches(/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/, getTextWithFallback("promocion.validation.letters_only", "Solo se permiten letras", "Only letters are allowed")),
+      tipo: Yup.string().oneOf(["Producto", "Categoria"]).required(getTextWithFallback("promocion.validation.select_type", "Seleccione un tipo", "Select a type")),
       tipoDescuento: Yup.string()
         .oneOf(["Porcentaje", "Monto"])
-        .required(t("promocion.validation.select_discount_type")),
+        .required(getTextWithFallback("promocion.validation.select_discount_type", "Seleccione tipo de descuento", "Select discount type")),
       porcentajeDescuento: Yup.number()
         .nullable()
         .when('tipoDescuento', {
           is: 'Porcentaje',
           then: (schema) => schema
-            .required(t("promocion.validation.percentage_required"))
-            .min(1, t("promocion.validation.percentage_range"))
-            .max(100, t("promocion.validation.percentage_range")),
+            .required(getTextWithFallback("promocion.validation.percentage_required", "El porcentaje es requerido", "Percentage is required"))
+            .min(1, getTextWithFallback("promocion.validation.percentage_range", "Debe estar entre 1% y 100%", "Must be between 1% and 100%"))
+            .max(100, getTextWithFallback("promocion.validation.percentage_range", "Debe estar entre 1% y 100%", "Must be between 1% and 100%")),
           otherwise: (schema) => schema.nullable().notRequired()
         }),
       montoDescuento: Yup.number()
@@ -47,21 +57,21 @@ export function UpdatePromocion() {
         .when('tipoDescuento', {
           is: 'Monto',
           then: (schema) => schema
-            .required(t("promocion.validation.amount_required"))
-            .min(0.01, t("promocion.validation.min_amount"))
+            .required(getTextWithFallback("promocion.validation.amount_required", "El monto es requerido", "Amount is required"))
+            .min(0.01, getTextWithFallback("promocion.validation.min_amount", "Monto mínimo 0.01", "Minimum amount 0.01"))
             .max(999999, "El monto no puede exceder ₡999,999"),
           otherwise: (schema) => schema.nullable().notRequired()
         }),
-      fecha_inicio: Yup.string().required(t("promocion.validation.start_date_required")),
-      fecha_fin: Yup.string().required(t("promocion.validation.end_date_required")),
+      fecha_inicio: Yup.string().required(getTextWithFallback("promocion.validation.start_date_required", "Fecha de inicio requerida", "Start date is required")),
+      fecha_fin: Yup.string().required(getTextWithFallback("promocion.validation.end_date_required", "Fecha de fin requerida", "End date is required")),
       ProductoID: Yup.string().when('tipo', {
         is: 'Producto',
-        then: (schema) => schema.required(t("promocion.validation.select_product")),
+        then: (schema) => schema.required(getTextWithFallback("promocion.validation.select_product", "Seleccione un producto", "Select a product")),
         otherwise: (schema) => schema.nullable().notRequired()
       }),
       CategoriaID: Yup.string().when('tipo', {
         is: 'Categoria', 
-        then: (schema) => schema.required(t("promocion.validation.select_category")),
+        then: (schema) => schema.required(getTextWithFallback("promocion.validation.select_category", "Seleccione una categoría", "Select a category")),
         otherwise: (schema) => schema.nullable().notRequired()
       })
     });
@@ -115,13 +125,16 @@ export function UpdatePromocion() {
   const getCategoryTranslation = (categoryName) => {
     if (!categoryName) return categoryName;
     
-    // Buscar en las traducciones de categorías
-    const categoryKey = Object.keys(t("categories", { returnObjects: true }) || {})
-      .find(key => key === categoryName);
-    
-    if (categoryKey) {
-      const translations = t("categories", { returnObjects: true })[categoryKey];
-      return translations[i18n.language] || translations.es || categoryName;
+    try {
+      const categoryKey = Object.keys(t("categories", { returnObjects: true }) || {})
+        .find(key => key === categoryName);
+      
+      if (categoryKey) {
+        const translations = t("categories", { returnObjects: true })[categoryKey];
+        return translations[i18n.language] || translations.es || categoryName;
+      }
+    } catch (error) {
+      console.warn('Error getting category translation:', error);
     }
     
     return categoryName;
@@ -131,19 +144,22 @@ export function UpdatePromocion() {
   const getProductTranslation = (productName) => {
     if (!productName) return productName;
     
-    // Buscar en las traducciones de productos
-    const productKey = Object.keys(t("products", { returnObjects: true }) || {})
-      .find(key => key === productName);
-    
-    if (productKey) {
-      const translations = t("products", { returnObjects: true })[productKey];
-      return translations[i18n.language] || translations.es || productName;
+    try {
+      const productKey = Object.keys(t("products", { returnObjects: true }) || {})
+        .find(key => key === productName);
+      
+      if (productKey) {
+        const translations = t("products", { returnObjects: true })[productKey];
+        return translations[i18n.language] || translations.es || productName;
+      }
+    } catch (error) {
+      console.warn('Error getting product translation:', error);
     }
     
     return productName;
   };
 
-  // FUNCIÓN MEJORADA Y SIMPLIFICADA para obtener la traducción de promociones
+  // Función CORREGIDA para obtener la traducción de promociones
   const getPromotionTranslation = (promotionName) => {
     if (!promotionName) return promotionName;
     
@@ -152,57 +168,49 @@ export function UpdatePromocion() {
       const promotionsTranslations = t("promotions", { returnObjects: true });
       
       if (!promotionsTranslations) {
-        console.warn('No promotions translations found');
         return promotionName;
       }
-      
-      console.log('Searching translation for:', promotionName);
       
       // 1. Búsqueda exacta (case-sensitive)
       if (promotionsTranslations[promotionName]) {
         const translation = promotionsTranslations[promotionName];
-        const result = translation[i18n.language] || translation.es || promotionName;
-        console.log('Exact match found:', result);
-        return result;
+        return translation[i18n.language] || translation.es || promotionName;
       }
       
       // 2. Búsqueda exacta (case-insensitive)
       const normalizedInput = promotionName.toLowerCase().trim();
       for (const [key, translation] of Object.entries(promotionsTranslations)) {
         if (key.toLowerCase() === normalizedInput) {
-          const result = translation[i18n.language] || translation.es || promotionName;
-          console.log('Case-insensitive match found:', key, '->', result);
-          return result;
+          return translation[i18n.language] || translation.es || promotionName;
         }
       }
       
-      // 3. Mapeo directo más completo - ACTUALIZADO para incluir todas las promociones
+      // 3. Mapeo directo simplificado basado en el JSON proporcionado
       const directMapping = {
-        // Mapeo directo desde tu JSON
         'holy week': i18n.language === 'es' ? 'Semana Santa' : 'Holy Week',
         'semana santa': i18n.language === 'en' ? 'Holy Week' : 'Semana Santa',
         
-        'dia del perro': i18n.language === 'en' ? 'Dog Day' : 'Día del perro',
         'dog day': i18n.language === 'es' ? 'Día del perro' : 'Dog Day',
+        'día del perro': i18n.language === 'en' ? 'Dog Day' : 'Día del perro',
         
-        'father\'s day': i18n.language === 'es' ? 'Día de los padres' : 'Father\'s Day',
-        'dia de los padres': i18n.language === 'en' ? 'Father\'s Day' : 'Día de los padres',
-        'dia del padres': i18n.language === 'en' ? 'Father\'s Day' : 'Día del Padres',
+        "father's day": i18n.language === 'es' ? 'Día de los padres' : "Father's Day",
+        'día de los padres': i18n.language === 'en' ? "Father's Day" : 'Día de los padres',
+        'día del padres': i18n.language === 'en' ? "Father's Day" : 'Día del Padres',
         
-        'men\'s day': i18n.language === 'es' ? 'Día del hombres' : 'Men\'s Day',
-        'dia del hombres': i18n.language === 'en' ? 'Men\'s Day' : 'Día del hombres',
+        "men's day": i18n.language === 'es' ? 'Día del hombres' : "Men's Day",
+        'día del hombres': i18n.language === 'en' ? "Men's Day" : 'Día del hombres',
         
-        'women\'s day': i18n.language === 'es' ? 'Día de la mujer' : 'Women\'s Day',
-        'dia de la mujer': i18n.language === 'en' ? 'Women\'s Day' : 'Día de la mujer',
+        "women's day": i18n.language === 'es' ? 'Día de la mujer' : "Women's Day",
+        'día de la mujer': i18n.language === 'en' ? "Women's Day" : 'Día de la mujer',
         
-        'bride\'s day': i18n.language === 'es' ? 'Día de la novia' : 'Bride\'s Day',
-        'dia de la novia': i18n.language === 'en' ? 'Bride\'s Day' : 'Día de la novia',
+        "bride's day": i18n.language === 'es' ? 'Día de la novia' : "Bride's Day",
+        'día de la novia': i18n.language === 'en' ? "Bride's Day" : 'Día de la novia',
         
-        'children\'s day': i18n.language === 'es' ? 'Día del niños' : 'Children\'s Day',
-        'dia del niños': i18n.language === 'en' ? 'Children\'s Day' : 'Día del niños',
+        "children's day": i18n.language === 'es' ? 'Día del niños' : "Children's Day",
+        'día del niños': i18n.language === 'en' ? "Children's Day" : 'Día del niños',
         
-        'mother\'s day': i18n.language === 'es' ? 'Día de la madre' : 'Mother\'s Day',
-        'dia de la madre': i18n.language === 'en' ? 'Mother\'s Day' : 'Día de la madre',
+        "mother's day": i18n.language === 'es' ? 'Día de la madre' : "Mother's Day",
+        'día de la madre': i18n.language === 'en' ? "Mother's Day" : 'Día de la madre',
         
         'coquette': 'Coquette', // Mismo en ambos idiomas
         
@@ -227,13 +235,10 @@ export function UpdatePromocion() {
       
       // Buscar en el mapeo directo
       if (directMapping[normalizedInput]) {
-        const result = directMapping[normalizedInput];
-        console.log('Direct mapping found:', normalizedInput, '->', result);
-        return result;
+        return directMapping[normalizedInput];
       }
       
       // 4. Último recurso: devolver el nombre original
-      console.warn('No translation found for:', promotionName);
       return promotionName;
       
     } catch (error) {
@@ -242,63 +247,20 @@ export function UpdatePromocion() {
     }
   };
 
-  // Función actualizada para obtener la traducción de estados usando tu JSON
+  // Función CORREGIDA para obtener la traducción de estados
   const getStatusTranslation = (status) => {
     if (!status) return status;
     
     try {
-      // Método 1: Usar promotion_status directamente
+      // Usar el JSON de promotion_status directamente
       const statusTranslations = t("promotion_status", { returnObjects: true });
+      
       if (statusTranslations && statusTranslations[status]) {
         const translation = statusTranslations[status];
         return translation[i18n.language] || translation.es || status;
       }
       
-      // Método 2: Usar el sistema de mapeo de status_mappings
-      const statusMappings = t("status_mappings", { returnObjects: true });
-      if (statusMappings && statusMappings[i18n.language] && statusMappings[i18n.language][status]) {
-        const mappingKey = statusMappings[i18n.language][status];
-        const defaultTranslations = t("status_translations", { returnObjects: true });
-        if (defaultTranslations && defaultTranslations[mappingKey]) {
-          return defaultTranslations[mappingKey];
-        }
-      }
-      
-      // Método 3: Usar directamente el mapeo desde default_translations
-      const defaultTranslations = t("default_translations", { returnObjects: true });
-      if (defaultTranslations && defaultTranslations[i18n.language]) {
-        // Buscar el valor directamente
-        const translations = defaultTranslations[i18n.language];
-        for (const [key, value] of Object.entries(translations)) {
-          // Si el status coincide con algún valor en español, buscar su traducción
-          if (value === status) {
-            return value;
-          }
-        }
-        
-        // Mapeo directo de estados conocidos
-        const statusKeyMap = {
-          'Vigente': 'promocion.status_active',
-          'Active': 'promocion.status_active',
-          'Activo': 'promocion.status_active',
-          'Pendiente': 'promocion.status_pending',
-          'Pending': 'promocion.status_pending',
-          'Aplicado': 'promocion.status_applied',
-          'Applied': 'promocion.status_applied',
-          'Inactivo': 'promocion.status_inactive',
-          'Inactive': 'promocion.status_inactive',
-          'Expirado': 'promocion.status_expired',
-          'Expired': 'promocion.status_expired',
-          'Vencido': 'promocion.status_expired'
-        };
-        
-        const statusKey = statusKeyMap[status];
-        if (statusKey && translations[statusKey]) {
-          return translations[statusKey];
-        }
-      }
-      
-      // Fallback: mapeo directo simple
+      // Mapeo directo como fallback
       const directMap = {
         'Pendiente': i18n.language === 'en' ? 'Pending' : 'Pendiente',
         'Pending': i18n.language === 'es' ? 'Pendiente' : 'Pending',
@@ -355,7 +317,7 @@ export function UpdatePromocion() {
         setProductos(productosRes.data || []);
         setCategorias(categoriasRes.data || []);
       } catch (err) {
-        setMensajeError(t("promocion.errors.load_initial_data"));
+        setMensajeError(getTextWithFallback("promocion.errors.load_initial_data", "Error al cargar datos iniciales", "Error loading initial data"));
       }
     };
 
@@ -386,13 +348,27 @@ export function UpdatePromocion() {
             return fechaObj.toISOString().slice(0, 16);
           };
 
-          // Determinar el tipo de descuento basado en los datos existentes
+          // CORREGIDO: Determinar el tipo de descuento y validar el valor
           let tipoDescuentoDetectado = "Porcentaje";
+          let valorDescuento = promo.descuento || 0;
           
+          // Validar que el valor esté dentro de los rangos correctos
           if (promo.tipo_descuento) {
             tipoDescuentoDetectado = promo.tipo_descuento;
           } else {
-            tipoDescuentoDetectado = (promo.descuento && promo.descuento <= 100) ? "Porcentaje" : "Monto";
+            // Si no hay tipo específico, inferir basado en el valor
+            if (valorDescuento <= 100) {
+              tipoDescuentoDetectado = "Porcentaje";
+            } else {
+              tipoDescuentoDetectado = "Monto";
+            }
+          }
+
+          // VALIDACIÓN ADICIONAL: Corregir valores fuera de rango
+          if (tipoDescuentoDetectado === "Porcentaje" && valorDescuento > 100) {
+            // Si el valor es mayor a 100 pero debería ser porcentaje, probablemente es un error
+            console.warn(`Valor de descuento ${valorDescuento} parece ser incorrecto para porcentaje`);
+            valorDescuento = Math.min(valorDescuento, 100); // Limitar a 100%
           }
 
           // Resetear formulario con datos de la promoción
@@ -403,32 +379,27 @@ export function UpdatePromocion() {
             ProductoID: promo.ProductoID ? String(promo.ProductoID) : "",
             CategoriaID: promo.CategoriaID ? String(promo.CategoriaID) : "",
             tipoDescuento: tipoDescuentoDetectado,
-            porcentajeDescuento: "",
-            montoDescuento: "",
+            porcentajeDescuento: null,
+            montoDescuento: null,
             fecha_inicio: formatearFecha(promo.fecha_inicio),
             fecha_fin: formatearFecha(promo.fecha_fin),
             activo: promo.activo !== undefined ? promo.activo : true
           };
 
-          // Asignar el valor al campo correspondiente
+          // Asignar el valor al campo correspondiente CON VALIDACIÓN
           if (tipoDescuentoDetectado === "Porcentaje") {
-            datosFormulario.porcentajeDescuento = String(promo.descuento || "");
+            // Validar que esté en rango 1-100
+            const porcentajeValido = Math.max(1, Math.min(100, valorDescuento));
+            datosFormulario.porcentajeDescuento = porcentajeValido;
             datosFormulario.montoDescuento = null;
           } else if (tipoDescuentoDetectado === "Monto") {
-            datosFormulario.montoDescuento = String(promo.descuento || "");
+            // Validar que sea un monto positivo
+            const montoValido = Math.max(0.01, Math.min(999999, valorDescuento));
+            datosFormulario.montoDescuento = montoValido;
             datosFormulario.porcentajeDescuento = null;
           }
           
           reset(datosFormulario);
-
-          // Forzar la actualización de los campos después del reset
-          setTimeout(() => {
-            if (tipoDescuentoDetectado === "Porcentaje" && promo.descuento) {
-              setValue("porcentajeDescuento", String(promo.descuento));
-            } else if (tipoDescuentoDetectado === "Monto" && promo.descuento) {
-              setValue("montoDescuento", String(promo.descuento));
-            }
-          }, 100);
 
           // Limpiar campos según el tipo
           if (promo.tipo === "Producto") {
@@ -441,10 +412,11 @@ export function UpdatePromocion() {
           
           if (!esEditable) {
             const estadoConfig = obtenerEstadoTexto(promo.Estado);
-            setMensajeError(t("promocion.warnings.state_restriction", { status: estadoConfig.texto }));
+            setMensajeError(getTextWithFallback("promocion.warnings.state_restriction", `Promoción no editable por estado: ${estadoConfig.texto}`, `Promotion not editable due to status: ${estadoConfig.texto}`));
           }
         } catch (err) {
-          setMensajeError(t("promocion.errors.load_selected"));
+          console.error('Error cargando promoción:', err);
+          setMensajeError(getTextWithFallback("promocion.errors.load_selected", "Error al cargar promoción seleccionada", "Error loading selected promotion"));
         } finally {
           setLoadingPromo(false);
         }
@@ -481,13 +453,13 @@ export function UpdatePromocion() {
 
   const onSubmit = async (data) => {
     if (!promocionEditable) {
-      setMensajeError(t("promocion.errors.not_editable"));
+      setMensajeError(getTextWithFallback("promocion.errors.not_editable", "Promoción no editable", "Promotion not editable"));
       return;
     }
 
     try {
       if (!promoSeleccionada) {
-        setMensajeError(t("promocion.errors.no_selection"));
+        setMensajeError(getTextWithFallback("promocion.errors.no_selection", "No hay promoción seleccionada", "No promotion selected"));
         return;
       }
 
@@ -497,15 +469,29 @@ export function UpdatePromocion() {
         return fechaDatetimeLocal.replace('T', ' ') + ':00';
       };
 
+      // VALIDACIÓN ADICIONAL antes de enviar
+      let valorDescuento;
+      if (data.tipoDescuento === "Porcentaje") {
+        valorDescuento = parseFloat(data.porcentajeDescuento);
+        if (isNaN(valorDescuento) || valorDescuento < 1 || valorDescuento > 100) {
+          setMensajeError("El porcentaje debe estar entre 1% y 100%");
+          return;
+        }
+      } else {
+        valorDescuento = parseFloat(data.montoDescuento);
+        if (isNaN(valorDescuento) || valorDescuento < 0.01 || valorDescuento > 999999) {
+          setMensajeError("El monto debe estar entre 0.01 y 999,999");
+          return;
+        }
+      }
+
       // Preparar datos para envío
       const datosParaEnvio = {
         id: parseInt(promoSeleccionada),
         nombre: data.nombre.trim(),
         tipo: data.tipo,
         tipo_descuento: data.tipoDescuento,
-        descuento: data.tipoDescuento === "Porcentaje" 
-          ? parseFloat(data.porcentajeDescuento) 
-          : parseFloat(data.montoDescuento),
+        descuento: valorDescuento,
         fecha_inicio: formatearFechaParaMySQL(data.fecha_inicio),
         fecha_fin: formatearFechaParaMySQL(data.fecha_fin),
         activo: data.activo !== undefined ? data.activo : true,
@@ -532,7 +518,7 @@ export function UpdatePromocion() {
       } else if (err.message) {
         setMensajeError(err.message);
       } else {
-        setMensajeError(t("promocion.errors.update_failed"));
+        setMensajeError(getTextWithFallback("promocion.errors.update_failed", "Error al actualizar promoción", "Failed to update promotion"));
       }
     }
   };
@@ -541,21 +527,21 @@ export function UpdatePromocion() {
     <Box sx={{ maxWidth: 800, mx: "auto", mt: 3, p: 2 }}>
       <Typography variant="h4" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <EditIcon color="primary" />
-        {t("promocion.title.update")}
+        {getTextWithFallback("promocion.title.update", "Actualizar Promoción", "Update Promotion")}
       </Typography>
 
       {/* Mensaje de éxito morado estilo promoción creada */}
       {promocionModificadaId && (
         <Box sx={{ mb: 3, p: 2, backgroundColor: '#c287d7ff', borderRadius: 2, mt: 8 }}>
           <Typography variant="h6" color="#d219a4ff">
-            {t("promocion.success.modified")}
+            {getTextWithFallback("promocion.success.modified", "Promoción modificada exitosamente", "Promotion successfully modified")}
           </Typography>
           <Typography sx={{ mt: 1 }}>
             <a
               href={`/promocion/${promocionModificadaId}`}
               style={{ color: '#d219a4ff', textDecoration: 'underline' }}
             >
-              {t("promocion.view_promotion")}
+              {getTextWithFallback("promocion.view_promotion", "Ver promoción", "View promotion")}
             </a>
           </Typography>
         </Box>
@@ -580,19 +566,23 @@ export function UpdatePromocion() {
           }}
         >
           <Typography variant="h6" color="error">
-            {t("promocion.error_label")}: {mensajeError}
+            {getTextWithFallback("promocion.error_label", "Error", "Error")}: {mensajeError}
           </Typography>
         </Box>
       )}
 
       <Card sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>{t("promocion.steps.select")}</Typography>
+        <Typography variant="h6" gutterBottom>
+          {getTextWithFallback("promocion.steps.select", "Seleccionar Promoción", "Select Promotion")}
+        </Typography>
         <FormControl fullWidth>
-          <InputLabel id="promocion-label">{t("promocion.fields.promotion")}</InputLabel>
+          <InputLabel id="promocion-label">
+            {getTextWithFallback("promocion.fields.promotion", "Promoción", "Promotion")}
+          </InputLabel>
           <Select
             labelId="promocion-label"
             value={promoSeleccionada}
-            label={t("promocion.fields.promotion")}
+            label={getTextWithFallback("promocion.fields.promotion", "Promoción", "Promotion")}
             onChange={(e) => setPromoSeleccionada(e.target.value)}
             disabled={loadingPromo}
           >
@@ -632,7 +622,7 @@ export function UpdatePromocion() {
                         variant="caption" 
                         sx={{ ml: 1, fontStyle: 'italic', color: 'text.disabled' }}
                       >
-                        - {t("promocion.buttons.not_editable")}
+                        - {getTextWithFallback("promocion.buttons.not_editable", "No editable", "Not editable")}
                       </Typography>
                     )}
                   </Box>
@@ -652,10 +642,10 @@ export function UpdatePromocion() {
       {mostrarFormulario && (
         <Card sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>
-            {t("promocion.steps.modify")}
+            {getTextWithFallback("promocion.steps.modify", "Modificar Promoción", "Modify Promotion")}
             {!promocionEditable && (
               <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-                {t("promocion.warnings.not_editable")}
+                {getTextWithFallback("promocion.warnings.not_editable", "Esta promoción no es editable", "This promotion is not editable")}
               </Typography>
             )}
           </Typography>
@@ -669,7 +659,7 @@ export function UpdatePromocion() {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label={t("promocion.fields.name")}
+                      label={getTextWithFallback("promocion.fields.name", "Nombre", "Name")}
                       fullWidth
                       disabled={!promocionEditable}
                       error={!!errors.nombre}
@@ -685,10 +675,10 @@ export function UpdatePromocion() {
                   control={control}
                   render={({ field }) => (
                     <FormControl fullWidth error={!!errors.tipo}>
-                      <InputLabel>{t("promocion.fields.type")}</InputLabel>
-                      <Select {...field} label={t("promocion.fields.type")} disabled={!promocionEditable}>
-                        <MenuItem value="Producto">{t("promocion.options.product")}</MenuItem>
-                        <MenuItem value="Categoria">{t("promocion.options.category")}</MenuItem>
+                      <InputLabel>{getTextWithFallback("promocion.fields.type", "Tipo", "Type")}</InputLabel>
+                      <Select {...field} label={getTextWithFallback("promocion.fields.type", "Tipo", "Type")} disabled={!promocionEditable}>
+                        <MenuItem value="Producto">{getTextWithFallback("promocion.options.product", "Producto", "Product")}</MenuItem>
+                        <MenuItem value="Categoria">{getTextWithFallback("promocion.options.category", "Categoría", "Category")}</MenuItem>
                       </Select>
                       {errors.tipo && (
                         <Typography variant="caption" color="error" sx={{ mt: 1, ml: 2 }}>
@@ -707,9 +697,9 @@ export function UpdatePromocion() {
                     control={control}
                     render={({ field }) => (
                       <FormControl fullWidth error={!!errors.ProductoID}>
-                        <InputLabel>{t("promocion.fields.product")}</InputLabel>
-                        <Select {...field} label={t("promocion.fields.product")} disabled={!promocionEditable}>
-                          <MenuItem value="">{t("promocion.placeholders.select_product")}</MenuItem>
+                        <InputLabel>{getTextWithFallback("promocion.fields.product", "Producto", "Product")}</InputLabel>
+                        <Select {...field} label={getTextWithFallback("promocion.fields.product", "Producto", "Product")} disabled={!promocionEditable}>
+                          <MenuItem value="">{getTextWithFallback("promocion.placeholders.select_product", "Seleccionar producto", "Select product")}</MenuItem>
                           {productos.map((p) => (
                             <MenuItem key={p.productosId} value={String(p.productosId)}>
                               {getProductTranslation(p.nombre)}
@@ -734,9 +724,9 @@ export function UpdatePromocion() {
                     control={control}
                     render={({ field }) => (
                       <FormControl fullWidth error={!!errors.CategoriaID}>
-                        <InputLabel>{t("promocion.fields.category")}</InputLabel>
-                        <Select {...field} label={t("promocion.fields.category")} disabled={!promocionEditable}>
-                          <MenuItem value="">{t("promocion.placeholders.select_category")}</MenuItem>
+                        <InputLabel>{getTextWithFallback("promocion.fields.category", "Categoría", "Category")}</InputLabel>
+                        <Select {...field} label={getTextWithFallback("promocion.fields.category", "Categoría", "Category")} disabled={!promocionEditable}>
+                          <MenuItem value="">{getTextWithFallback("promocion.placeholders.select_category", "Seleccionar categoría", "Select category")}</MenuItem>
                           {categorias.map((cat) => (
                             <MenuItem key={cat.categoriaId} value={String(cat.categoriaId)}>
                               {getCategoryTranslation(cat.nombreSCategoria)}
@@ -754,17 +744,17 @@ export function UpdatePromocion() {
                 </Grid>
               )}
 
-              {/* Nuevo campo: Tipo de Descuento */}
+              {/* Campo: Tipo de Descuento */}
               <Grid item xs={12}>
                 <Controller
                   name="tipoDescuento"
                   control={control}
                   render={({ field }) => (
                     <FormControl fullWidth error={!!errors.tipoDescuento}>
-                      <InputLabel>{t("promocion.fields.discount_type")}</InputLabel>
-                      <Select {...field} label={t("promocion.fields.discount_type")} disabled={!promocionEditable}>
-                        <MenuItem value="Porcentaje">{t("promocion.options.percentage")}</MenuItem>
-                        <MenuItem value="Monto">{t("promocion.options.fixed_amount")}</MenuItem>
+                      <InputLabel>{getTextWithFallback("promocion.fields.discount_type", "Tipo de Descuento", "Discount Type")}</InputLabel>
+                      <Select {...field} label={getTextWithFallback("promocion.fields.discount_type", "Tipo de Descuento", "Discount Type")} disabled={!promocionEditable}>
+                        <MenuItem value="Porcentaje">{getTextWithFallback("promocion.options.percentage", "Porcentaje", "Percentage")}</MenuItem>
+                        <MenuItem value="Monto">{getTextWithFallback("promocion.options.fixed_amount", "Monto Fijo", "Fixed Amount")}</MenuItem>
                       </Select>
                       {errors.tipoDescuento && (
                         <Typography variant="caption" color="error" sx={{ mt: 1, ml: 2 }}>
@@ -785,7 +775,7 @@ export function UpdatePromocion() {
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        label={t("promocion.fields.discount_percentage")}
+                        label={getTextWithFallback("promocion.fields.discount_percentage", "Porcentaje de Descuento", "Discount Percentage")}
                         type="number"
                         fullWidth
                         disabled={!promocionEditable}
@@ -793,7 +783,7 @@ export function UpdatePromocion() {
                         error={!!errors.porcentajeDescuento}
                         helperText={
                           errors.porcentajeDescuento?.message || 
-                          t("promocion.validation.percentage_helper")
+                          getTextWithFallback("promocion.validation.percentage_helper", "Ingrese un porcentaje entre 1% y 100%", "Enter a percentage between 1% and 100%")
                         }
                         InputProps={{
                           endAdornment: "%"
@@ -813,7 +803,7 @@ export function UpdatePromocion() {
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        label={t("promocion.fields.discount_amount")}
+                        label={getTextWithFallback("promocion.fields.discount_amount", "Monto de Descuento", "Discount Amount")}
                         type="number"
                         fullWidth
                         disabled={!promocionEditable}
@@ -821,7 +811,7 @@ export function UpdatePromocion() {
                         error={!!errors.montoDescuento}
                         helperText={
                           errors.montoDescuento?.message || 
-                          t("promocion.validation.amount_helper")
+                          getTextWithFallback("promocion.validation.amount_helper", "Ingrese un monto entre 0.01 y 999,999", "Enter an amount between 0.01 and 999,999")
                         }
                         InputProps={{
                           startAdornment: i18n.language === 'es' ? "₡" : "$"
@@ -839,7 +829,7 @@ export function UpdatePromocion() {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label={t("promocion.fields.start_date")}
+                      label={getTextWithFallback("promocion.fields.start_date", "Fecha de Inicio", "Start Date")}
                       type="datetime-local"
                       fullWidth
                       disabled={!promocionEditable}
@@ -858,7 +848,7 @@ export function UpdatePromocion() {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label={t("promocion.fields.end_date")}
+                      label={getTextWithFallback("promocion.fields.end_date", "Fecha de Fin", "End Date")}
                       type="datetime-local"
                       fullWidth
                       disabled={!promocionEditable}
@@ -879,7 +869,10 @@ export function UpdatePromocion() {
                 startIcon={<SaveIcon />}
                 disabled={!isDirty || !promocionEditable || loadingPromo}
               >
-                {promocionEditable ? t("promocion.buttons.save_changes") : t("promocion.buttons.not_editable")}
+                {promocionEditable 
+                  ? getTextWithFallback("promocion.buttons.save_changes", "Guardar Cambios", "Save Changes")
+                  : getTextWithFallback("promocion.buttons.not_editable", "No Editable", "Not Editable")
+                }
               </Button>
             </Box>
           </form>
@@ -909,7 +902,7 @@ export function UpdatePromocion() {
             }
           }}
         >
-          {t("promocion.success.updated")}
+          {getTextWithFallback("promocion.success.updated", "Promoción actualizada exitosamente", "Promotion updated successfully")}
         </Alert>
       </Snackbar>
 
