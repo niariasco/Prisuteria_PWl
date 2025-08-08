@@ -213,7 +213,20 @@
     },
     "buttons": {
       "back": "← Back"
-    }
+    },
+    "footer": {
+    "company_name": "PRISUTERÍA ACCESSORIES",
+    "schedule": "Monday to Saturday: 9:00am - 6:00pm", 
+    "links_title": "LINKS",
+    "links": {
+      "home": "Home",
+      "about": "About Us",
+      "products": "Products", 
+      "contact": "Contact"
+    },
+    "copyright": "© 2025 UTN Project. All rights reserved.",
+    "developers": "Nicole Arias & Priscilla Sanchez"
+  }
   
   }
 }
