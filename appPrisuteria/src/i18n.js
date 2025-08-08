@@ -9,6 +9,7 @@ import enTranslations from './translations/en/global.json';
 import categoryTranslations from './translations/categoryTranslations.json';
 import productTranslations from './translations/productTranslations.json';
 import estadosTranslations from './translations/estadosTranslations.json';
+import promocionTranslations from './translations/promocionTranslations.json';
 
 i18n
   .use(initReactI18next)
@@ -19,8 +20,10 @@ i18n
           ...esTranslations,
           categories: categoryTranslations.categories,
           products: productTranslations.products,
-          status_mappings: estadosTranslations.status_mappings.es,
-          status_translations: estadosTranslations.default_translations.es,
+          promotions: promocionTranslations.promotions,
+          promotion_status: promocionTranslations.promotion_status,
+          status_mappings: estadosTranslations.status_mappings?.es || {},
+          status_translations: estadosTranslations.default_translations?.es || {},
         },
       },
       en: {
@@ -28,8 +31,10 @@ i18n
           ...enTranslations,
           categories: categoryTranslations.categories,
           products: productTranslations.products,
-          status_mappings: estadosTranslations.status_mappings.en,
-          status_translations: estadosTranslations.default_translations.en,
+          promotions: promocionTranslations.promotions,
+          promotion_status: promocionTranslations.promotion_status,
+          status_mappings: estadosTranslations.status_mappings?.en || {},
+          status_translations: estadosTranslations.default_translations?.en || {},
         },
       },
     },

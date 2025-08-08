@@ -143,15 +143,183 @@ export function UpdatePromocion() {
     return productName;
   };
 
-  // Función para obtener la traducción de estados
+  // FUNCIÓN MEJORADA Y SIMPLIFICADA para obtener la traducción de promociones
+  const getPromotionTranslation = (promotionName) => {
+    if (!promotionName) return promotionName;
+    
+    try {
+      // Obtener el objeto de traducciones de promociones
+      const promotionsTranslations = t("promotions", { returnObjects: true });
+      
+      if (!promotionsTranslations) {
+        console.warn('No promotions translations found');
+        return promotionName;
+      }
+      
+      console.log('Searching translation for:', promotionName);
+      
+      // 1. Búsqueda exacta (case-sensitive)
+      if (promotionsTranslations[promotionName]) {
+        const translation = promotionsTranslations[promotionName];
+        const result = translation[i18n.language] || translation.es || promotionName;
+        console.log('Exact match found:', result);
+        return result;
+      }
+      
+      // 2. Búsqueda exacta (case-insensitive)
+      const normalizedInput = promotionName.toLowerCase().trim();
+      for (const [key, translation] of Object.entries(promotionsTranslations)) {
+        if (key.toLowerCase() === normalizedInput) {
+          const result = translation[i18n.language] || translation.es || promotionName;
+          console.log('Case-insensitive match found:', key, '->', result);
+          return result;
+        }
+      }
+      
+      // 3. Mapeo directo más completo - ACTUALIZADO para incluir todas las promociones
+      const directMapping = {
+        // Mapeo directo desde tu JSON
+        'holy week': i18n.language === 'es' ? 'Semana Santa' : 'Holy Week',
+        'semana santa': i18n.language === 'en' ? 'Holy Week' : 'Semana Santa',
+        
+        'dia del perro': i18n.language === 'en' ? 'Dog Day' : 'Día del perro',
+        'dog day': i18n.language === 'es' ? 'Día del perro' : 'Dog Day',
+        
+        'father\'s day': i18n.language === 'es' ? 'Día de los padres' : 'Father\'s Day',
+        'dia de los padres': i18n.language === 'en' ? 'Father\'s Day' : 'Día de los padres',
+        'dia del padres': i18n.language === 'en' ? 'Father\'s Day' : 'Día del Padres',
+        
+        'men\'s day': i18n.language === 'es' ? 'Día del hombres' : 'Men\'s Day',
+        'dia del hombres': i18n.language === 'en' ? 'Men\'s Day' : 'Día del hombres',
+        
+        'women\'s day': i18n.language === 'es' ? 'Día de la mujer' : 'Women\'s Day',
+        'dia de la mujer': i18n.language === 'en' ? 'Women\'s Day' : 'Día de la mujer',
+        
+        'bride\'s day': i18n.language === 'es' ? 'Día de la novia' : 'Bride\'s Day',
+        'dia de la novia': i18n.language === 'en' ? 'Bride\'s Day' : 'Día de la novia',
+        
+        'children\'s day': i18n.language === 'es' ? 'Día del niños' : 'Children\'s Day',
+        'dia del niños': i18n.language === 'en' ? 'Children\'s Day' : 'Día del niños',
+        
+        'mother\'s day': i18n.language === 'es' ? 'Día de la madre' : 'Mother\'s Day',
+        'dia de la madre': i18n.language === 'en' ? 'Mother\'s Day' : 'Día de la madre',
+        
+        'coquette': 'Coquette', // Mismo en ambos idiomas
+        
+        'final clearance': i18n.language === 'es' ? 'Liquidación Final' : 'Final Clearance',
+        'liquidación final': i18n.language === 'en' ? 'Final Clearance' : 'Liquidación Final',
+        
+        'weekend promo': i18n.language === 'es' ? 'Promo Fin de Semana' : 'Weekend Promo',
+        'promo fin de semana': i18n.language === 'en' ? 'Weekend Promo' : 'Promo Fin de Semana',
+        
+        'january sale': i18n.language === 'es' ? 'Rebajas de Enero' : 'January Sale',
+        'rebajas de enero': i18n.language === 'en' ? 'January Sale' : 'Rebajas de Enero',
+        
+        'winter discounts': i18n.language === 'es' ? 'Descuentos Invierno' : 'Winter Discounts',
+        'descuentos invierno': i18n.language === 'en' ? 'Winter Discounts' : 'Descuentos Invierno',
+        
+        'special offer': i18n.language === 'es' ? 'Oferta Especial' : 'Special Offer',
+        'oferta especial': i18n.language === 'en' ? 'Special Offer' : 'Oferta Especial',
+        
+        'summer promo': i18n.language === 'es' ? 'Promo Verano' : 'Summer Promo',
+        'promo verano': i18n.language === 'en' ? 'Summer Promo' : 'Promo Verano'
+      };
+      
+      // Buscar en el mapeo directo
+      if (directMapping[normalizedInput]) {
+        const result = directMapping[normalizedInput];
+        console.log('Direct mapping found:', normalizedInput, '->', result);
+        return result;
+      }
+      
+      // 4. Último recurso: devolver el nombre original
+      console.warn('No translation found for:', promotionName);
+      return promotionName;
+      
+    } catch (error) {
+      console.error('Error getting promotion translation:', error, 'for promotion:', promotionName);
+      return promotionName;
+    }
+  };
+
+  // Función actualizada para obtener la traducción de estados usando tu JSON
   const getStatusTranslation = (status) => {
     if (!status) return status;
     
-    // Buscar en las traducciones de estados
-    const statusTranslations = t("status_translations", { returnObjects: true }) || {};
-    const statusKey = `promocion.status_${status.toLowerCase()}`;
-    
-    return statusTranslations[statusKey] || t(`promocion.status.${status.toLowerCase()}`, status);
+    try {
+      // Método 1: Usar promotion_status directamente
+      const statusTranslations = t("promotion_status", { returnObjects: true });
+      if (statusTranslations && statusTranslations[status]) {
+        const translation = statusTranslations[status];
+        return translation[i18n.language] || translation.es || status;
+      }
+      
+      // Método 2: Usar el sistema de mapeo de status_mappings
+      const statusMappings = t("status_mappings", { returnObjects: true });
+      if (statusMappings && statusMappings[i18n.language] && statusMappings[i18n.language][status]) {
+        const mappingKey = statusMappings[i18n.language][status];
+        const defaultTranslations = t("status_translations", { returnObjects: true });
+        if (defaultTranslations && defaultTranslations[mappingKey]) {
+          return defaultTranslations[mappingKey];
+        }
+      }
+      
+      // Método 3: Usar directamente el mapeo desde default_translations
+      const defaultTranslations = t("default_translations", { returnObjects: true });
+      if (defaultTranslations && defaultTranslations[i18n.language]) {
+        // Buscar el valor directamente
+        const translations = defaultTranslations[i18n.language];
+        for (const [key, value] of Object.entries(translations)) {
+          // Si el status coincide con algún valor en español, buscar su traducción
+          if (value === status) {
+            return value;
+          }
+        }
+        
+        // Mapeo directo de estados conocidos
+        const statusKeyMap = {
+          'Vigente': 'promocion.status_active',
+          'Active': 'promocion.status_active',
+          'Activo': 'promocion.status_active',
+          'Pendiente': 'promocion.status_pending',
+          'Pending': 'promocion.status_pending',
+          'Aplicado': 'promocion.status_applied',
+          'Applied': 'promocion.status_applied',
+          'Inactivo': 'promocion.status_inactive',
+          'Inactive': 'promocion.status_inactive',
+          'Expirado': 'promocion.status_expired',
+          'Expired': 'promocion.status_expired',
+          'Vencido': 'promocion.status_expired'
+        };
+        
+        const statusKey = statusKeyMap[status];
+        if (statusKey && translations[statusKey]) {
+          return translations[statusKey];
+        }
+      }
+      
+      // Fallback: mapeo directo simple
+      const directMap = {
+        'Pendiente': i18n.language === 'en' ? 'Pending' : 'Pendiente',
+        'Pending': i18n.language === 'es' ? 'Pendiente' : 'Pending',
+        'Vigente': i18n.language === 'en' ? 'Active' : 'Vigente',
+        'Active': i18n.language === 'es' ? 'Vigente' : 'Active',
+        'Activo': i18n.language === 'en' ? 'Active' : 'Vigente',
+        'Aplicado': i18n.language === 'en' ? 'Applied' : 'Aplicado',
+        'Applied': i18n.language === 'es' ? 'Aplicado' : 'Applied',
+        'Inactivo': i18n.language === 'en' ? 'Inactive' : 'Inactivo',
+        'Inactive': i18n.language === 'es' ? 'Inactivo' : 'Inactive',
+        'Expirado': i18n.language === 'en' ? 'Expired' : 'Expirado',
+        'Expired': i18n.language === 'es' ? 'Expirado' : 'Expired',
+        'Vencido': i18n.language === 'en' ? 'Expired' : 'Vencido'
+      };
+      
+      return directMap[status] || status;
+      
+    } catch (error) {
+      console.warn('Error getting status translation:', error, 'for status:', status);
+      return status;
+    }
   };
 
   // Función para determinar si una promoción es editable basada en su estado
@@ -443,7 +611,7 @@ export function UpdatePromocion() {
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                     <Typography sx={{ flexGrow: 1 }}>
-                      {promo.nombre} (ID: {promo.id})
+                      {getPromotionTranslation(promo.nombre)} (ID: {promo.id})
                     </Typography>
                     <Typography 
                       variant="caption" 

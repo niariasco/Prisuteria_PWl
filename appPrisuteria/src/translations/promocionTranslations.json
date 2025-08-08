@@ -1,0 +1,170 @@
+{
+  "promotions": {
+    "Holy Week": {
+      "en": "Holy Week",
+      "es": "Semana Santa"
+    },
+    "Semana Santa": {
+      "en": "Holy Week",
+      "es": "Semana Santa"
+    },
+    "Dog Day": {
+      "en": "Dog Day",
+      "es": "Día del perro"
+    },
+    "Día del perro": {
+      "en": "Dog Day",
+      "es": "Día del perro"
+    },
+    "Father's Day": {
+      "en": "Father's Day",
+      "es": "Día de los padres"
+    },
+    "Día de los padres": {
+      "en": "Father's Day",
+      "es": "Día de los padres"
+    },
+    "Día del Padres": {
+      "en": "Father's Day",
+      "es": "Día del Padres"
+    },
+    "Men's Day": {
+      "en": "Men's Day",
+      "es": "Día del hombres"
+    },
+    "Día del hombres": {
+      "en": "Men's Day",
+      "es": "Día del hombres"
+    },
+    "Women's Day": {
+      "en": "Women's Day",
+      "es": "Día de la mujer"
+    },
+    "Día de la mujer": {
+      "en": "Women's Day",
+      "es": "Día de la mujer"
+    },
+    "Bride's Day": {
+      "en": "Bride's Day",
+      "es": "Día de la novia"
+    },
+    "Día de la novia": {
+      "en": "Bride's Day",
+      "es": "Día de la novia"
+    },
+    "Children's Day": {
+      "en": "Children's Day",
+      "es": "Día del niños"
+    },
+    "Día del niños": {
+      "en": "Children's Day",
+      "es": "Día del niños"
+    },
+    "Mother's Day": {
+      "en": "Mother's Day",
+      "es": "Día de la madre"
+    },
+    "Día de la madre": {
+      "en": "Mother's Day",
+      "es": "Día de la madre"
+    },
+    "Coquette": {
+      "en": "Coquette",
+      "es": "Coquette"
+    },
+    "Final Clearance": {
+      "en": "Final Clearance",
+      "es": "Liquidación Final"
+    },
+    "Liquidación Final": {
+      "en": "Final Clearance",
+      "es": "Liquidación Final"
+    },
+    "Weekend Promo": {
+      "en": "Weekend Promo",
+      "es": "Promo Fin de Semana"
+    },
+    "Promo Fin de Semana": {
+      "en": "Weekend Promo",
+      "es": "Promo Fin de Semana"
+    },
+    "January Sale": {
+      "en": "January Sale",
+      "es": "Rebajas de Enero"
+    },
+    "Rebajas de Enero": {
+      "en": "January Sale",
+      "es": "Rebajas de Enero"
+    },
+    "Winter Discounts": {
+      "en": "Winter Discounts",
+      "es": "Descuentos Invierno"
+    },
+    "Descuentos Invierno": {
+      "en": "Winter Discounts",
+      "es": "Descuentos Invierno"
+    },
+    "Special Offer": {
+      "en": "Special Offer",
+      "es": "Oferta Especial"
+    },
+    "Oferta Especial": {
+      "en": "Special Offer",
+      "es": "Oferta Especial"
+    },
+    "Summer Promo": {
+      "en": "Summer Promo",
+      "es": "Promo Verano"
+    },
+    "Promo Verano": {
+      "en": "Summer Promo",
+      "es": "Promo Verano"
+    }
+  },
+  "promotion_status": {
+    "Pendiente": {
+      "en": "Pending",
+      "es": "Pendiente"
+    },
+    "Pending": {
+      "en": "Pending",
+      "es": "Pendiente"
+    },
+    "Vigente": {
+      "en": "Active",
+      "es": "Vigente"
+    },
+    "Active": {
+      "en": "Active",
+      "es": "Vigente"
+    },
+    "Aplicado": {
+      "en": "Applied",
+      "es": "Aplicado"
+    },
+    "Applied": {
+      "en": "Applied",
+      "es": "Aplicado"
+    },
+    "Inactivo": {
+      "en": "Inactive",
+      "es": "Inactivo"
+    },
+    "Inactive": {
+      "en": "Inactive",
+      "es": "Inactivo"
+    },
+    "Expirado": {
+      "en": "Expired",
+      "es": "Expirado"
+    },
+    "Expired": {
+      "en": "Expired",
+      "es": "Expirado"
+    },
+    "Vencido": {
+      "en": "Expired",
+      "es": "Vencido"
+    }
+  }
+}
