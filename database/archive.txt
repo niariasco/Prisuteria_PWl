@@ -49,3 +49,13 @@ MODIFY COLUMN `descuento` DECIMAL(10,2) NOT NULL;
 
 -- Actualizar registros existentes para establecer tipo_descuento como 'porcentaje'
 UPDATE `promociones` SET `tipo_descuento` = 'Porcentaje' WHERE `tipo_descuento` IS NULL;
+
+
+
+___________________________________________________________________________--
+12/08/25  Cambio Tabla ordenes enums Priscilla
+
+ALTER TABLE `ordenes` 
+MODIFY `estado` ENUM('Pendiente','Procesando','Enviado','Entregado','Cancelado') NOT NULL,
+MODIFY `metodo_pago` ENUM('Efectivo','Tarjeta') NOT NULL;
+

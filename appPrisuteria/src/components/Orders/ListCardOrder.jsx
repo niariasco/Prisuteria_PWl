@@ -27,9 +27,12 @@ export function ListCardOrder({ data }) {
               }}
             />
             <CardContent>
-              {/* Puedes agregar más detalles si vienen del backend */}
               <Typography variant="body2" color="text.secondary">
-                Fecha: {orden.fecha}
+                Fecha: {new Date(orden.fecha).toLocaleDateString('es-ES', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric'
+                })}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Estado: {orden.estado}
@@ -38,7 +41,7 @@ export function ListCardOrder({ data }) {
                 <Grid item>
                   <IconButton
                     component={Link}
-                  to={`/orden/${orden.ordenesId}`}
+                    to={`/orden/${orden.ordenesId}`}
                     aria-label="Detalle"
                   >
                     <Info />
