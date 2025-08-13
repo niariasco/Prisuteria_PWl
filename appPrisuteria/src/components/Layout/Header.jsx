@@ -535,7 +535,7 @@ function Header() {
       onClose={handleOpcionesMenuClose}
     >
       <MenuItem onClick={handleOpcionesMenuClose}>
-        <IconButton size="large" color="inherit" component={Link} to="/rental/crear/">
+        <IconButton size="large" color="inherit" component={Link} to="/cart">
           <Badge badgeContent={getCountItems(cart)} color="error">
             <ShoppingCartIcon />
           </Badge>
@@ -620,16 +620,19 @@ function Header() {
 
           {/* Opciones para desktop */}
           <Box sx={{ display: { xs: "none", md: "flex" } }}>
-            <IconButton 
-              size="large" 
-              color="inherit"
-              component={Link}
-              to="/rental/crear/"
-            >
-              <Badge badgeContent={getCountItems(cart)} color="error">
-                <ShoppingCartIcon />
-              </Badge>
-            </IconButton>
+            <Tooltip title={t('header.tooltip.cart', 'Ver carrito de compras')}>
+              <IconButton 
+                size="large" 
+                color="inherit"
+                component={Link}
+                to="/cart"
+                aria-label={t('header.tooltip.cart', 'Ver carrito de compras')}
+              >
+                <Badge badgeContent={getCountItems(cart)} color="error">
+                  <ShoppingCartIcon />
+                </Badge>
+              </IconButton>
+            </Tooltip>
             <IconButton size="large" color="inherit">
               <Badge badgeContent={17} color="error">
                 <NotificationsIcon />

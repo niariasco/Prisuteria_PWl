@@ -35,6 +35,11 @@ import { CreateProducto } from "./components/Productos/CreateProducto";
 import { UpdateProducto } from "./components/Productos/UpdateProducto";
 import { CreatePromocion } from "./components/Promociones/CreatePromocion";
 import { UpdatePromocion } from "./components/Promociones/UpdatePromocion";
+import { ListaCarrito } from "./components/Carrito/ListaCarrito";
+import { RegistrarPedido } from "./components/Orders/RegistrarPedido";
+
+
+
 
 
 
@@ -84,7 +89,11 @@ const rutas = createBrowserRouter([
       { path: '/promocion', element: <ListaPromociones /> },
       { path: '/promocion/:id', element: <DetallePromociones /> },
       { path: '/orden', element: <ListOrders /> },
-      { path: '/orden/:id', element: <DetalleOrder /> }
+      { path: '/orden/:id', element: <DetalleOrder /> },
+      { path: '/cart', element: <ListaCarrito /> },
+     { path: '/registrar-pedido', element: <RegistrarPedido /> }
+
+      
     ]
   }
 ]);

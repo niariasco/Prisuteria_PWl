@@ -1,0 +1,598 @@
+import React, { useState } from 'react';
+import { 
+  Box, 
+  Typography, 
+  Grid, 
+  Card, 
+  CardContent, 
+  IconButton, 
+  Button, 
+  Divider,
+  Chip,
+  Paper
+} from '@mui/material';
+import { 
+  Add, 
+  Remove, 
+  Delete, 
+  LocalShipping, 
+  Security, 
+  Refresh
+} from '@mui/icons-material';
+import { useCart } from '../../hooks/useCart';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import productTranslations from '../../translations/productTranslations.json';
+
+export function ListaCarrito() {
+  const { cart, removeItem, addItem, updateQuantity } = useCart();
+  const BASE_URL = import.meta.env.VITE_BASE_URL + 'uploads';
+  const { i18n } = useTranslation();
+
+  // Estado para manejar las cantidades localmente
+  const [quantities, setQuantities] = useState({});
+
+  // FUNCIONES DE CONVERSIÓN DE MONEDA
+  const getCurrency = () => {
+    return i18n.language === 'es' ? 'CRC' : 'USD';
+  };
+
+  // Tasa de cambio actualizada - ajusta según tu necesidad
+  const EXCHANGE_RATE = 500; // 1 USD = 500 CRC
+  // IMPORTANTE: Define cuál es tu moneda base en la base de datos
+  const BASE_CURRENCY = 'CRC'; // Los precios están almacenados en CRC (colones)
+
+  const convertPrice = (price) => {
+    const numPrice = parseFloat(price) || 0;
+    
+    // Si la moneda actual es la misma que la base, no convertir
+    if ((i18n.language === 'en' && BASE_CURRENCY === 'USD') || 
+        (i18n.language === 'es' && BASE_CURRENCY === 'CRC')) {
+      return numPrice; // No convertir - mantener precio original
+    }
+    
+    // Convertir según sea necesario
+    if (i18n.language === 'es' && BASE_CURRENCY === 'USD') {
+      // Convertir de USD (base) a CRC (mostrar)
+      return numPrice * EXCHANGE_RATE;
+    } else if (i18n.language === 'en' && BASE_CURRENCY === 'CRC') {
+      // Convertir de CRC (base) a USD (mostrar)
+      return numPrice / EXCHANGE_RATE;
+    }
+    
+    return numPrice;
+  };
+
+  // Función para obtener la cantidad actual de un producto
+  const getQuantity = (itemId) => {
+    if (quantities[itemId]) {
+      return quantities[itemId];
+    }
+    const cartItem = cart.find(item => item.id === itemId);
+    return cartItem ? cartItem.quantity || 1 : 1;
+  };
+
+  // Función para manejar el incremento de cantidad
+  const handleIncreaseQuantity = (item) => {
+    const currentQty = getQuantity(item.id);
+    const newQuantity = currentQty + 1;
+    
+    setQuantities(prev => ({
+      ...prev,
+      [item.id]: newQuantity
+    }));
+
+    addItem(item);
+  };
+
+  // Función para manejar el decremento de cantidad
+  const handleDecreaseQuantity = (item) => {
+    const currentQty = getQuantity(item.id);
+    
+    if (currentQty > 1) {
+      const newQuantity = currentQty - 1;
+      
+      setQuantities(prev => ({
+        ...prev,
+        [item.id]: newQuantity
+      }));
+
+      if (updateQuantity) {
+        updateQuantity(item.id, newQuantity);
+      }
+    }
+  };
+
+  // Función para obtener el nombre traducido
+  const getProductName = (producto) => {
+    if (producto.translations && producto.translations[i18n.language]) {
+      return producto.translations[i18n.language];
+    }
+    const productName = producto.nombre;
+    if (productTranslations.products[productName] && productTranslations.products[productName][i18n.language]) {
+      return productTranslations.products[productName][i18n.language];
+    }
+    return producto.nombre;
+  };
+
+  // FUNCIONES DE PROMOCIONES
+
+  // Función para determinar si el producto tiene promoción activa
+  const tienePromocionActiva = (item) => {
+    // Verificar múltiples campos que pueden indicar promoción
+    const promocionPorcentaje = parseFloat(item.promocion || 0);
+    const tienePromocion = item.tiene_promocion;
+    const precioConDescuento = item.precio_con_descuento;
+    const descuentoProducto = parseFloat(item.descuento_producto || 0);
+    const descuentoCategoria = parseFloat(item.descuento_categoria || 0);
+    
+    return promocionPorcentaje > 0 || 
+           tienePromocion || 
+           (precioConDescuento && precioConDescuento !== item.precio) ||
+           descuentoProducto > 0 ||
+           descuentoCategoria > 0;
+  };
+
+  // Función para obtener el precio original (antes del descuento) en la moneda correcta
+  const getPrecioOriginalConvertido = (item) => {
+    let precioOriginalBase = 0;
+    
+    // 1. Determinar el precio original en la moneda base (BD)
+    if (item.precio_original && parseFloat(item.precio_original) > 0) {
+      precioOriginalBase = parseFloat(item.precio_original);
+    } else if (!tienePromocionActiva(item)) {
+      precioOriginalBase = parseFloat(item.precio);
+    } else {
+      // Si tiene promoción pero no hay precio_original, calcularlo
+      const precioActualBase = parseFloat(item.precio) || 0;
+      const promocion = parseFloat(item.promocion || item.descuento_producto || item.descuento_categoria || 0);
+      
+      if (promocion > 0) {
+        // precio_con_descuento = precio_original * (1 - promocion/100)
+        // precio_original = precio_con_descuento / (1 - promocion/100)
+        precioOriginalBase = precioActualBase / (1 - promocion / 100);
+      } else {
+        precioOriginalBase = precioActualBase;
+      }
+    }
+    
+    // 2. Convertir a la moneda de visualización
+    const precioConvertido = convertPrice(precioOriginalBase);
+    
+    return precioConvertido;
+  };
+
+  // Función para obtener el precio con descuento en la moneda correcta
+  const getPrecioConDescuentoConvertido = (item) => {
+    let precioConDescuentoBase = 0;
+    
+    // 1. Determinar el precio con descuento en la moneda base (BD)
+    if (item.precio_con_descuento && parseFloat(item.precio_con_descuento) > 0 && tienePromocionActiva(item)) {
+      precioConDescuentoBase = parseFloat(item.precio_con_descuento);
+    } 
+    else if (tienePromocionActiva(item)) {
+      // Calcular el precio con descuento
+      let precioOriginalBase = 0;
+      
+      if (item.precio_original && parseFloat(item.precio_original) > 0) {
+        precioOriginalBase = parseFloat(item.precio_original);
+      } else {
+        precioOriginalBase = parseFloat(item.precio);
+      }
+      
+      const promocion = parseFloat(item.promocion || item.descuento_producto || item.descuento_categoria || 0);
+      
+      if (promocion > 0) {
+        precioConDescuentoBase = precioOriginalBase * (1 - promocion / 100);
+      } else {
+        precioConDescuentoBase = precioOriginalBase;
+      }
+    } 
+    else {
+      // Si no tiene promoción, usar precio normal
+      precioConDescuentoBase = parseFloat(item.precio);
+    }
+    
+    // 2. Convertir a la moneda de visualización
+    const precioConvertido = convertPrice(precioConDescuentoBase);
+    
+    return precioConvertido;
+  };
+
+  // Función para obtener el porcentaje de descuento
+  const getPorcentajeDescuento = (item) => {
+    return parseFloat(item.promocion || item.descuento_producto || item.descuento_categoria || 0);
+  };
+
+  // Función para obtener el nombre de la promoción
+  const getNombrePromocion = (item) => {
+    return item.nombre_promocion || 
+           item.nombre_promocion_producto || 
+           item.nombre_promocion_categoria || 
+           'Oferta Especial';
+  };
+
+  if (!cart || cart.length === 0) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        minHeight: '60vh',
+        p: 4 
+      }}>
+        <Typography variant="h4" gutterBottom color="text.secondary">
+          Tu bolsa de compras está vacía
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
+          Agrega algunos productos increíbles y regresa para finalizar tu compra
+        </Typography>
+        <Button 
+          variant="contained" 
+          component={Link} 
+          to="/producto"
+          sx={{ 
+            mt: 2, 
+            px: 4, 
+            py: 1.5,
+            backgroundColor: '#F06292',
+            '&:hover': {
+              backgroundColor: '#E91E63'
+            }
+          }}
+        >
+          Explorar productos
+        </Button>
+      </Box>
+    );
+  }
+
+  const validItems = cart.filter(item => item && item.id && item.nombre);
+
+  if (validItems.length === 0) {
+    return (
+      <Typography variant="h6" align="center" sx={{ mt: 4 }}>
+        No hay productos válidos en tu bolsa de compras.
+      </Typography>
+    );
+  }
+
+  // Calcular totales con conversión de moneda correcta
+  const currency = getCurrency();
+  const subtotal = validItems.reduce((sum, item) => {
+    const precio = tienePromocionActiva(item) ? 
+      getPrecioConDescuentoConvertido(item) : 
+      convertPrice(item.precio);
+    const cantidad = getQuantity(item.id);
+    return sum + (precio * cantidad);
+  }, 0);
+
+  const subtotalOriginal = validItems.reduce((sum, item) => {
+    const precioOriginal = getPrecioOriginalConvertido(item);
+    const cantidad = getQuantity(item.id);
+    return sum + (precioOriginal * cantidad);
+  }, 0);
+
+  const totalAhorros = subtotalOriginal - subtotal;
+
+  // Envío siempre gratis
+  const shipping = 0;
+  const total = subtotal + shipping;
+
+  return (
+    <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3 }}>
+      <Grid container spacing={4}>
+        {/* Lista de productos - Lado izquierdo */}
+        <Grid item xs={12} md={7}>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
+            TU BOLSA ({validItems.length})
+          </Typography>
+          
+          <Box sx={{ mb: 3 }}>
+            {validItems.map((item, index) => {
+              const tienePromo = tienePromocionActiva(item);
+              const precioOriginal = getPrecioOriginalConvertido(item);
+              const precioConDescuento = getPrecioConDescuentoConvertido(item);
+              const precioFinal = tienePromo ? precioConDescuento : convertPrice(item.precio);
+              const cantidad = getQuantity(item.id);
+              const promocion = getPorcentajeDescuento(item);
+              const nombrePromocion = getNombrePromocion(item);
+
+              return (
+                <Card key={`${item.id}-${index}`} sx={{ mb: 2, boxShadow: 1 }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Grid container spacing={3} alignItems="center">
+                      {/* Imagen del producto */}
+                      <Grid item xs={12} sm={3}>
+                        <Box
+                          component="img"
+                          src={`${BASE_URL}/${item.imagen || 'default.jpg'}`}
+                          alt={item.nombre}
+                          sx={{
+                            width: '100%',
+                            maxWidth: 120,
+                            height: 120,
+                            objectFit: 'cover',
+                            borderRadius: 2
+                          }}
+                        />
+                      </Grid>
+
+                      {/* Detalles del producto */}
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="h6" gutterBottom>
+                          {getProductName(item)}
+                        </Typography>
+                        
+                        {/* Chip de promoción */}
+                        {tienePromo && promocion > 0 && (
+                          <Box sx={{ mb: 1 }}>
+                            <Chip 
+                              label={`${promocion}% OFF`} 
+                              sx={{
+                                backgroundColor: '#F06292',
+                                color: 'white',
+                                mr: 1
+                              }}
+                              size="small" 
+                            />
+                            <Typography variant="caption" sx={{ color: '#F06292' }}>
+                              {nombrePromocion}
+                            </Typography>
+                          </Box>
+                        )}
+
+                        {/* Precios */}
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#F06292' }}>
+                            {currency} {Math.round(precioFinal).toLocaleString()}
+                          </Typography>
+                          {tienePromo && precioOriginal !== precioFinal && (
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                textDecoration: 'line-through', 
+                                color: 'text.secondary'
+                              }}
+                            >
+                              {currency} {Math.round(precioOriginal).toLocaleString()}
+                            </Typography>
+                          )}
+                        </Box>
+
+                        {/* Controles de cantidad */}
+                        <Box sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          mt: 2,
+                          backgroundColor: '#f5f5f5',
+                          borderRadius: 2,
+                          p: 1,
+                          width: 'fit-content'
+                        }}>
+                          <IconButton 
+                            size="small"
+                            onClick={() => handleDecreaseQuantity(item)}
+                            disabled={cantidad <= 1}
+                            sx={{ 
+                              backgroundColor: '#F8BBD0',
+                              color: '#fff',
+                              '&:hover': {
+                                backgroundColor: '#F06292',
+                              },
+                              '&:disabled': {
+                                backgroundColor: '#e0e0e0',
+                                color: '#9e9e9e'
+                              },
+                              width: 32,
+                              height: 32
+                            }}
+                          >
+                            <Remove fontSize="small" />
+                          </IconButton>
+                          
+                          <Typography sx={{ 
+                            mx: 3, 
+                            minWidth: 30, 
+                            textAlign: 'center',
+                            fontWeight: 'bold',
+                            fontSize: '1.1rem'
+                          }}>
+                            {cantidad}
+                          </Typography>
+                          
+                          <IconButton 
+                            size="small"
+                            onClick={() => handleIncreaseQuantity(item)}
+                            sx={{ 
+                              backgroundColor: '#F8BBD0',
+                              color: '#fff',
+                              '&:hover': {
+                                backgroundColor: '#F06292',
+                              },
+                              width: 32,
+                              height: 32
+                            }}
+                          >
+                            <Add fontSize="small" />
+                          </IconButton>
+                        </Box>
+
+                        <Button 
+                          startIcon={<Delete />}
+                          onClick={() => removeItem(item)}
+                          sx={{ 
+                            mt: 2, 
+                            color: '#F06292',
+                            '&:hover': {
+                              backgroundColor: 'rgba(240, 98, 146, 0.1)'
+                            }
+                          }}
+                          size="small"
+                        >
+                          Eliminar
+                        </Button>
+                      </Grid>
+
+                      {/* Precio total del item */}
+                      <Grid item xs={12} sm={3} sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                          {currency} {Math.round(precioFinal * cantidad).toLocaleString()}
+                        </Typography>
+                        {tienePromo && (
+                          <Typography variant="body2" sx={{ color: 'success.main' }}>
+                            Ahorras: {currency} {Math.round((precioOriginal - precioFinal) * cantidad).toLocaleString()}
+                          </Typography>
+                        )}
+                      </Grid>
+                    </Grid>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Box>
+
+          <Button
+            variant="outlined"
+            component={Link}
+            to="/producto"
+            sx={{ 
+              mb: 3,
+              borderColor: '#F06292',
+              color: '#F06292',
+              px: 4,
+              py: 1.5,
+              '&:hover': {
+                borderColor: '#E91E63',
+                backgroundColor: 'rgba(240, 98, 146, 0.1)',
+                color: '#E91E63'
+              }
+            }}
+          >
+            SEGUIR COMPRANDO
+          </Button>
+        </Grid>
+
+        {/* Resumen - Lado derecho */}
+        <Grid item xs={12} md={5}>
+          <Paper sx={{ p: 3, position: 'sticky', top: 20 }}>
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
+              RESUMEN DE COMPRA
+            </Typography>
+
+            {/* Resumen de precios */}
+            <Box sx={{ mt: 4 }}>
+              {totalAhorros > 0 && (
+                <>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography>Subtotal original</Typography>
+                    <Typography sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
+                      {currency} {Math.round(subtotalOriginal).toLocaleString()}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography sx={{ color: 'success.main', fontWeight: 'bold' }}>
+                      Descuentos aplicados
+                    </Typography>
+                    <Typography sx={{ color: 'success.main', fontWeight: 'bold' }}>
+                      -{currency} {Math.round(totalAhorros).toLocaleString()}
+                    </Typography>
+                  </Box>
+                </>
+              )}
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Typography>Total productos</Typography>
+                <Typography sx={{ fontWeight: 'bold' }}>
+                  {currency} {Math.round(subtotal).toLocaleString()}
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Typography>Gastos de envío</Typography>
+                <Typography sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                  GRATIS
+                </Typography>
+              </Box>
+
+              <Divider sx={{ my: 2 }} />
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                  Total
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                  {currency} {Math.round(total).toLocaleString()}
+                </Typography>
+              </Box>
+
+              {totalAhorros > 0 && (
+                <Box sx={{ 
+                  backgroundColor: 'success.light', 
+                  p: 2, 
+                  borderRadius: 2, 
+                  mb: 2,
+                  textAlign: 'center'
+                }}>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+                    ¡Has ahorrado {currency} {Math.round(totalAhorros).toLocaleString()} en total!
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+
+            {/* Botón de checkout */}
+            <Button
+              variant="contained"
+              fullWidth
+              component={Link}
+              to="/registrar-pedido"
+              sx={{ 
+                backgroundColor: '#F06292',
+                color: 'white',
+                py: 2,
+                mb: 3,
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                borderRadius: 2,
+                '&:hover': {
+                  backgroundColor: '#E91E63',
+                },
+                '&:active': {
+                  backgroundColor: '#C2185B'
+                }
+              }}
+            >
+              REALIZAR PEDIDO
+            </Button>
+
+            {/* Beneficios */}
+            <Box sx={{ mt: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Refresh sx={{ mr: 2, color: '#F06292' }} />
+                <Typography variant="body2" color="text.secondary">
+                  30 DÍAS PARA DEVOLVER GRATIS TUS COMPRAS
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <LocalShipping sx={{ mr: 2, color: '#F06292' }} />
+                <Typography variant="body2" color="text.secondary">
+                  ENVÍO GRATIS 
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Security sx={{ mr: 2, color: '#F06292' }} />
+                <Typography variant="body2" color="text.secondary">
+                  PAGO SEGURO
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
+    </Box>
+  );
+}
