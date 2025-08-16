@@ -131,14 +131,17 @@ ALTER TABLE opciones MODIFY precio_adicional DECIMAL(10,3) NOT NULL;
     
     INSERT INTO opciones (criterio_id, nombre, precio_adicional)
 VALUES 
-(1, 'Rojo', 1.200),
-(1, 'Azul', 1.200),
-(1, 'Negro', 1.200),
-(2, 'Pequeña 16 cm', 1.300),
-(2, 'Mediana 17-18 cm', 1.400),
-(2, 'Grande 19 cm ', 1.500),
-(2, 'Extra-Grande 20-21 cm', 1.600),
-(3, 'Plata', 1.600),
-(3, 'Oro', 1.700),
-(3, 'Oro rosa', 1.800),
-(3, 'Acero', 1.900);
+(1, 'Rojo', 1200),
+(1, 'Azul', 1200),
+(1, 'Negro', 1200),
+(2, 'Pequeña 16 cm', 1300),
+(2, 'Mediana 17-18 cm', 1400),
+(2, 'Grande 19 cm ', 1500),
+(2, 'Extra-Grande 20-21 cm', 1600),
+(3, 'Plata', 1600),
+(3, 'Oro', 1700),
+(3, 'Oro rosa', 1800),
+(3, 'Acero', 1900);
+
+ALTER TABLE productos MODIFY precio DECIMAL(10,2);
+ALTER TABLE opciones MODIFY precio_adicional DECIMAL(10,2);

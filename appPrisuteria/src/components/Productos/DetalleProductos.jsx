@@ -26,13 +26,30 @@ export function DetalleProductos({ addItem }) {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
 
-const [ setOpcionesSeleccionadas] = useState({});
+  const [opcionesSeleccionadas, setOpcionesSeleccionadas] = useState({});
 
+const formatCRC0 = (n) =>
+  Number(n ?? 0).toLocaleString('es-CR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-// Precio total dinámico
-const [precioTotal, setPrecioTotal] = useState(data ? data.precio : 0);
+  // Precio total dinámico
+  const [precioTotal, setPrecioTotal] = useState(data ? data.precio : 0);
 
+  const calcularPrecioTotal = (opciones, productoBase) => {
+    if (!productoBase) return 0;
 
+    // Base: usa el precio con descuento si existe, sino el normal
+    const base = productoBase.precio_con_descuento != null
+      ? parseFloat(productoBase.precio_con_descuento)
+      : parseFloat(productoBase.precio) || 0;
+
+    // Suma de adicionales
+    let extras = 0;
+    Object.values(opciones).forEach((opcion) => {
+      extras += parseFloat(opcion?.precio_adicional || 0);
+    });
+
+    return base + extras;
+  };
 
   const getProductName = (producto) => {
     if (producto.translations && producto.translations[i18n.language]) {
@@ -72,17 +89,16 @@ const [precioTotal, setPrecioTotal] = useState(data ? data.precio : 0);
 
   const formatearFecha = (fecha) => {
     if (!fecha) return 'Fecha no disponible';
-      let fechaObj;
-      if (fecha instanceof Date) fechaObj = fecha;
-      else if (typeof fecha === 'string') {
-        if (fecha.includes('T')) fechaObj = new Date(fecha);
-        else fechaObj = new Date(fecha.replace(' ', 'T'));
-      } else if (typeof fecha === 'number') fechaObj = new Date(fecha);
-      else return 'Fecha no disponible';
-      if (isNaN(fechaObj.getTime())) return 'Fecha no disponible';
-      return fechaObj.toLocaleDateString('es-CR', { year: 'numeric', month: 'long', day: 'numeric' });
-    }
-
+    let fechaObj;
+    if (fecha instanceof Date) fechaObj = fecha;
+    else if (typeof fecha === 'string') {
+      if (fecha.includes('T')) fechaObj = new Date(fecha);
+      else fechaObj = new Date(fecha.replace(' ', 'T'));
+    } else if (typeof fecha === 'number') fechaObj = new Date(fecha);
+    else return 'Fecha no disponible';
+    if (isNaN(fechaObj.getTime())) return 'Fecha no disponible';
+    return fechaObj.toLocaleDateString('es-CR', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
 
   useEffect(() => {
     ProductoService.getProductoById(routeParams.id)
@@ -114,7 +130,7 @@ const [precioTotal, setPrecioTotal] = useState(data ? data.precio : 0);
                 style={{ width: '100%', maxHeight: 400, objectFit: 'contain', borderRadius: 10 }}
               />
             ) : (
-              <Slider dots={true} infinite={true} speed={500} slidesToShow={1} slidesToScroll={1} arrows>
+              <Slider dots infinite speed={500} slidesToShow={1} slidesToScroll={1} arrows>
                 {data.imagenes.map((img, index) => (
                   <div key={index}>
                     <img
@@ -139,26 +155,16 @@ const [precioTotal, setPrecioTotal] = useState(data ? data.precio : 0);
           {data.precio_con_descuento && data.precio_con_descuento !== data.precio ? (
             <>
               <Typography sx={{ textDecoration: 'line-through', color: 'gray' }}>
-                {Number(data.precio).toLocaleString()}
+                ₡{formatCRC0(data.precio)}
               </Typography>
-              <Typography variant="h5" sx={{ color: '#d83b6a', fontWeight: 'bold' }}>
-                {Math.round(data.precio_con_descuento).toLocaleString()}
+              <Typography variant="h6" sx={{ color: '#d83b6a', fontWeight: 'bold' }}>
+                ₡{Math.round(parseFloat(data.precio_con_descuento)).toLocaleString('es-CR')}
               </Typography>
-              {(data.descuento_producto || data.descuento_categoria) && (
-                <Typography variant="caption" color="primary">
-                  {data.nombre_promocion_producto && `${data.nombre_promocion_producto} `}
-                  {data.nombre_promocion_categoria && `${data.nombre_promocion_categoria}`}
-                </Typography>
-              )}
-              {data.nombre_promocion && (
-                <Typography variant="caption" color="primary">
-                  {data.nombre_promocion}
-                  {Number(data.descuento) > 0 ? ` (-${data.descuento}%)` : ''}
-                </Typography>
-              )}
             </>
           ) : (
-            <Typography variant="h5">{Number(data.precio).toLocaleString()}</Typography>
+            <Typography variant="h6" sx={{ color: '#d83b6a', fontWeight: 'bold' }}>
+              ₡{formatCRC0(data.precio)}
+            </Typography>
           )}
 
           <Typography variant="subtitle1" gutterBottom color="text.secondary">
@@ -197,52 +203,71 @@ const [precioTotal, setPrecioTotal] = useState(data ? data.precio : 0);
             )}
           </Box>
 
-{/* CRITERIOS DE PERSONALIZACIÓN */}
+          {/* CRITERIOS DE PERSONALIZACIÓN */}
+          {data.criterios && data.criterios.length > 0 && (
+            <Box sx={{ mt: 3, mb: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+                {t('personalizar_producto')}
+              </Typography>
 
-{data.criterios && data.criterios.length > 0 && (
-  <Box sx={{ mt: 3, mb: 3 }}>
-    <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>{t('personalizar_producto')}</Typography>
-    {data.criterios.map((criterio) => (
-      <Box key={criterio.id} sx={{ mb: 2 }}>
-        <Typography variant="subtitle1" sx={{ mb: 0.5 }}>{criterio.nombre}:</Typography>
-        <select
-      onChange={(e) => {
-  const opcionSeleccionada = criterio.opciones.find(
-    (op) => op.id === Number(e.target.value)
-  );
+              {data.criterios.map((criterio) => (
+                <Box key={criterio.id} sx={{ mb: 2 }}>
+                  <Typography variant="subtitle1" sx={{ mb: 0.5 }}>{criterio.nombre}:</Typography>
+                  <select
+                    onChange={(e) => {
+                      const opcionSeleccionada = criterio.opciones.find(
+                        (op) => op.id === Number(e.target.value)
+                      );
 
-  setOpcionesSeleccionadas((prev) => {
-    const nuevoEstado = { ...prev, [criterio.id]: opcionSeleccionada };
-    
-    // Recalcular precio total dinámico
-    let total = parseFloat(data.precio) || 0;
-    Object.values(nuevoEstado).forEach((op) => {
-      if (op && op.precio_adicional) total += parseFloat(op.precio_adicional) || 0;
-    });
-    setPrecioTotal(total.toFixed(3));
+                      setOpcionesSeleccionadas((prev) => {
+                        const nuevoEstado = { ...prev, [criterio.id]: opcionSeleccionada };
 
-    return nuevoEstado;
-  });
-}}
-          style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-        >
-          <option value="">{t('seleccione_opcion')}</option>
-          {criterio.opciones.map((opcion) => (
-            <option key={opcion.id} value={opcion.id}>
-              {opcion.nombre} (+ {Number(opcion.precio_adicional).toFixed(3)})
-            </option>
-          ))}
-        </select>
-      </Box>
-    ))}
+                        // Recalcular precio total dinámico
+                        const total = calcularPrecioTotal(nuevoEstado, data);
+                        setPrecioTotal(total);
 
-    <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d83b6a', mt: 2 }}>
-      {t('precio_total')}: ₡ {precioTotal}
-    </Typography>
-  </Box>
-)}
+                        return nuevoEstado;
+                      });
+                    }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                  >
+                    <option value="">{t('seleccione_opcion')}</option>
+                    {criterio.opciones.map((opcion) => (
+                      <option key={opcion.id} value={opcion.id}>
+                        {opcion.nombre} (+{formatCRC0(opcion.precio_adicional)})
+                      </option>
+                    ))}
+                  </select>
 
+                  {opcionesSeleccionadas[criterio.id] && (
+                    <Box sx={{ mt: 1, p: 2, backgroundColor: '#f0f8ff', borderRadius: 1 }}>
+                      <Typography variant="body2" color="primary">
+                        ✓ Seleccionado: {opcionesSeleccionadas[criterio.id].nombre}
+                        (+{formatCRC0(opcionesSeleccionadas[criterio.id].precio_adicional)})
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              ))}
 
+             
+
+            
+              {/* Precio total */}
+           <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d83b6a', textAlign: 'center' }}>
+                {t('precio_total', 'Precio Total')}: {formatCRC0(precioTotal)}
+              </Typography>
+              {Object.entries(opcionesSeleccionadas).map(([criterioId, opcion]) => {
+                const criterio = data.criterios.find(c => c.id === Number(criterioId));
+                if (!criterio || !opcion) return null;
+                return (
+                  <Typography key={criterioId} variant="body2" color="text.secondary">
+                    {criterio.nombre}: +{formatCRC0(opcion.precio_adicional)}
+                  </Typography>
+                );
+              })}
+            </Box>
+          )}
 
           {/* Botón agregar al carrito */}
           <IconButton

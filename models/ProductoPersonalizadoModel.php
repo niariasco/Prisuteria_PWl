@@ -16,7 +16,7 @@ public function getAll()
                     p.nombre AS producto_base,
                     pp.precio_total,
                     pp.fecha_creacion,
-                    GROUP_CONCAT(CONCAT(c.nombre, ': ', o.nombre, ' (+₡', o.precio_adicional, ')') SEPARATOR ' | ') AS opciones
+                    GROUP_CONCAT(CONCAT(c.nombre, ': ', o.nombre, ' (+', o.precio_adicional, ')') SEPARATOR ' | ') AS opciones
                 FROM productos_personalizados pp
                 INNER JOIN usuarios u 
                     ON pp.usuario_id = u.usuarioId

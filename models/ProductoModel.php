@@ -153,9 +153,7 @@ GROUP BY p.productosId;
             $resenas = $this->enlace->ExecuteSQL($sqlResenas);
             $producto->resenas = $resenas;
 
-        // =========================
-// Criterios y opciones
-// =========================
+
 $sqlCriterios = "
     SELECT 
         c.id AS criterio_id, 
