@@ -7,7 +7,36 @@ class ProductoPersonalizadoModel
     {
         $this->enlace = new MySqlConnect();
     }
+public function getAll()
+{
+    try {
+        $sql = "SELECT 
+                    pp.id AS producto_personalizado_id,
+                    u.nombre_usuario,
+                    p.nombre AS producto_base,
+                    pp.precio_total,
+                    pp.fecha_creacion,
+                    GROUP_CONCAT(CONCAT(c.nombre, ': ', o.nombre, ' (+', o.precio_adicional, ')') SEPARATOR ' | ') AS opciones
+                FROM productos_personalizados pp
+                INNER JOIN usuarios u 
+                    ON pp.usuario_id = u.usuarioId
+                INNER JOIN productos p 
+                    ON pp.producto_base_id = p.productosId
+                LEFT JOIN productos_personalizados_componentes ppc 
+                    ON pp.id = ppc.producto_personalizado_id
+                LEFT JOIN criterios c 
+                    ON ppc.criterio_id = c.id
+                LEFT JOIN opciones o 
+                    ON ppc.opcion_id = o.id
+                GROUP BY pp.id
+                ORDER BY pp.fecha_creacion DESC";
 
+        return $this->enlace->executeSQL($sql);
+
+    } catch (Exception $e) {
+        handleException($e);
+    }
+}
     public function getPorUsuario($usuarioId)
     {
         try {

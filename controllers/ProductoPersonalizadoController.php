@@ -1,6 +1,21 @@
 <?php
 class ProductoPersonalizadoController
 {
+
+        public function index()
+    {
+        try {
+            $response = new Response();
+            //Instancia modelo
+            $productoM = new ProductoPersonalizadoModel;
+            //Método del modelo
+            $result = $productoM->getAll();
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
     // Listar personalizados de un usuario
     public function personalizadosPorUsuario($usuarioId)
     {

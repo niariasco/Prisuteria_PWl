@@ -153,6 +153,43 @@ GROUP BY p.productosId;
             $resenas = $this->enlace->ExecuteSQL($sqlResenas);
             $producto->resenas = $resenas;
 
+
+$sqlCriterios = "
+    SELECT 
+        c.id AS criterio_id, 
+        c.nombre AS criterio_nombre, 
+        o.id AS opcion_id, 
+        o.nombre AS opcion_nombre, 
+        o.precio_adicional
+    FROM criterios c
+    JOIN opciones o ON o.criterio_id = c.id
+    ORDER BY c.id, o.id
+";
+
+$criteriosOpcionesRaw = $this->enlace->ExecuteSQL($sqlCriterios);
+
+$criterios = [];
+foreach ($criteriosOpcionesRaw as $row) {
+    $cId = $row->criterio_id;
+    if (!isset($criterios[$cId])) {
+        $criterios[$cId] = [
+            'id' => $cId,
+            'nombre' => $row->criterio_nombre,
+            'opciones' => []
+        ];
+    }
+    $criterios[$cId]['opciones'][] = [
+        'id' => $row->opcion_id,
+        'nombre' => $row->opcion_nombre,
+        'precio_adicional' => $row->precio_adicional
+    ];
+}
+
+$producto->criterios = array_values($criterios);
+
+        
+        
+        
             return $producto;
         }
 

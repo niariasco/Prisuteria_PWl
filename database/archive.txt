@@ -59,3 +59,89 @@ ALTER TABLE `ordenes`
 MODIFY `estado` ENUM('Pendiente','Procesando','Enviado','Entregado','Cancelado') NOT NULL,
 MODIFY `metodo_pago` ENUM('Efectivo','Tarjeta') NOT NULL;
 
+___________________________________________________________________________
+8/15/2025 cambio NICOLE.
+
+-- Tabla de criterios de personalización
+CREATE TABLE criterios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,         -- Ej: Color, Tamaño, Grabado
+    descripcion TEXT
+);
+
+-- Opciones de personalización para cada criterio
+CREATE TABLE opciones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    criterio_id INT NOT NULL,
+    nombre VARCHAR(255) NOT NULL,      
+    precio_adicional DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (criterio_id) REFERENCES criterios(id) ON DELETE CASCADE
+);
+
+INSERT INTO criterios (nombre) VALUES ('Color Dijes'), ('Tamaño'), ('Material');
+
+
+CREATE TABLE productos_personalizados_componentes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    producto_personalizado_id INT NOT NULL,
+    criterio_id INT NOT NULL,
+    opcion_id INT NOT NULL,
+    FOREIGN KEY (producto_personalizado_id) REFERENCES productos_personalizados(id) ON DELETE CASCADE,
+    FOREIGN KEY (criterio_id) REFERENCES criterios(id) ON DELETE CASCADE,
+    FOREIGN KEY (opcion_id) REFERENCES opciones(id) ON DELETE CASCADE
+);
+
+DELIMITER $$
+
+CREATE TRIGGER tr_update_precio_total_after_insert
+AFTER INSERT ON productos_personalizados_componentes
+FOR EACH ROW
+BEGIN
+    DECLARE precio_base DECIMAL(10,2);
+    DECLARE precio_adicional_total DECIMAL(10,2);
+
+    -- Obtener precio del producto base
+    SELECT precio INTO precio_base
+    FROM productos
+    WHERE productosId = (SELECT producto_base_id 
+                         FROM productos_personalizados 
+                         WHERE id = NEW.producto_personalizado_id);
+
+    -- Sumar precio de todas las opciones seleccionadas para este producto personalizado
+    SELECT IFNULL(SUM(o.precio_adicional),0) INTO precio_adicional_total
+    FROM productos_personalizados_componentes ppc
+    INNER JOIN opciones o ON ppc.opcion_id = o.id
+    WHERE ppc.producto_personalizado_id = NEW.producto_personalizado_id;
+
+    -- Actualizar precio total
+    UPDATE productos_personalizados
+    SET precio_total = precio_base + precio_adicional_total
+    WHERE id = NEW.producto_personalizado_id;
+END$$
+
+DELIMITER ;
+
+
+ALTER TABLE opciones MODIFY precio_adicional DECIMAL(10,3) NOT NULL;
+
+
+
+    ALTER TABLE opciones MODIFY precio_adicional DECIMAL(10,3) NOT NULL;
+    
+    
+    INSERT INTO opciones (criterio_id, nombre, precio_adicional)
+VALUES 
+(1, 'Rojo', 1200),
+(1, 'Azul', 1200),
+(1, 'Negro', 1200),
+(2, 'Pequeña 16 cm', 1300),
+(2, 'Mediana 17-18 cm', 1400),
+(2, 'Grande 19 cm ', 1500),
+(2, 'Extra-Grande 20-21 cm', 1600),
+(3, 'Plata', 1600),
+(3, 'Oro', 1700),
+(3, 'Oro rosa', 1800),
+(3, 'Acero', 1900);
+
+ALTER TABLE productos MODIFY precio DECIMAL(10,2);
+ALTER TABLE opciones MODIFY precio_adicional DECIMAL(10,2);

@@ -1,96 +1,104 @@
+import Slider from 'react-slick';
 import Card from '@mui/material/Card';
 import CardHeader from '@mui/material/CardHeader';
 import CardContent from '@mui/material/CardContent';
-import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Rating from '@mui/material/Rating';
+import Divider from '@mui/material/Divider';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
-import { Info } from '@mui/icons-material';
+import { Info, AccountCircle } from '@mui/icons-material';
 import IconButton from '@mui/material/IconButton';
+import Box from '@mui/material/Box';
 
 ListaCartasResenas.propTypes = {
   data: PropTypes.array.isRequired
 };
 
 export function ListaCartasResenas({ data }) {
+
+  const settings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 3,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 4000,
+    arrows: true,
+    responsive: [
+      { breakpoint: 960, settings: { slidesToShow: 2 } },
+      { breakpoint: 600, settings: { slidesToShow: 1 } }
+    ]
+  };
+
   return (
-    <Grid container sx={{ p: 2 }} spacing={3}>
+    <Slider {...settings}>
       {data && data.map((resena) => (
-        <Grid item xs={12} sm={6} md={4} key={resena.resenasId}>
-          <Card
-            sx={{
-              borderRadius: 4,
-              boxShadow: 3,
-              transition: 'transform 0.2s ease-in-out',
-              '&:hover': {
-                transform: 'scale(1.015)',
-                boxShadow: 6,
-              },
-            }}
-          >
+        <Box key={resena.resenasId} sx={{ px: 1 }}>
+          <Card sx={{
+            borderRadius: 4,
+            boxShadow: 6,
+            background: 'linear-gradient(145deg, #ffffff, #fff0f5)',
+          }}>
             <CardHeader
+              avatar={<AccountCircle sx={{ fontSize: 40, color: '#f06292' }} />}
               title={
-                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#f06292' }}>
                   {resena.nombre_usuario}
                 </Typography>
               }
               sx={{
-                background: 'linear-gradient(135deg, #F8BBD0 0%, #D1C4E9 100%)',
+                background: 'linear-gradient(135deg, #f8bbd0, #ffc1e3)',
                 color: '#fff',
                 textAlign: 'center',
                 py: 2,
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16
               }}
             />
-            <CardContent sx={{ backgroundColor: '#fff', minHeight: 200 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#d83b6a' }}>
+            <CardContent sx={{ minHeight: 230 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#d83b6a', mb: 0.5 }}>
                 Producto:
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 {resena.nombre}
               </Typography>
 
-              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#d83b6a', mt: 2 }}>
+              <Divider sx={{ my: 1, borderColor: '#f8bbd0' }} />
+
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#d83b6a', mb: 0.5 }}>
                 Comentario:
               </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                {resena.comentario}
+              <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontStyle: 'italic' }}>
+               {resena.comentario}
               </Typography>
 
-              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#d83b6a', mt: 2 }}>
+              <Divider sx={{ my: 1, borderColor: '#f8bbd0' }} />
+
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#d83b6a', mb: 0.5 }}>
                 Valoración:
               </Typography>
-              <Rating
-                value={resena.calificacion || 0}
-                max={5}
-                precision={0.5}
-                readOnly
-                sx={{ color: '#f06292', mt: 0.5 }}
-              />
+              <Rating value={resena.calificacion || 0} max={5} precision={0.5} readOnly sx={{ color: '#f06292' }} />
 
-              <Grid container justifyContent="flex-end" mt={2}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                 <IconButton
                   component={Link}
                   to={`/resena/${resena.resenasId}`}
                   aria-label="Detalle"
                   sx={{
-                    color: '#d83b6a',
-                    border: '1px solid #f8bbd0',
+                    color: '#fff',
+                    backgroundColor: '#f06292',
                     borderRadius: 2,
-                    transition: '0.2s ease',
-                    '&:hover': {
-                      backgroundColor: '#f8bbd0',
-                      color: '#fff',
-                    },
                   }}
                 >
                   <Info />
                 </IconButton>
-              </Grid>
+              </Box>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
       ))}
-    </Grid>
+    </Slider>
   );
 }

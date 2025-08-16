@@ -2,7 +2,8 @@
 import { useEffect } from 'react';
 import { useState } from 'react';
 import ResenaService from '../../services/ResenaService';
-import { ListaCartasResenas } from './ListaCartasResenas'; 
+//import { ListaCartasResenas } from './ListaCartasResenas'; 
+import {Home} from '../Home/Home';
 
 export function ListaResenas() {
   //Resultado de consumo del API, respuesta
@@ -35,6 +36,6 @@ useEffect(() => {
 
 if(!loaded) return <p>Cargando..</p>
 if(error) return <p>Error: {error.message}</p>
-  return <ListaCartasResenas data={data} isShopping={false} />;
+  return <Home data={data} isShopping={false} />;
 
 }
