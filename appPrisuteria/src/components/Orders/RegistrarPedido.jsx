@@ -58,10 +58,119 @@ export function RegistrarPedido() {
     return i18n.language === 'es' ? 'CRC' : 'USD';
   };
 
+  // Tasa de cambio actualizada - ajusta según tu necesidad
+  const EXCHANGE_RATE = 500; // 1 USD = 500 CRC
+  // IMPORTANTE: Define cuál es tu moneda base en la base de datos
+  const BASE_CURRENCY = 'CRC'; // Los precios están almacenados en CRC (colones)
+
   // Función para convertir precio según la moneda
   const convertPrice = (price) => {
     const numPrice = parseFloat(price) || 0;
-    return i18n.language === 'es' ? numPrice * 500 : numPrice;
+    
+    // Si la moneda actual es la misma que la base, no convertir
+    if ((i18n.language === 'en' && BASE_CURRENCY === 'USD') || 
+        (i18n.language === 'es' && BASE_CURRENCY === 'CRC')) {
+      return numPrice; // No convertir - mantener precio original
+    }
+    
+    // Convertir según sea necesario
+    if (i18n.language === 'es' && BASE_CURRENCY === 'USD') {
+      // Convertir de USD (base) a CRC (mostrar)
+      return numPrice * EXCHANGE_RATE;
+    } else if (i18n.language === 'en' && BASE_CURRENCY === 'CRC') {
+      // Convertir de CRC (base) a USD (mostrar)
+      return numPrice / EXCHANGE_RATE;
+    }
+    
+    return numPrice;
+  };
+
+  // FUNCIONES PARA MANEJAR PRECIOS Y PROMOCIONES
+
+  // Función para determinar si el producto tiene promoción activa
+  const tienePromocionActiva = (item) => {
+    const promocionPorcentaje = parseFloat(item.promocion || 0);
+    const tienePromocion = item.tiene_promocion;
+    const precioConDescuento = item.precio_con_descuento;
+    const descuentoProducto = parseFloat(item.descuento_producto || 0);
+    const descuentoCategoria = parseFloat(item.descuento_categoria || 0);
+    
+    return promocionPorcentaje > 0 || 
+           tienePromocion || 
+           (precioConDescuento && precioConDescuento !== item.precio) ||
+           descuentoProducto > 0 ||
+           descuentoCategoria > 0;
+  };
+
+  // Función para obtener el precio original (antes del descuento) en la moneda correcta
+  const getPrecioOriginalConvertido = (item) => {
+    let precioOriginalBase = 0;
+    
+    // 1. Determinar el precio original en la moneda base (BD)
+    if (item.precio_original && parseFloat(item.precio_original) > 0) {
+      precioOriginalBase = parseFloat(item.precio_original);
+    } else if (!tienePromocionActiva(item)) {
+      precioOriginalBase = parseFloat(item.precio);
+    } else {
+      // Si tiene promoción pero no hay precio_original, calcularlo
+      const precioActualBase = parseFloat(item.precio) || 0;
+      const promocion = parseFloat(item.promocion || item.descuento_producto || item.descuento_categoria || 0);
+      
+      if (promocion > 0) {
+        // precio_con_descuento = precio_original * (1 - promocion/100)
+        // precio_original = precio_con_descuento / (1 - promocion/100)
+        precioOriginalBase = precioActualBase / (1 - promocion / 100);
+      } else {
+        precioOriginalBase = precioActualBase;
+      }
+    }
+    
+    // 2. Convertir a la moneda de visualización
+    const precioConvertido = convertPrice(precioOriginalBase);
+    
+    return precioConvertido;
+  };
+
+  // Función para obtener el precio con descuento en la moneda correcta
+  const getPrecioConDescuentoConvertido = (item) => {
+    let precioConDescuentoBase = 0;
+    
+    // 1. Determinar el precio con descuento en la moneda base (BD)
+    if (item.precio_con_descuento && parseFloat(item.precio_con_descuento) > 0 && tienePromocionActiva(item)) {
+      precioConDescuentoBase = parseFloat(item.precio_con_descuento);
+    } 
+    else if (tienePromocionActiva(item)) {
+      // Calcular el precio con descuento
+      let precioOriginalBase = 0;
+      
+      if (item.precio_original && parseFloat(item.precio_original) > 0) {
+        precioOriginalBase = parseFloat(item.precio_original);
+      } else {
+        precioOriginalBase = parseFloat(item.precio);
+      }
+      
+      const promocion = parseFloat(item.promocion || item.descuento_producto || item.descuento_categoria || 0);
+      
+      if (promocion > 0) {
+        precioConDescuentoBase = precioOriginalBase * (1 - promocion / 100);
+      } else {
+        precioConDescuentoBase = precioOriginalBase;
+      }
+    } 
+    else {
+      // Si no tiene promoción, usar precio normal
+      precioConDescuentoBase = parseFloat(item.precio);
+    }
+    
+    // 2. Convertir a la moneda de visualización
+    const precioConvertido = convertPrice(precioConDescuentoBase);
+    
+    return precioConvertido;
+  };
+
+  // Función para obtener el porcentaje de descuento
+  const getPorcentajeDescuento = (item) => {
+    return parseFloat(item.promocion || item.descuento_producto || item.descuento_categoria || 0);
   };
 
   // Simular carga de clientes disponibles
@@ -168,18 +277,30 @@ export function RegistrarPedido() {
     );
   }
 
-  // Calcular totales
+  // Calcular totales usando PRECIOS FINALES (con descuentos aplicados)
   const currency = getCurrency();
+  
+  // Subtotal con precios finales (incluyendo descuentos)
   const subtotal = validItems.reduce((sum, item) => {
-    const precio = convertPrice(item.precio);
+    const precioFinal = tienePromocionActiva(item) ? 
+      getPrecioConDescuentoConvertido(item) : 
+      convertPrice(item.precio);
     const cantidad = item.quantity || 1;
-    const promocion = parseFloat(item.promocion) || 0;
-    const precioConDescuento = promocion > 0 ? precio - (precio * promocion) / 100 : precio;
-    return sum + (precioConDescuento * cantidad);
+    return sum + (precioFinal * cantidad);
   }, 0);
 
-  const shippingCost = i18n.language === 'es' ? 75000 : 150;
-  const shipping = subtotal > shippingCost ? 0 : (i18n.language === 'es' ? 7500 : 15);
+  // Subtotal con precios originales (para calcular ahorros)
+  const subtotalOriginal = validItems.reduce((sum, item) => {
+    const precioOriginal = getPrecioOriginalConvertido(item);
+    const cantidad = item.quantity || 1;
+    return sum + (precioOriginal * cantidad);
+  }, 0);
+
+  // Calcular total de ahorros
+  const totalAhorros = subtotalOriginal - subtotal;
+
+  // Envío siempre gratis
+  const shipping = 0;
   const total = subtotal + shipping;
 
   // Función para procesar el pedido
@@ -200,8 +321,18 @@ export function RegistrarPedido() {
       fecha: fechaActual,
       direccionEnvio,
       estado: estadoPedido,
-      productos: validItems,
+      productos: validItems.map(item => ({
+        ...item,
+        precioUnitarioFinal: tienePromocionActiva(item) ? 
+          getPrecioConDescuentoConvertido(item) : 
+          convertPrice(item.precio),
+        precioUnitarioOriginal: getPrecioOriginalConvertido(item),
+        tienePromocion: tienePromocionActiva(item),
+        porcentajeDescuento: getPorcentajeDescuento(item)
+      })),
       subtotal,
+      subtotalOriginal,
+      totalAhorros,
       envio: shipping,
       total,
       moneda: currency
@@ -385,18 +516,20 @@ export function RegistrarPedido() {
                     <TableRow sx={{ backgroundColor: '#F06292' }}>
                       <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Producto</TableCell>
                       <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold' }}>Cantidad</TableCell>
-                      <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>Precio Unit.</TableCell>
+                      <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>Precio Final</TableCell>
                       <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>Descuento</TableCell>
                       <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>Subtotal</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {validItems.map((item, index) => {
-                      const precio = convertPrice(item.precio);
+                      const precioFinal = tienePromocionActiva(item) ? 
+                        getPrecioConDescuentoConvertido(item) : 
+                        convertPrice(item.precio);
+                      const precioOriginal = getPrecioOriginalConvertido(item);
                       const cantidad = item.quantity || 1;
-                      const promocion = parseFloat(item.promocion) || 0;
-                      const precioConDescuento = promocion > 0 ? precio - (precio * promocion) / 100 : precio;
-                      const subtotalItem = precioConDescuento * cantidad;
+                      const promocion = getPorcentajeDescuento(item);
+                      const subtotalItem = precioFinal * cantidad;
 
                       return (
                         <TableRow key={`${item.id}-${index}`} sx={{ '&:nth-of-type(even)': { backgroundColor: '#f8f9fa' } }}>
@@ -404,12 +537,36 @@ export function RegistrarPedido() {
                             <Typography sx={{ fontWeight: 'bold' }}>{item.nombre}</Typography>
                           </TableCell>
                           <TableCell align="center">{cantidad}</TableCell>
-                          <TableCell align="right">{currency} {precio.toLocaleString()}</TableCell>
                           <TableCell align="right">
-                            {promocion > 0 ? `${promocion}%` : '-'}
+                            <Typography sx={{ fontWeight: 'bold' }}>
+                              {currency} {Math.round(precioFinal).toLocaleString()}
+                            </Typography>
+                            {tienePromocionActiva(item) && precioOriginal !== precioFinal && (
+                              <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                  textDecoration: 'line-through', 
+                                  color: 'text.secondary'
+                                }}
+                              >
+                                {currency} {Math.round(precioOriginal).toLocaleString()}
+                              </Typography>
+                            )}
+                          </TableCell>
+                          <TableCell align="right">
+                            {promocion > 0 ? (
+                              <Chip 
+                                label={`${promocion}% OFF`} 
+                                size="small"
+                                sx={{ 
+                                  backgroundColor: '#F06292',
+                                  color: 'white'
+                                }}
+                              />
+                            ) : '-'}
                           </TableCell>
                           <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                            {currency} {subtotalItem.toLocaleString()}
+                            {currency} {Math.round(subtotalItem).toLocaleString()}
                           </TableCell>
                         </TableRow>
                       );
@@ -417,6 +574,14 @@ export function RegistrarPedido() {
                   </TableBody>
                 </Table>
               </TableContainer>
+
+              {/* Nota importante sobre precios */}
+              <Alert severity="info" sx={{ mt: 3 }}>
+                <Typography variant="body2">
+                  <strong>Nota:</strong> Este pedido refleja los precios finales con todos los descuentos 
+                  y promociones aplicados. Los precios originales se muestran como referencia.
+                </Typography>
+              </Alert>
             </CardContent>
           </Card>
         </Grid>
@@ -430,17 +595,36 @@ export function RegistrarPedido() {
               </Typography>
 
               <Box sx={{ mb: 3 }}>
+                {totalAhorros > 0 && (
+                  <>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                      <Typography>Subtotal original:</Typography>
+                      <Typography sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
+                        {currency} {Math.round(subtotalOriginal).toLocaleString()}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                      <Typography sx={{ color: 'success.main', fontWeight: 'bold' }}>
+                        Descuentos aplicados:
+                      </Typography>
+                      <Typography sx={{ color: 'success.main', fontWeight: 'bold' }}>
+                        -{currency} {Math.round(totalAhorros).toLocaleString()}
+                      </Typography>
+                    </Box>
+                  </>
+                )}
+
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                  <Typography>Subtotal:</Typography>
+                  <Typography>Subtotal (Precio Final):</Typography>
                   <Typography sx={{ fontWeight: 'bold' }}>
-                    {currency} {subtotal.toLocaleString()}
+                    {currency} {Math.round(subtotal).toLocaleString()}
                   </Typography>
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                   <Typography>Envío:</Typography>
-                  <Typography sx={{ fontWeight: 'bold' }}>
-                    {shipping === 0 ? 'GRATIS' : `${currency} ${shipping.toLocaleString()}`}
+                  <Typography sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                    GRATIS
                   </Typography>
                 </Box>
 
@@ -451,9 +635,23 @@ export function RegistrarPedido() {
                     TOTAL:
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#F06292' }}>
-                    {currency} {total.toLocaleString()}
+                    {currency} {Math.round(total).toLocaleString()}
                   </Typography>
                 </Box>
+
+                {totalAhorros > 0 && (
+                  <Box sx={{ 
+                    backgroundColor: 'success.light', 
+                    p: 2, 
+                    borderRadius: 2, 
+                    mb: 2,
+                    textAlign: 'center'
+                  }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+                      ¡Has ahorrado {currency} {Math.round(totalAhorros).toLocaleString()} en total!
+                    </Typography>
+                  </Box>
+                )}
               </Box>
 
               <Button
