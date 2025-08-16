@@ -12,6 +12,7 @@ import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import PropTypes from 'prop-types';
 import { useCart } from '../../hooks/useCart';
 import ProductoService from '../../services/ProductoService';
+import { useTranslation } from 'react-i18next';
 
 ListaCartasProductos.propTypes = {
   data: PropTypes.array,
@@ -21,6 +22,26 @@ ListaCartasProductos.propTypes = {
 export function ListaCartasProductos({ data, isShopping }) {
   const { addItem } = useCart();
   const BASE_URL = import.meta.env.VITE_BASE_URL + 'uploads';
+  const { i18n } = useTranslation();
+
+  // Funciones de conversión de moneda
+  const EXCHANGE_RATE = 500; // 1 USD = 500 CRC
+  const BASE_CURRENCY = 'CRC'; // moneda base de la BD
+
+  const getCurrency = (language) => (language === 'es' ? 'CRC' : 'USD');
+
+  const convertPrice = (price, language) => {
+    const numPrice = parseFloat(price) || 0;
+
+    if ((language === 'en' && BASE_CURRENCY === 'USD') || (language === 'es' && BASE_CURRENCY === 'CRC')) {
+      return numPrice;
+    }
+
+    if (language === 'es' && BASE_CURRENCY === 'USD') return numPrice * EXCHANGE_RATE;
+    if (language === 'en' && BASE_CURRENCY === 'CRC') return numPrice / EXCHANGE_RATE;
+
+    return numPrice;
+  };
 
   const handleAddToCart = (producto) => {
     const productoPreparado = ProductoService.prepararProductoParaCarrito(producto);
@@ -61,13 +82,23 @@ export function ListaCartasProductos({ data, isShopping }) {
                 <Typography variant="subtitle1" fontWeight="bold">
                   {item.nombre}
                 </Typography>
-                {tienePromo ? (
+
+                {tienePromo && (
                   <Typography variant="body2" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
-                    ₡{precioOriginal.toLocaleString()}
+                    {convertPrice(precioOriginal, i18n.language).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}{' '}
+                    {getCurrency(i18n.language)}
                   </Typography>
-                ) : null}
+                )}
+
                 <Typography variant="h6" color={tienePromo ? 'error' : 'text.primary'}>
-                  ₡{precioConDescuento.toLocaleString()}
+                  {convertPrice(precioConDescuento, i18n.language).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}{' '}
+                  {getCurrency(i18n.language)}
                 </Typography>
               </CardContent>
 
@@ -94,21 +125,12 @@ export function ListaCartasProductos({ data, isShopping }) {
                   background: '#F8BBD0',
                 }}
               >
-                <IconButton
-                  component={Link}
-                  to={`/producto/${item.id}`}
-                  aria-label="Detalle"
-                  sx={{ color: '#fff' }}
-                >
+                <IconButton component={Link} to={`/producto/${item.id}`} aria-label="Detalle" sx={{ color: '#fff' }}>
                   <Info />
                 </IconButton>
 
                 {isShopping && (
-                  <IconButton
-                    aria-label="Agregar al carrito"
-                    onClick={() => handleAddToCart(item)}
-                    sx={{ color: '#fff' }}
-                  >
+                  <IconButton aria-label="Agregar al carrito" onClick={() => handleAddToCart(item)} sx={{ color: '#fff' }}>
                     <AddShoppingCartIcon />
                   </IconButton>
                 )}
