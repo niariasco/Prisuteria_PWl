@@ -1,26 +1,226 @@
 import axios from 'axios';
-//http://localhost:81/prisuteria/Producto/
+
+// Usar la misma URL base pero con 'productos' para mantener consistencia
 const BASE_URL = import.meta.env.VITE_BASE_URL + 'producto';
+const API_URL = BASE_URL.replace(/\/+$/, '');
 
-class ProductoService {
-  //Definición para Llamar al API y obtener el listado de productos
+class ProductosService {
+  // Obtener todos los productos
+  getProductos() {
+    return axios.get(API_URL)
+      .then(response => response.data)
+      .catch(error => {
+        console.error('Error obteniendo productos:', error);
+        throw error;
+      });
+  }
 
-  //Lista productos
-  //localhost:81/prisuteria/producto
+  // Obtener todos los productos (alias para compatibilidad)
   getAllProductos() {
-    return axios.get(BASE_URL);
-  }
-  
-  //Obtener producto por ID
-  //localhost:81/prisuteria/producto/1
-  getProductoById(ProductoId){
-    return axios.get(BASE_URL+'/'+ProductoId);
+    return axios.get(API_URL);
   }
 
-  // Obtener productos con promociones aplicadas
+  // Obtener un producto específico por ID
+  get(id) {
+    return axios.get(`${API_URL}/${id}`)
+      .then(response => response.data)
+      .catch(error => {
+        console.error(`Error obteniendo producto ${id}:`, error);
+        throw error;
+      });
+  }
+
+  // Obtener producto por ID (alias para compatibilidad)
+  getProductoById(ProductoId) {
+    return axios.get(`${API_URL}/${ProductoId}`);
+  }
+
+  // Crear nuevo producto
+  create(productoData) {
+    return axios.post(API_URL, productoData, {
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.data)
+    .catch(error => {
+      console.error('Error creando producto:', error);
+      throw error;
+    });
+  }
+
+  // Crear producto (alias para compatibilidad)
+  createProducto(producto) {
+    return axios.post(API_URL, producto, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  // Actualizar producto
+  update(id, productoData) {
+    return axios.put(`${API_URL}/${id}`, productoData, {
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.data)
+    .catch(error => {
+      console.error(`Error actualizando producto ${id}:`, error);
+      throw error;
+    });
+  }
+
+  // Actualizar producto (alias para compatibilidad)
+  updateProducto(producto) {
+    return axios.put(API_URL, producto, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  // Eliminar producto
+  delete(id) {
+    return axios.delete(`${API_URL}/${id}`)
+      .then(response => response.data)
+      .catch(error => {
+        console.error(`Error eliminando producto ${id}:`, error);
+        throw error;
+      });
+  }
+
+  // Validar stock de múltiples productos
+  async validarStockMultiple(productos) {
+    try {
+      const validaciones = await Promise.allSettled(
+        productos.map(async (item) => {
+          try {
+            const response = await this.get(item.id);
+            const producto = response.data || response;
+            
+            return {
+              id: item.id,
+              nombre: item.nombre,
+              cantidadSolicitada: item.cantidad,
+              stockDisponible: parseInt(producto.stock || 0),
+              tieneStock: parseInt(producto.stock || 0) >= item.cantidad,
+              producto: producto
+            };
+          } catch (error) {
+            return {
+              id: item.id,
+              nombre: item.nombre,
+              cantidadSolicitada: item.cantidad,
+              error: 'No se pudo verificar el stock',
+              tieneStock: false
+            };
+          }
+        })
+      );
+
+      return validaciones.map(result => {
+        if (result.status === 'fulfilled') {
+          return result.value;
+        } else {
+          return {
+            error: 'Error en la validación',
+            tieneStock: false
+          };
+        }
+      });
+
+    } catch (error) {
+      console.error('Error en validación múltiple de stock:', error);
+      throw error;
+    }
+  }
+
+  // Validar stock de un producto específico
+  async validarStock(productId, cantidadSolicitada) {
+    try {
+      const response = await this.get(productId);
+      const producto = response.data || response;
+      const stockDisponible = parseInt(producto.stock || 0);
+      
+      return {
+        id: productId,
+        stockDisponible,
+        cantidadSolicitada,
+        tieneStock: stockDisponible >= cantidadSolicitada,
+        diferencia: stockDisponible - cantidadSolicitada
+      };
+    } catch (error) {
+      console.error(`Error validando stock para producto ${productId}:`, error);
+      return {
+        id: productId,
+        error: 'No se pudo verificar el stock',
+        tieneStock: false
+      };
+    }
+  }
+
+  // Actualizar stock después de una compra
+  async actualizarStock(productId, cantidadVendida) {
+    try {
+      const producto = await this.get(productId);
+      const stockActual = parseInt(producto.stock || 0);
+      const nuevoStock = Math.max(0, stockActual - cantidadVendida);
+      
+      return await this.update(productId, {
+        ...producto,
+        stock: nuevoStock
+      });
+    } catch (error) {
+      console.error(`Error actualizando stock para producto ${productId}:`, error);
+      throw error;
+    }
+  }
+
+  // Obtener productos con stock bajo
+  async getProductosStockBajo(limite = 5) {
+    try {
+      const productos = await this.getProductos();
+      return productos.filter(producto => 
+        parseInt(producto.stock || 0) <= limite
+      );
+    } catch (error) {
+      console.error('Error obteniendo productos con stock bajo:', error);
+      throw error;
+    }
+  }
+
+  // Búsqueda de productos
+  search(query) {
+    return axios.get(`${API_URL}/search?q=${encodeURIComponent(query)}`)
+      .then(response => response.data)
+      .catch(error => {
+        console.error('Error en búsqueda de productos:', error);
+        throw error;
+      });
+  }
+
+  // Obtener productos por categoría
+  getByCategoria(categoriaId) {
+    return axios.get(`${API_URL}/categoria/${categoriaId}`)
+      .then(response => response.data)
+      .catch(error => {
+        console.error(`Error obteniendo productos de categoría ${categoriaId}:`, error);
+        throw error;
+      });
+  }
+
+  // Obtener productos con promociones
+  getProductosConPromocion() {
+    return axios.get(`${API_URL}/promociones`)
+      .then(response => response.data)
+      .catch(error => {
+        console.error('Error obteniendo productos con promoción:', error);
+        throw error;
+      });
+  }
+
+  // Obtener productos con promociones aplicadas (del ProductoService original)
   obtenerProductosConPromociones() {
     return axios
-      .get(`${BASE_URL}/obtenerProductosPromocion`)
+      .get(`${API_URL}/obtenerProductosPromocion`)
       .then(response => {
         if (response.data.success) {
           return response.data.data;
@@ -30,9 +230,9 @@ class ProductoService {
       });
   }
 
-  // Nuevo método: obtener producto con promoción aplicada
+  // Obtener producto con promoción aplicada (del ProductoService original)
   getProductoConPromocion(ProductoId) {
-    return axios.get(`${BASE_URL}/conPromocion/${ProductoId}`)
+    return axios.get(`${API_URL}/conPromocion/${ProductoId}`)
       .then(response => {
         if (response.data.success) {
           return response.data.data;
@@ -42,8 +242,7 @@ class ProductoService {
       });
   }
 
-  // Método para preparar producto para el carrito
-  // Este método asegura que el producto tenga la información correcta de precios
+  // Método para preparar producto para el carrito (del ProductoService original)
   prepararProductoParaCarrito(producto) {
     const promocion = parseFloat(producto.promocion) || 0;
     const precioOriginal = parseFloat(producto.precio) || 0;
@@ -93,22 +292,6 @@ class ProductoService {
         return this.prepararProductoParaCarrito(producto);
       });
   }
-
-  createProducto(producto) {
-    return axios.post(BASE_URL, producto, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-  }
-
-  updateProducto(producto) {
-    return axios.put(BASE_URL, producto, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-  }
 }
 
-export default new ProductoService();
+export default new ProductosService();

@@ -9,7 +9,10 @@ import {
   Button, 
   Divider,
   Chip,
-  Paper
+  Paper,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails
 } from '@mui/material';
 import { 
   Add, 
@@ -17,7 +20,8 @@ import {
   Delete, 
   LocalShipping, 
   Security, 
-  Refresh
+  Refresh,
+  ExpandMore
 } from '@mui/icons-material';
 import { useCart } from '../../hooks/useCart';
 import { Link } from 'react-router-dom';
@@ -115,10 +119,102 @@ export function ListaCarrito() {
     return producto.nombre;
   };
 
-  // FUNCIONES DE PROMOCIONES
+  // Función para determinar si un producto tiene personalizaciones
+  const tienePersonalizaciones = (item) => {
+    return item.opcionesPersonalizacion && 
+           Object.keys(item.opcionesPersonalizacion).length > 0;
+  };
+
+  // Función para obtener el precio correcto (personalizado o normal)
+  const getPrecioProducto = (item) => {
+    // Si es producto personalizado, usar precio_total o precio_unitario
+    if (tienePersonalizaciones(item)) {
+      return convertPrice(item.precio_unitario || item.precio_total || item.precio);
+    }
+
+    // Para productos normales, usar la lógica existente de promociones
+    if (tienePromocionActiva(item)) {
+      return getPrecioConDescuentoConvertido(item);
+    }
+    
+    return convertPrice(item.precio);
+  };
+
+  // Función para renderizar las características personalizadas
+  const renderPersonalizaciones = (opcionesPersonalizacion) => {
+    if (!opcionesPersonalizacion || Object.keys(opcionesPersonalizacion).length === 0) {
+      return null;
+    }
+
+    return (
+      <Accordion sx={{ mt: 1, boxShadow: 'none', border: '1px solid #e0e0e0' }}>
+        <AccordionSummary
+          expandIcon={<ExpandMore />}
+          sx={{ 
+            backgroundColor: '#f8f9fa', 
+            minHeight: '40px',
+            '& .MuiAccordionSummary-content': {
+              margin: '8px 0'
+            }
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#F06292' }}>
+            Ver personalizaciones ({Object.keys(opcionesPersonalizacion).length})
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails sx={{ pt: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {Object.entries(opcionesPersonalizacion).map(([criterioId, opcion]) => {
+              if (!opcion || !opcion.nombre) return null;
+              
+              return (
+                <Box key={criterioId} sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  p: 1,
+                  backgroundColor: '#f9f9f9',
+                  borderRadius: 1,
+                  border: '1px solid #e0e0e0'
+                }}>
+                  <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                    {opcion.criterioNombre || `Opción ${criterioId}`}:
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2">
+                      {opcion.nombre}
+                    </Typography>
+                    {opcion.precio_adicional && parseFloat(opcion.precio_adicional) > 0 && (
+                      <Chip 
+                        label={`+${getCurrency()} ${Math.round(convertPrice(opcion.precio_adicional)).toLocaleString()}`}
+                        size="small"
+                        sx={{ 
+                          backgroundColor: '#E8F5E8',
+                          color: '#2E7D32',
+                          fontSize: '0.75rem',
+                          height: '24px'
+                        }}
+                      />
+                    )}
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+    );
+  };
+
+  // FUNCIONES DE PROMOCIONES (mantenidas para compatibilidad con productos normales)
 
   // Función para determinar si el producto tiene promoción activa
   const tienePromocionActiva = (item) => {
+    // Si es producto personalizado, no aplicar promociones
+    if (tienePersonalizaciones(item)) {
+      return false;
+    }
+
     // Verificar múltiples campos que pueden indicar promoción
     const promocionPorcentaje = parseFloat(item.promocion || 0);
     const tienePromocion = item.tiene_promocion;
@@ -261,15 +357,21 @@ export function ListaCarrito() {
   // Calcular totales con conversión de moneda correcta
   const currency = getCurrency();
   const subtotal = validItems.reduce((sum, item) => {
-    const precio = tienePromocionActiva(item) ? 
-      getPrecioConDescuentoConvertido(item) : 
-      convertPrice(item.precio);
+    const precio = getPrecioProducto(item);
     const cantidad = getQuantity(item.id);
     return sum + (precio * cantidad);
   }, 0);
 
   const subtotalOriginal = validItems.reduce((sum, item) => {
-    const precioOriginal = getPrecioOriginalConvertido(item);
+    let precioOriginal;
+    
+    if (tienePersonalizaciones(item)) {
+      // Para productos personalizados, usar el precio base sin personalizaciones
+      precioOriginal = convertPrice(item.precio || 0);
+    } else {
+      precioOriginal = getPrecioOriginalConvertido(item);
+    }
+    
     const cantidad = getQuantity(item.id);
     return sum + (precioOriginal * cantidad);
   }, 0);
@@ -291,10 +393,12 @@ export function ListaCarrito() {
           
           <Box sx={{ mb: 3 }}>
             {validItems.map((item, index) => {
+              const esPersonalizado = tienePersonalizaciones(item);
               const tienePromo = tienePromocionActiva(item);
-              const precioOriginal = getPrecioOriginalConvertido(item);
-              const precioConDescuento = getPrecioConDescuentoConvertido(item);
-              const precioFinal = tienePromo ? precioConDescuento : convertPrice(item.precio);
+              const precioOriginal = esPersonalizado ? 
+                convertPrice(item.precio || 0) : 
+                getPrecioOriginalConvertido(item);
+              const precioFinal = getPrecioProducto(item);
               const cantidad = getQuantity(item.id);
               const promocion = getPorcentajeDescuento(item);
               const nombrePromocion = getNombrePromocion(item);
@@ -321,12 +425,25 @@ export function ListaCarrito() {
 
                       {/* Detalles del producto */}
                       <Grid item xs={12} sm={6}>
-                        <Typography variant="h6" gutterBottom>
-                          {getProductName(item)}
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <Typography variant="h6">
+                            {getProductName(item)}
+                          </Typography>
+                          {esPersonalizado && (
+                            <Chip 
+                              label="Personalizado" 
+                              size="small"
+                              sx={{
+                                backgroundColor: '#E3F2FD',
+                                color: '#1976D2',
+                                fontWeight: 'bold'
+                              }}
+                            />
+                          )}
+                        </Box>
                         
-                        {/* Chip de promoción */}
-                        {tienePromo && promocion > 0 && (
+                        {/* Chip de promoción para productos normales */}
+                        {!esPersonalizado && tienePromo && promocion > 0 && (
                           <Box sx={{ mb: 1 }}>
                             <Chip 
                               label={`${promocion}% OFF`} 
@@ -347,8 +464,13 @@ export function ListaCarrito() {
                         <Box sx={{ mb: 2 }}>
                           <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#F06292' }}>
                             {currency} {Math.round(precioFinal).toLocaleString()}
+                            {esPersonalizado && (
+                              <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+                                (precio personalizado)
+                              </Typography>
+                            )}
                           </Typography>
-                          {tienePromo && precioOriginal !== precioFinal && (
+                          {((!esPersonalizado && tienePromo) || (esPersonalizado && precioOriginal !== precioFinal)) && (
                             <Typography 
                               variant="body2" 
                               sx={{ 
@@ -360,6 +482,9 @@ export function ListaCarrito() {
                             </Typography>
                           )}
                         </Box>
+
+                        {/* Mostrar personalizaciones si existen */}
+                        {esPersonalizado && renderPersonalizaciones(item.opcionesPersonalizacion)}
 
                         {/* Controles de cantidad */}
                         <Box sx={{ 
@@ -440,9 +565,12 @@ export function ListaCarrito() {
                         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                           {currency} {Math.round(precioFinal * cantidad).toLocaleString()}
                         </Typography>
-                        {tienePromo && (
+                        {((esPersonalizado && precioOriginal !== precioFinal) || (!esPersonalizado && tienePromo)) && (
                           <Typography variant="body2" sx={{ color: 'success.main' }}>
-                            Ahorras: {currency} {Math.round((precioOriginal - precioFinal) * cantidad).toLocaleString()}
+                            {esPersonalizado ? 
+                              `Personalización: +${currency} ${Math.round((precioFinal - precioOriginal) * cantidad).toLocaleString()}` :
+                              `Ahorras: ${currency} ${Math.round((precioOriginal - precioFinal) * cantidad).toLocaleString()}`
+                            }
                           </Typography>
                         )}
                       </Grid>
@@ -493,10 +621,10 @@ export function ListaCarrito() {
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                     <Typography sx={{ color: 'success.main', fontWeight: 'bold' }}>
-                      Descuentos aplicados
+                      Descuentos/Personalizaciones
                     </Typography>
                     <Typography sx={{ color: 'success.main', fontWeight: 'bold' }}>
-                      -{currency} {Math.round(totalAhorros).toLocaleString()}
+                      {totalAhorros > 0 ? '-' : '+'}{currency} {Math.round(Math.abs(totalAhorros)).toLocaleString()}
                     </Typography>
                   </Box>
                 </>
@@ -527,16 +655,19 @@ export function ListaCarrito() {
                 </Typography>
               </Box>
 
-              {totalAhorros > 0 && (
+              {totalAhorros !== 0 && (
                 <Box sx={{ 
-                  backgroundColor: 'success.light', 
+                  backgroundColor: totalAhorros > 0 ? 'success.light' : 'info.light', 
                   p: 2, 
                   borderRadius: 2, 
                   mb: 2,
                   textAlign: 'center'
                 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'success.dark' }}>
-                    ¡Has ahorrado {currency} {Math.round(totalAhorros).toLocaleString()} en total!
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: totalAhorros > 0 ? 'success.dark' : 'info.dark' }}>
+                    {totalAhorros > 0 
+                      ? `¡Has ahorrado ${currency} ${Math.round(totalAhorros).toLocaleString()} en total!`
+                      : `Costo de personalizaciones: ${currency} ${Math.round(Math.abs(totalAhorros)).toLocaleString()}`
+                    }
                   </Typography>
                 </Box>
               )}

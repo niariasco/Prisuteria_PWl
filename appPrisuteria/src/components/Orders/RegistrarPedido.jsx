@@ -18,7 +18,15 @@ import {
   Autocomplete,
   Chip,
   Alert,
-  CircularProgress
+  CircularProgress,
+  IconButton,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   Receipt,
@@ -26,16 +34,24 @@ import {
   LocationOn,
   CalendarToday,
   ShoppingCart,
-  CheckCircle
+  CheckCircle,
+  Add,
+  Remove,
+  Delete,
+  ExpandMore,
+  Warning
 } from '@mui/icons-material';
 import { useCart } from '../../hooks/useCart';
 import { UserContext } from '../../context/UserContext';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import UsuarioDetalleService from '../../services/UsuariosDetalleService.js'; // Import corregido
+import UsuarioDetalleService from '../../services/UsuariosDetalleService.js';
+// CAMBIO: Usar ProductoService (sin "s") en lugar de ProductosService
+import ProductoService from '../../services/ProductoService.js'; // Para verificar stock
+import productTranslations from '../../translations/productTranslations.json';
 
 export function RegistrarPedido() {
-  const { cart, getCountItems, clearCart } = useCart();
+  const { cart, getCountItems, clearCart, removeItem, updateQuantity } = useCart();
   const { user, decodeToken } = useContext(UserContext);
   const { i18n, t } = useTranslation();
   const navigate = useNavigate();
@@ -59,42 +75,164 @@ export function RegistrarPedido() {
   const [loadingUsuarioDetalle, setLoadingUsuarioDetalle] = useState(false);
   const [errorUsuarioDetalle, setErrorUsuarioDetalle] = useState(null);
 
-  // Función para obtener la moneda según el idioma
+  // Estados para validaciones
+  const [erroresStock, setErroresStock] = useState([]);
+  const [validandoStock, setValidandoStock] = useState(false);
+  const [dialogConfirmacion, setDialogConfirmacion] = useState(false);
+
+  // Estados para cantidades locales (para actualizaciones en tiempo real)
+  const [cantidadesLocales, setCantidadesLocales] = useState({});
+
+  // Constantes de moneda y conversión
   const getCurrency = () => {
     return i18n.language === 'es' ? 'CRC' : 'USD';
   };
 
-  // Tasa de cambio actualizada - ajusta según tu necesidad
-  const EXCHANGE_RATE = 500; // 1 USD = 500 CRC
-  // IMPORTANTE: Define cuál es tu moneda base en la base de datos
-  const BASE_CURRENCY = 'CRC'; // Los precios están almacenados en CRC (colones)
+  const EXCHANGE_RATE = 500;
+  const BASE_CURRENCY = 'CRC';
+  const IVA_PERCENTAGE = 13; // 13% IVA en Costa Rica
 
-  // Función para convertir precio según la moneda
   const convertPrice = (price) => {
     const numPrice = parseFloat(price) || 0;
     
-    // Si la moneda actual es la misma que la base, no convertir
     if ((i18n.language === 'en' && BASE_CURRENCY === 'USD') || 
         (i18n.language === 'es' && BASE_CURRENCY === 'CRC')) {
-      return numPrice; // No convertir - mantener precio original
+      return numPrice;
     }
     
-    // Convertir según sea necesario
     if (i18n.language === 'es' && BASE_CURRENCY === 'USD') {
-      // Convertir de USD (base) a CRC (mostrar)
       return numPrice * EXCHANGE_RATE;
     } else if (i18n.language === 'en' && BASE_CURRENCY === 'CRC') {
-      // Convertir de CRC (base) a USD (mostrar)
       return numPrice / EXCHANGE_RATE;
     }
     
     return numPrice;
   };
 
-  // FUNCIONES PARA MANEJAR PRECIOS Y PROMOCIONES
+  // Función para obtener el nombre traducido
+  const getProductName = (producto) => {
+    if (producto.translations && producto.translations[i18n.language]) {
+      return producto.translations[i18n.language];
+    }
+    const productName = producto.nombre;
+    if (productTranslations.products[productName] && productTranslations.products[productName][i18n.language]) {
+      return productTranslations.products[productName][i18n.language];
+    }
+    return producto.nombre;
+  };
 
-  // Función para determinar si el producto tiene promoción activa
+  // Función para obtener la cantidad actual de un producto
+  const getCantidadActual = (itemId) => {
+    if (cantidadesLocales[itemId] !== undefined) {
+      return cantidadesLocales[itemId];
+    }
+    const cartItem = cart.find(item => item.id === itemId);
+    return cartItem ? cartItem.quantity || 1 : 1;
+  };
+
+  // Función para actualizar cantidad local y del carrito
+  const actualizarCantidad = (itemId, nuevaCantidad) => {
+    // Validar que sea número positivo
+    const cantidad = Math.max(0, parseInt(nuevaCantidad) || 0);
+    
+    setCantidadesLocales(prev => ({
+      ...prev,
+      [itemId]: cantidad
+    }));
+
+    // Si la cantidad es 0, eliminar del carrito
+    if (cantidad === 0) {
+      const item = cart.find(item => item.id === itemId);
+      if (item) {
+        removeItem(item);
+      }
+    } else {
+      // Actualizar en el carrito
+      if (updateQuantity) {
+        updateQuantity(itemId, cantidad);
+      }
+    }
+  };
+
+  // FUNCIONES DE PRODUCTOS PERSONALIZADOS
+
+  const tienePersonalizaciones = (item) => {
+    return item.opcionesPersonalizacion && 
+           Object.keys(item.opcionesPersonalizacion).length > 0;
+  };
+
+  const renderPersonalizaciones = (opcionesPersonalizacion) => {
+    if (!opcionesPersonalizacion || Object.keys(opcionesPersonalizacion).length === 0) {
+      return null;
+    }
+
+    return (
+      <Accordion sx={{ mt: 1, boxShadow: 'none', border: '1px solid #e0e0e0' }}>
+        <AccordionSummary
+          expandIcon={<ExpandMore />}
+          sx={{ 
+            backgroundColor: '#f8f9fa', 
+            minHeight: '40px',
+            '& .MuiAccordionSummary-content': {
+              margin: '8px 0'
+            }
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#F06292' }}>
+            Ver personalizaciones ({Object.keys(opcionesPersonalizacion).length})
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails sx={{ pt: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {Object.entries(opcionesPersonalizacion).map(([criterioId, opcion]) => {
+              if (!opcion || !opcion.nombre) return null;
+              
+              return (
+                <Box key={criterioId} sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  p: 1,
+                  backgroundColor: '#f9f9f9',
+                  borderRadius: 1,
+                  border: '1px solid #e0e0e0'
+                }}>
+                  <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                    {opcion.criterioNombre || `Opción ${criterioId}`}:
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2">
+                      {opcion.nombre}
+                    </Typography>
+                    {opcion.precio_adicional && parseFloat(opcion.precio_adicional) > 0 && (
+                      <Chip 
+                        label={`+${getCurrency()} ${Math.round(convertPrice(opcion.precio_adicional)).toLocaleString()}`}
+                        size="small"
+                        sx={{ 
+                          backgroundColor: '#E8F5E8',
+                          color: '#2E7D32',
+                          fontSize: '0.75rem',
+                          height: '24px'
+                        }}
+                      />
+                    )}
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+    );
+  };
+
+  // FUNCIONES DE PRECIOS Y PROMOCIONES
+
   const tienePromocionActiva = (item) => {
+    if (tienePersonalizaciones(item)) {
+      return false;
+    }
+
     const promocionPorcentaje = parseFloat(item.promocion || 0);
     const tienePromocion = item.tiene_promocion;
     const precioConDescuento = item.precio_con_descuento;
@@ -108,45 +246,34 @@ export function RegistrarPedido() {
            descuentoCategoria > 0;
   };
 
-  // Función para obtener el precio original (antes del descuento) en la moneda correcta
   const getPrecioOriginalConvertido = (item) => {
     let precioOriginalBase = 0;
     
-    // 1. Determinar el precio original en la moneda base (BD)
     if (item.precio_original && parseFloat(item.precio_original) > 0) {
       precioOriginalBase = parseFloat(item.precio_original);
     } else if (!tienePromocionActiva(item)) {
       precioOriginalBase = parseFloat(item.precio);
     } else {
-      // Si tiene promoción pero no hay precio_original, calcularlo
       const precioActualBase = parseFloat(item.precio) || 0;
       const promocion = parseFloat(item.promocion || item.descuento_producto || item.descuento_categoria || 0);
       
       if (promocion > 0) {
-        // precio_con_descuento = precio_original * (1 - promocion/100)
-        // precio_original = precio_con_descuento / (1 - promocion/100)
         precioOriginalBase = precioActualBase / (1 - promocion / 100);
       } else {
         precioOriginalBase = precioActualBase;
       }
     }
     
-    // 2. Convertir a la moneda de visualización
-    const precioConvertido = convertPrice(precioOriginalBase);
-    
-    return precioConvertido;
+    return convertPrice(precioOriginalBase);
   };
 
-  // Función para obtener el precio con descuento en la moneda correcta
   const getPrecioConDescuentoConvertido = (item) => {
     let precioConDescuentoBase = 0;
     
-    // 1. Determinar el precio con descuento en la moneda base (BD)
     if (item.precio_con_descuento && parseFloat(item.precio_con_descuento) > 0 && tienePromocionActiva(item)) {
       precioConDescuentoBase = parseFloat(item.precio_con_descuento);
     } 
     else if (tienePromocionActiva(item)) {
-      // Calcular el precio con descuento
       let precioOriginalBase = 0;
       
       if (item.precio_original && parseFloat(item.precio_original) > 0) {
@@ -164,22 +291,87 @@ export function RegistrarPedido() {
       }
     } 
     else {
-      // Si no tiene promoción, usar precio normal
       precioConDescuentoBase = parseFloat(item.precio);
     }
     
-    // 2. Convertir a la moneda de visualización
-    const precioConvertido = convertPrice(precioConDescuentoBase);
-    
-    return precioConvertido;
+    return convertPrice(precioConDescuentoBase);
   };
 
-  // Función para obtener el porcentaje de descuento
   const getPorcentajeDescuento = (item) => {
     return parseFloat(item.promocion || item.descuento_producto || item.descuento_categoria || 0);
   };
 
-  // Función para cargar los datos reales del usuario logueado
+  const getPrecioUnitario = (item) => {
+    if (tienePersonalizaciones(item)) {
+      return convertPrice(item.precio_unitario || item.precio_total || item.precio);
+    }
+
+    if (tienePromocionActiva(item)) {
+      return getPrecioConDescuentoConvertido(item);
+    }
+    
+    return convertPrice(item.precio);
+  };
+
+  // Función para calcular IVA
+  const calcularIVA = (precio) => {
+    return precio * (IVA_PERCENTAGE / 100);
+  };
+
+  // Función para validar stock - CAMBIO: Usar ProductoService en lugar de ProductosService
+  const validarStock = async () => {
+    setValidandoStock(true);
+    setErroresStock([]);
+    
+    const errores = [];
+    const validItems = cart?.filter(item => item && item.id && item.nombre) || [];
+
+    try {
+      for (const item of validItems) {
+        // Solo validar stock para productos normales, no personalizados
+        if (!tienePersonalizaciones(item)) {
+          const cantidadSolicitada = getCantidadActual(item.id);
+          
+          if (cantidadSolicitada > 0) {
+            try {
+              // CAMBIO: Usar getProductoById del ProductoService existente
+              const response = await ProductoService.getProductoById(item.id);
+              const productoActual = response.data || response;
+              
+              const stockDisponible = parseInt(productoActual.stock || 0);
+              
+              if (stockDisponible < cantidadSolicitada) {
+                errores.push({
+                  producto: getProductName(item),
+                  cantidadSolicitada,
+                  stockDisponible
+                });
+              }
+            } catch (error) {
+              console.error(`Error validando stock para producto ${item.id}:`, error);
+              errores.push({
+                producto: getProductName(item),
+                cantidadSolicitada: getCantidadActual(item.id),
+                error: 'No se pudo verificar el stock'
+              });
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error general validando stock:', error);
+    }
+    
+    setErroresStock(errores);
+    setValidandoStock(false);
+    
+    return errores.length === 0;
+  };
+
+  // Resto del código permanece igual...
+  // [El resto de las funciones y componentes no cambian]
+
+  // Función para cargar los datos del usuario
   const cargarUsuarioDetalleActual = async () => {
     if (!userData || !userData.usuarioId) {
       console.log('No hay usuario logueado o falta usuarioId');
@@ -190,11 +382,9 @@ export function RegistrarPedido() {
     setErrorUsuarioDetalle(null);
 
     try {
-      // Obtener todos los detalles de usuario y buscar el del usuario actual
       const response = await UsuarioDetalleService.getUsuarioDetalles();
       
       if (response.data && Array.isArray(response.data)) {
-        // Buscar el detalle del usuario actual
         const detalleUsuario = response.data.find(
           detalle => detalle.usuarioId === userData.usuarioId
         );
@@ -202,7 +392,6 @@ export function RegistrarPedido() {
         if (detalleUsuario) {
           setUsuarioDetalleActual(detalleUsuario);
           
-          // Crear objeto cliente basado en los datos reales
           const clienteReal = {
             id: detalleUsuario.usuarioDetalleId,
             nombre: detalleUsuario.nombre_completo,
@@ -212,20 +401,14 @@ export function RegistrarPedido() {
             direccion: detalleUsuario.direccion_envio || ''
           };
 
-          // Establecer como cliente seleccionado
           setClienteSeleccionado(clienteReal);
           setDireccionEnvio(clienteReal.direccion);
-          
-          // Agregar a la lista de clientes disponibles (solo el usuario actual)
           setClientesDisponibles([clienteReal]);
-          
-          // Cargar detalles del cliente
           cargarDetalleCliente(clienteReal);
           
           console.log('Datos del usuario cargados:', detalleUsuario);
         } else {
           setErrorUsuarioDetalle('No se encontraron detalles para este usuario');
-          console.log('No se encontró detalle para usuarioId:', userData.usuarioId);
         }
       }
     } catch (error) {
@@ -236,14 +419,6 @@ export function RegistrarPedido() {
     }
   };
 
-  // Cargar datos del usuario al montar el componente
-  useEffect(() => {
-    if (userData && userData.usuarioId) {
-      cargarUsuarioDetalleActual();
-    }
-  }, [userData]);
-
-  // Función para cargar detalles del cliente seleccionado
   const cargarDetalleCliente = async (cliente) => {
     if (!cliente) {
       setDetalleCliente(null);
@@ -251,24 +426,29 @@ export function RegistrarPedido() {
     }
 
     setLoadingDetalle(true);
-    // Simular carga para información adicional
     await new Promise(resolve => setTimeout(resolve, 800));
     
-    // Usar los datos reales del usuario si está disponible
     const detalleCompleto = {
       ...cliente,
       fechaRegistro: usuarioDetalleActual?.created_at || '2023-01-15',
-      pedidosAnteriores: Math.floor(Math.random() * 20), // Esto podría venir de otra API
-      totalCompras: (Math.random() * 500000).toFixed(2), // Esto podría venir de otra API
-      categoriaCliente: 'Premium', // Esto podría calcularse basado en compras anteriores
-      metodoPagoPreferido: 'Tarjeta de Crédito' // Esto podría venir de preferencias del usuario
+      pedidosAnteriores: Math.floor(Math.random() * 20),
+      totalCompras: (Math.random() * 500000).toFixed(2),
+      categoriaCliente: 'Premium',
+      metodoPagoPreferido: 'Tarjeta de Crédito'
     };
     
     setDetalleCliente(detalleCompleto);
     setLoadingDetalle(false);
   };
 
-  // Manejar cambio de cliente (ahora solo permite seleccionar el usuario actual)
+  // Cargar datos del usuario al montar el componente
+  useEffect(() => {
+    if (userData && userData.usuarioId) {
+      cargarUsuarioDetalleActual();
+    }
+  }, [userData]);
+
+  // Manejar cambio de cliente
   const handleClienteChange = (event, newValue) => {
     setClienteSeleccionado(newValue);
     cargarDetalleCliente(newValue);
@@ -294,7 +474,6 @@ export function RegistrarPedido() {
     );
   }
 
-  // Si no hay usuario logueado
   if (!userData || !userData.usuarioId) {
     return (
       <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
@@ -312,63 +491,81 @@ export function RegistrarPedido() {
     );
   }
 
-  // Calcular totales usando PRECIOS FINALES (con descuentos aplicados)
+  // Calcular totales
   const currency = getCurrency();
   
-  // Subtotal con precios finales (incluyendo descuentos)
-  const subtotal = validItems.reduce((sum, item) => {
-    const precioFinal = tienePromocionActiva(item) ? 
-      getPrecioConDescuentoConvertido(item) : 
-      convertPrice(item.precio);
-    const cantidad = item.quantity || 1;
-    return sum + (precioFinal * cantidad);
+  // Subtotal sin impuestos
+  const subtotalSinImpuestos = validItems.reduce((sum, item) => {
+    const precioUnitario = getPrecioUnitario(item);
+    const cantidad = getCantidadActual(item.id);
+    return sum + (precioUnitario * cantidad);
   }, 0);
 
-  // Subtotal con precios originales (para calcular ahorros)
-  const subtotalOriginal = validItems.reduce((sum, item) => {
-    const precioOriginal = getPrecioOriginalConvertido(item);
-    const cantidad = item.quantity || 1;
-    return sum + (precioOriginal * cantidad);
-  }, 0);
-
-  // Calcular total de ahorros
-  const totalAhorros = subtotalOriginal - subtotal;
+  // Calcular IVA total
+  const ivaTotal = calcularIVA(subtotalSinImpuestos);
+  
+  // Total con impuestos
+  const totalConImpuestos = subtotalSinImpuestos + ivaTotal;
 
   // Envío siempre gratis
   const shipping = 0;
-  const total = subtotal + shipping;
+  const total = totalConImpuestos + shipping;
 
   // Función para procesar el pedido
   const procesarPedido = async () => {
+    // Validaciones básicas
     if (!clienteSeleccionado || !direccionEnvio.trim()) {
       alert('Por favor complete todos los campos requeridos');
       return;
     }
 
+    // Validar cantidades
+    const hayErroresCantidad = validItems.some(item => {
+      const cantidad = getCantidadActual(item.id);
+      return cantidad <= 0 || !Number.isInteger(cantidad);
+    });
+
+    if (hayErroresCantidad) {
+      alert('Todas las cantidades deben ser números enteros positivos');
+      return;
+    }
+
+    // Validar stock
+    const stockValido = await validarStock();
+    if (!stockValido) {
+      setDialogConfirmacion(true);
+      return;
+    }
+
+    proceedWithOrder();
+  };
+
+  const proceedWithOrder = async () => {
     setLoading(true);
+    setDialogConfirmacion(false);
     
     // Simular procesamiento del pedido
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Aquí iría la lógica para enviar el pedido al backend
     const pedidoData = {
       cliente: clienteSeleccionado,
-      usuarioDetalle: usuarioDetalleActual, // Incluir datos completos del usuario
+      usuarioDetalle: usuarioDetalleActual,
       fecha: fechaActual,
       direccionEnvio,
       estado: estadoPedido,
       productos: validItems.map(item => ({
         ...item,
-        precioUnitarioFinal: tienePromocionActiva(item) ? 
-          getPrecioConDescuentoConvertido(item) : 
-          convertPrice(item.precio),
-        precioUnitarioOriginal: getPrecioOriginalConvertido(item),
-        tienePromocion: tienePromocionActiva(item),
-        porcentajeDescuento: getPorcentajeDescuento(item)
+        cantidad: getCantidadActual(item.id),
+        precioUnitario: getPrecioUnitario(item),
+        subtotal: getPrecioUnitario(item) * getCantidadActual(item.id),
+        iva: calcularIVA(getPrecioUnitario(item) * getCantidadActual(item.id)),
+        totalConIva: getPrecioUnitario(item) * getCantidadActual(item.id) + calcularIVA(getPrecioUnitario(item) * getCantidadActual(item.id)),
+        esPersonalizado: tienePersonalizaciones(item),
+        opcionesPersonalizacion: item.opcionesPersonalizacion || null
       })),
-      subtotal,
-      subtotalOriginal,
-      totalAhorros,
+      subtotalSinImpuestos,
+      ivaTotal,
+      totalConImpuestos,
       envio: shipping,
       total,
       moneda: currency
@@ -376,13 +573,13 @@ export function RegistrarPedido() {
     
     console.log('Pedido registrado:', pedidoData);
     
-    // Limpiar carrito y redirigir
     clearCart();
     setLoading(false);
     
     alert('¡Pedido registrado exitosamente!');
     navigate('/orden');
   };
+
 
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3 }}>
@@ -401,9 +598,25 @@ export function RegistrarPedido() {
         </Alert>
       )}
 
+      {/* Mostrar errores de stock */}
+      {erroresStock.length > 0 && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            <Warning sx={{ mr: 1 }} />
+            Problemas de inventario detectados:
+          </Typography>
+          {erroresStock.map((error, index) => (
+            <Typography key={index} variant="body2">
+              • {error.producto}: Solicitado {error.cantidadSolicitada}, Disponible: {error.stockDisponible || error.error}
+            </Typography>
+          ))}
+        </Alert>
+      )}
+
       <Grid container spacing={4}>
-        {/* Encabezado del Pedido */}
+        {/* Información del pedido - Lado izquierdo */}
         <Grid item xs={12} md={8}>
+          {/* Información General */}
           <Card sx={{ mb: 3, boxShadow: 3 }}>
             <CardContent sx={{ p: 4 }}>
               <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, color: '#F06292' }}>
@@ -411,7 +624,6 @@ export function RegistrarPedido() {
               </Typography>
               
               <Grid container spacing={3}>
-                {/* Fecha Actual */}
                 <Grid item xs={12} md={6}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <CalendarToday sx={{ color: '#F06292', mr: 1 }} />
@@ -427,14 +639,11 @@ export function RegistrarPedido() {
                       month: 'long',
                       day: 'numeric'
                     })}
-                    InputProps={{
-                      readOnly: true,
-                    }}
+                    InputProps={{ readOnly: true }}
                     variant="outlined"
                   />
                 </Grid>
 
-                {/* Estado del Pedido */}
                 <Grid item xs={12} md={6}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <CheckCircle sx={{ color: '#F06292', mr: 1 }} />
@@ -456,7 +665,6 @@ export function RegistrarPedido() {
                   />
                 </Grid>
 
-                {/* Selector de Cliente */}
                 <Grid item xs={12}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Person sx={{ color: '#F06292', mr: 1 }} />
@@ -470,7 +678,7 @@ export function RegistrarPedido() {
                     value={clienteSeleccionado}
                     onChange={handleClienteChange}
                     loading={loadingUsuarioDetalle}
-                    disabled={true} // Deshabilitar ya que solo hay un cliente (el usuario actual)
+                    disabled={true}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -490,7 +698,6 @@ export function RegistrarPedido() {
                   />
                 </Grid>
 
-                {/* Información detallada del cliente */}
                 {clienteSeleccionado && (
                   <Grid item xs={12}>
                     <Card sx={{ backgroundColor: '#f8f9fa', border: '1px solid #F06292' }}>
@@ -522,7 +729,6 @@ export function RegistrarPedido() {
                   </Grid>
                 )}
 
-                {/* Dirección de Envío */}
                 <Grid item xs={12}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <LocationOn sx={{ color: '#F06292', mr: 1 }} />
@@ -550,87 +756,219 @@ export function RegistrarPedido() {
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                 <ShoppingCart sx={{ color: '#F06292', mr: 1 }} />
                 <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#F06292' }}>
-                  DETALLE DEL PEDIDO
+                  DETALLE DEL PEDIDO ({validItems.length} productos)
                 </Typography>
               </Box>
 
-              <TableContainer component={Paper} sx={{ boxShadow: 1 }}>
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: '#F06292' }}>
-                      <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Producto</TableCell>
-                      <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold' }}>Cantidad</TableCell>
-                      <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>Precio Final</TableCell>
-                      <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>Descuento</TableCell>
-                      <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>Subtotal</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {validItems.map((item, index) => {
-                      const precioFinal = tienePromocionActiva(item) ? 
-                        getPrecioConDescuentoConvertido(item) : 
-                        convertPrice(item.precio);
-                      const precioOriginal = getPrecioOriginalConvertido(item);
-                      const cantidad = item.quantity || 1;
-                      const promocion = getPorcentajeDescuento(item);
-                      const subtotalItem = precioFinal * cantidad;
+              {validItems.map((item, index) => {
+                const esPersonalizado = tienePersonalizaciones(item);
+                const precioUnitario = getPrecioUnitario(item);
+                const cantidad = getCantidadActual(item.id);
+                const subtotalItem = precioUnitario * cantidad;
+                const ivaItem = calcularIVA(subtotalItem);
+                const totalConIvaItem = subtotalItem + ivaItem;
+                const promocion = getPorcentajeDescuento(item);
 
-                      return (
-                        <TableRow key={`${item.id}-${index}`} sx={{ '&:nth-of-type(even)': { backgroundColor: '#f8f9fa' } }}>
-                          <TableCell>
-                            <Typography sx={{ fontWeight: 'bold' }}>{item.nombre}</Typography>
-                          </TableCell>
-                          <TableCell align="center">{cantidad}</TableCell>
-                          <TableCell align="right">
-                            <Typography sx={{ fontWeight: 'bold' }}>
-                              {currency} {Math.round(precioFinal).toLocaleString()}
-                            </Typography>
-                            {tienePromocionActiva(item) && precioOriginal !== precioFinal && (
-                              <Typography 
-                                variant="body2" 
-                                sx={{ 
-                                  textDecoration: 'line-through', 
-                                  color: 'text.secondary'
-                                }}
-                              >
-                                {currency} {Math.round(precioOriginal).toLocaleString()}
+                return (
+                  <Card key={`${item.id}-${index}`} sx={{ mb: 3, border: '1px solid #e0e0e0' }}>
+                    <CardContent sx={{ p: 3 }}>
+                      <Grid container spacing={3} alignItems="center">
+                        {/* Información del producto */}
+                        <Grid item xs={12}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                                {getProductName(item)}
                               </Typography>
-                            )}
-                          </TableCell>
-                          <TableCell align="right">
-                            {promocion > 0 ? (
-                              <Chip 
-                                label={`${promocion}% OFF`} 
-                                size="small"
-                                sx={{ 
-                                  backgroundColor: '#F06292',
-                                  color: 'white'
-                                }}
-                              />
-                            ) : '-'}
-                          </TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                            {currency} {Math.round(subtotalItem).toLocaleString()}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                              {esPersonalizado && (
+                                <Chip 
+                                  label="Personalizado" 
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: '#E3F2FD',
+                                    color: '#1976D2',
+                                    fontWeight: 'bold'
+                                  }}
+                                />
+                              )}
+                              {!esPersonalizado && promocion > 0 && (
+                                <Chip 
+                                  label={`${promocion}% OFF`} 
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: '#F06292',
+                                    color: 'white',
+                                    fontWeight: 'bold'
+                                  }}
+                                />
+                              )}
+                            </Box>
+                            <IconButton 
+                              onClick={() => {
+                                removeItem(item);
+                                setCantidadesLocales(prev => {
+                                  const newState = {...prev};
+                                  delete newState[item.id];
+                                  return newState;
+                                });
+                              }}
+                              sx={{ color: '#F06292' }}
+                            >
+                              <Delete />
+                            </IconButton>
+                          </Box>
 
-              {/* Nota importante sobre precios */}
-              <Alert severity="info" sx={{ mt: 3 }}>
-                <Typography variant="body2">
-                  <strong>Nota:</strong> Este pedido refleja los precios finales con todos los descuentos 
-                  y promociones aplicados. Los precios originales se muestran como referencia.
-                </Typography>
-              </Alert>
+                          {/* Información específica para productos personalizados */}
+                          {esPersonalizado && (
+                            <Box sx={{ mb: 2, p: 2, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#F06292' }}>
+                                Información del Producto Personalizado:
+                              </Typography>
+                              <Typography variant="body2" sx={{ mb: 1 }}>
+                                <strong>Producto Base:</strong> {getProductName(item)}
+                              </Typography>
+                              <Typography variant="body2" sx={{ mb: 1 }}>
+                                <strong>Costo Base:</strong> {currency} {Math.round(convertPrice(item.precio || 0)).toLocaleString()}
+                              </Typography>
+                              {renderPersonalizaciones(item.opcionesPersonalizacion)}
+                              <Typography variant="body2" sx={{ mt: 2, fontWeight: 'bold', color: '#F06292' }}>
+                                <strong>Total Personalizado:</strong> {currency} {Math.round(precioUnitario).toLocaleString()}
+                              </Typography>
+                            </Box>
+                          )}
+
+                          {/* Controles de cantidad y precios */}
+                          <Grid container spacing={2} alignItems="center">
+                            <Grid item xs={12} sm={3}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                Cantidad:
+                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <IconButton 
+                                  size="small"
+                                  onClick={() => actualizarCantidad(item.id, cantidad - 1)}
+                                  disabled={cantidad <= 1}
+                                  sx={{ 
+                                    backgroundColor: '#F8BBD0',
+                                    color: '#fff',
+                                    '&:hover': { backgroundColor: '#F06292' },
+                                    '&:disabled': { backgroundColor: '#e0e0e0', color: '#9e9e9e' }
+                                  }}
+                                >
+                                  <Remove fontSize="small" />
+                                </IconButton>
+                                
+                                <TextField
+                                  size="small"
+                                  value={cantidad}
+                                  onChange={(e) => {
+                                    const newValue = e.target.value;
+                                    // Permitir campo vacío temporalmente para edición
+                                    if (newValue === '') {
+                                      setCantidadesLocales(prev => ({ ...prev, [item.id]: '' }));
+                                    } else {
+                                      const numValue = parseInt(newValue);
+                                      if (!isNaN(numValue) && numValue >= 0) {
+                                        actualizarCantidad(item.id, numValue);
+                                      }
+                                    }
+                                  }}
+                                  onBlur={() => {
+                                    // Al perder el foco, asegurar que hay un valor válido
+                                    if (cantidad === '' || cantidad <= 0) {
+                                      actualizarCantidad(item.id, 1);
+                                    }
+                                  }}
+                                  inputProps={{ 
+                                    min: 1, 
+                                    style: { textAlign: 'center', width: '60px' },
+                                    inputMode: 'numeric',
+                                    pattern: '[0-9]*'
+                                  }}
+                                  error={cantidad === '' || cantidad <= 0}
+                                  helperText={cantidad === '' || cantidad <= 0 ? 'Cantidad requerida' : ''}
+                                />
+                                
+                                <IconButton 
+                                  size="small"
+                                  onClick={() => actualizarCantidad(item.id, cantidad + 1)}
+                                  sx={{ 
+                                    backgroundColor: '#F8BBD0',
+                                    color: '#fff',
+                                    '&:hover': { backgroundColor: '#F06292' }
+                                  }}
+                                >
+                                  <Add fontSize="small" />
+                                </IconButton>
+                              </Box>
+                            </Grid>
+
+                            <Grid item xs={12} sm={3}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                Precio Unitario:
+                              </Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#F06292' }}>
+                                {currency} {Math.round(precioUnitario).toLocaleString()}
+                              </Typography>
+                              {!esPersonalizado && tienePromocionActiva(item) && (
+                                <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
+                                  {currency} {Math.round(getPrecioOriginalConvertido(item)).toLocaleString()}
+                                </Typography>
+                              )}
+                            </Grid>
+
+                            <Grid item xs={12} sm={3}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                Subtotal (sin IVA):
+                              </Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                {currency} {Math.round(subtotalItem).toLocaleString()}
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                IVA (13%): {currency} {Math.round(ivaItem).toLocaleString()}
+                              </Typography>
+                            </Grid>
+
+                            <Grid item xs={12} sm={3}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                Total con IVA:
+                              </Typography>
+                              <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#F06292' }}>
+                                {currency} {Math.round(totalConIvaItem).toLocaleString()}
+                              </Typography>
+                            </Grid>
+                          </Grid>
+                        </Grid>
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+
+              {/* Botón para validar stock */}
+              <Box sx={{ textAlign: 'center', mt: 3 }}>
+                <Button
+                  variant="outlined"
+                  onClick={validarStock}
+                  disabled={validandoStock}
+                  startIcon={validandoStock ? <CircularProgress size={20} /> : <CheckCircle />}
+                  sx={{
+                    borderColor: '#F06292',
+                    color: '#F06292',
+                    '&:hover': {
+                      borderColor: '#E91E63',
+                      backgroundColor: 'rgba(240, 98, 146, 0.1)',
+                    }
+                  }}
+                >
+                  {validandoStock ? 'Validando Inventario...' : 'Validar Disponibilidad'}
+                </Button>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Resumen y Totales */}
+        {/* Resumen y Totales - Lado derecho */}
         <Grid item xs={12} md={4}>
           <Card sx={{ position: 'sticky', top: 20, boxShadow: 3 }}>
             <CardContent sx={{ p: 4 }}>
@@ -638,30 +976,26 @@ export function RegistrarPedido() {
                 RESUMEN DEL PEDIDO
               </Typography>
 
+              {/* Desglose de totales */}
               <Box sx={{ mb: 3 }}>
-                {totalAhorros > 0 && (
-                  <>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                      <Typography>Subtotal original:</Typography>
-                      <Typography sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
-                        {currency} {Math.round(subtotalOriginal).toLocaleString()}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                      <Typography sx={{ color: 'success.main', fontWeight: 'bold' }}>
-                        Descuentos aplicados:
-                      </Typography>
-                      <Typography sx={{ color: 'success.main', fontWeight: 'bold' }}>
-                        -{currency} {Math.round(totalAhorros).toLocaleString()}
-                      </Typography>
-                    </Box>
-                  </>
-                )}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography>Subtotal (sin impuestos):</Typography>
+                  <Typography sx={{ fontWeight: 'bold' }}>
+                    {currency} {Math.round(subtotalSinImpuestos).toLocaleString()}
+                  </Typography>
+                </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                  <Typography>Subtotal (Precio Final):</Typography>
+                  <Typography>IVA (13%):</Typography>
                   <Typography sx={{ fontWeight: 'bold' }}>
-                    {currency} {Math.round(subtotal).toLocaleString()}
+                    {currency} {Math.round(ivaTotal).toLocaleString()}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography>Total con impuestos:</Typography>
+                  <Typography sx={{ fontWeight: 'bold', color: '#F06292' }}>
+                    {currency} {Math.round(totalConImpuestos).toLocaleString()}
                   </Typography>
                 </Box>
 
@@ -676,28 +1010,28 @@ export function RegistrarPedido() {
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                   <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    TOTAL:
+                    TOTAL FINAL:
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#F06292' }}>
                     {currency} {Math.round(total).toLocaleString()}
                   </Typography>
                 </Box>
 
-                {totalAhorros > 0 && (
-                  <Box sx={{ 
-                    backgroundColor: 'success.light', 
-                    p: 2, 
-                    borderRadius: 2, 
-                    mb: 2,
-                    textAlign: 'center'
-                  }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'success.dark' }}>
-                      ¡Has ahorrado {currency} {Math.round(totalAhorros).toLocaleString()} en total!
-                    </Typography>
-                  </Box>
-                )}
+                {/* Información de impuestos */}
+                <Box sx={{ 
+                  backgroundColor: '#e8f5e8', 
+                  p: 2, 
+                  borderRadius: 2, 
+                  mb: 2,
+                  textAlign: 'center'
+                }}>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
+                    Impuestos incluidos: {currency} {Math.round(ivaTotal).toLocaleString()} (13% IVA)
+                  </Typography>
+                </Box>
               </Box>
 
+              {/* Botón de confirmar pedido */}
               <Button
                 variant="contained"
                 fullWidth
@@ -746,6 +1080,44 @@ export function RegistrarPedido() {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Dialog de confirmación para errores de stock */}
+      <Dialog
+        open={dialogConfirmacion}
+        onClose={() => setDialogConfirmacion(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: '#F06292', fontWeight: 'bold' }}>
+          <Warning sx={{ mr: 1 }} />
+          Confirmar Pedido con Problemas de Inventario
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Se detectaron problemas de inventario para algunos productos. ¿Desea continuar con el pedido?
+          </Typography>
+          <Box sx={{ backgroundColor: '#fff3cd', p: 2, borderRadius: 1, border: '1px solid #ffeaa7' }}>
+            {erroresStock.map((error, index) => (
+              <Typography key={index} variant="body2" sx={{ mb: 1 }}>
+                • <strong>{error.producto}:</strong> Solicitado {error.cantidadSolicitada}, 
+                Disponible: {error.stockDisponible || error.error}
+              </Typography>
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogConfirmacion(false)} color="inherit">
+            Cancelar
+          </Button>
+          <Button 
+            onClick={proceedWithOrder} 
+            variant="contained"
+            sx={{ backgroundColor: '#F06292', '&:hover': { backgroundColor: '#E91E63' } }}
+          >
+            Confirmar de todas formas
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

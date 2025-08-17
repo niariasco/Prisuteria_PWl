@@ -139,7 +139,7 @@ export function DetalleProductos({ isShopping }) {
         setCalculandoPrecio(false);
         return;
       }
-      precioBase;
+
       setPrecioTotal(calcularPrecioLocal(nuevasOpciones));
       
       try {
@@ -233,21 +233,36 @@ export function DetalleProductos({ isShopping }) {
       // Usar el precio total calculado (que ya incluye personalizaciones)
       const precioFinal = precioTotal;
 
+      // Preparar las opciones con nombres de criterios
+      const opcionesConNombres = {};
+      Object.entries(opcionesSeleccionadas).forEach(([criterioId, opcion]) => {
+        const criterio = data.criterios?.find(c => c.id == criterioId);
+        opcionesConNombres[criterioId] = {
+          ...opcion,
+          criterioNombre: criterio?.nombre || `Criterio ${criterioId}`
+        };
+      });
+
       // Crear el objeto para el carrito
       const productoParaCarrito = {
         ...productoPreparado,
-        // Incluir las opciones seleccionadas
-        opcionesPersonalizacion: opcionesSeleccionadas,
+        // Incluir las opciones seleccionadas con nombres
+        opcionesPersonalizacion: opcionesConNombres,
         cantidad: cantidad,
         precio_unitario: precioFinal,
         precio_total: precioFinal * cantidad,
+        precio_base_original: parseFloat(data.precio) || 0,
         // Información adicional útil
         nombre: getProductName(data),
         descripcion: getProductDescription(data),
         imagen: data.imagenes?.[0] || null,
         // IDs importantes
         id: data.productosId || data.id,
-        productoId: data.productosId || data.id
+        productoId: data.productosId || data.id,
+        // Marcar como personalizado si tiene opciones
+        esPersonalizado: Object.keys(opcionesSeleccionadas).length > 0,
+        // Información para mostrar en el carrito
+        tienePersonalizaciones: Object.keys(opcionesSeleccionadas).length > 0
       };
 
       console.log('Agregando al carrito:', productoParaCarrito);
@@ -256,7 +271,11 @@ export function DetalleProductos({ isShopping }) {
       addItem(productoParaCarrito);
 
       // Mostrar confirmación
-      alert(`${getProductName(data)} agregado al carrito (Cantidad: ${cantidad})`);
+      const mensajePersonalizacion = Object.keys(opcionesSeleccionadas).length > 0 
+        ? ' (Personalizado)' 
+        : '';
+      
+      alert(`${getProductName(data)}${mensajePersonalizacion} agregado al carrito (Cantidad: ${cantidad})`);
       
     } catch (error) {
       console.error('Error al agregar producto al carrito:', error);
@@ -304,18 +323,47 @@ export function DetalleProductos({ isShopping }) {
         <Grid item xs={12} md={6}>
           {data.imagenes && data.imagenes.length > 0 ? (
             data.imagenes.length === 1 ? (
-              <img src={`${BASE_URL}/${data.imagenes[0]}`} alt="producto" style={{ width: '100%', maxHeight: 400, objectFit: 'contain', borderRadius: 10 }} />
+              <img 
+                src={`${BASE_URL}/${data.imagenes[0]}`} 
+                alt="producto" 
+                style={{ 
+                  width: '100%', 
+                  maxHeight: 400, 
+                  objectFit: 'contain', 
+                  borderRadius: 10 
+                }} 
+              />
             ) : (
               <Slider dots infinite speed={500} slidesToShow={1} slidesToScroll={1} arrows>
                 {data.imagenes.map((img, idx) => (
                   <div key={idx}>
-                    <img src={`${BASE_URL}/${img}`} alt={`img-${idx}`} style={{ width: '100%', maxHeight: 400, objectFit: 'contain', borderRadius: 10 }} />
+                    <img 
+                      src={`${BASE_URL}/${img}`} 
+                      alt={`img-${idx}`} 
+                      style={{ 
+                        width: '100%', 
+                        maxHeight: 400, 
+                        objectFit: 'contain', 
+                        borderRadius: 10 
+                      }} 
+                    />
                   </div>
                 ))}
               </Slider>
             )
           ) : (
-            <strong>{t('NoImages')}</strong>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: 400, 
+              backgroundColor: '#f5f5f5', 
+              borderRadius: 2 
+            }}>
+              <Typography variant="h6" color="text.secondary">
+                {t('NoImages', 'Sin imágenes disponibles')}
+              </Typography>
+            </Box>
           )}
         </Grid>
 
@@ -324,85 +372,107 @@ export function DetalleProductos({ isShopping }) {
             {getProductName(data)}
           </Typography>
 
-          {tienePromo ? (
-            <>
-              <Typography sx={{ textDecoration: 'line-through', color: 'gray' }}>
+          {/* Mostrar precios */}
+          <Box sx={{ mb: 2 }}>
+            {tienePromo ? (
+              <>
+                <Typography sx={{ textDecoration: 'line-through', color: 'gray', fontSize: '1.1rem' }}>
+                  {formatPrice(data.precio)}
+                </Typography>
+                <Typography variant="h5" sx={{ color: '#d83b6a', fontWeight: 'bold' }}>
+                  {formatPrice(data.precio_con_descuento)}
+                </Typography>
+                {(data.descuento_producto || data.descuento_categoria) && (
+                  <Typography variant="caption" color="primary">
+                    {data.nombre_promocion_producto && `${data.nombre_promocion_producto} `}
+                    {data.nombre_promocion_categoria && `${data.nombre_promocion_categoria}`}
+                  </Typography>
+                )}
+                {data.nombre_promocion && (
+                  <Typography variant="caption" color="primary">
+                    {data.nombre_promocion}
+                    {Number(data.descuento) > 0 ? ` (-${data.descuento}%)` : ''}
+                  </Typography>
+                )}
+              </>
+            ) : (
+              <Typography variant="h5" sx={{ color: '#d83b6a', fontWeight: 'bold' }}>
                 {formatPrice(data.precio)}
               </Typography>
-              <Typography variant="h5" sx={{ color: '#d83b6a', fontWeight: 'bold' }}>
-                {formatPrice(data.precio_con_descuento)}
-              </Typography>
-              {(data.descuento_producto || data.descuento_categoria) && (
-                <Typography variant="caption" color="primary">
-                  {data.nombre_promocion_producto && `${data.nombre_promocion_producto} `}
-                  {data.nombre_promocion_categoria && `${data.nombre_promocion_categoria}`}
-                </Typography>
-              )}
-              {data.nombre_promocion && (
-                <Typography variant="caption" color="primary">
-                  {data.nombre_promocion}
-                  {Number(data.descuento) > 0 ? ` (-${data.descuento}%)` : ''}
-                </Typography>
-              )}
-            </>
-          ) : (
-            <Typography variant="h5">
-              {formatPrice(data.precio)}
-            </Typography>
-          )}
+            )}
+          </Box>
 
           <Typography variant="subtitle1" gutterBottom color="text.secondary">
             {getProductDescription(data)}
           </Typography>
 
           <Typography variant="body1" gutterBottom>
-            <strong>{t('promocion.options.category')}</strong> : {getCategoryName(data)}
+            <strong>{t('promocion.options.category', 'Categoría')}</strong> : {getCategoryName(data)}
           </Typography>
 
-          {typeof data.etiquetas === 'string' && data.etiquetas.length > 0
-            ? data.etiquetas.split(',').map((etiqueta, idx) => (
-                <Chip key={idx} label={t(`tags.${etiqueta.trim()}`, { defaultValue: etiqueta.trim() })} variant="outlined" color="primary" sx={{ mr: 1, mb: 1 }} />
-              ))
-            : null}
+          {/* Mostrar etiquetas */}
+          {typeof data.etiquetas === 'string' && data.etiquetas.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              {data.etiquetas.split(',').map((etiqueta, idx) => (
+                <Chip 
+                  key={idx} 
+                  label={t(`tags.${etiqueta.trim()}`, { defaultValue: etiqueta.trim() })} 
+                  variant="outlined" 
+                  color="primary" 
+                  sx={{ mr: 1, mb: 1 }} 
+                />
+              ))}
+            </Box>
+          )}
 
+          {/* Mostrar valoración */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Typography variant="body1" sx={{ mr: 1 }}>
-              <strong> {t('valoracion')}</strong> :
+              <strong> {t('valoracion', 'Valoración')}</strong> :
             </Typography>
             {data.promedio_valoracion > 0 ? (
-              <Rating value={parseFloat(data.promedio_valoracion)} precision={0.1} readOnly size="small" />
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Rating value={parseFloat(data.promedio_valoracion)} precision={0.1} readOnly size="small" />
+                <Typography variant="body2" sx={{ ml: 1 }}>
+                  ({parseFloat(data.promedio_valoracion).toFixed(1)})
+                </Typography>
+              </Box>
             ) : (
               <Typography variant="body2" color="text.secondary">
-                <strong> {t('NoValoracion')}</strong>
+                <strong> {t('NoValoracion', 'Sin valoraciones')}</strong>
               </Typography>
             )}
           </Box>
 
+          {/* Sección de personalización */}
           {data.criterios && data.criterios.length > 0 && (
             <Box sx={{ mt: 3, mb: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-                {t('personalizar_producto')}
+              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: '#d83b6a' }}>
+                {t('personalizar_producto', 'Personalizar Producto')}
               </Typography>
 
               {Object.keys(opcionesSeleccionadas).length === 0 && (
-                <Typography variant="body2" sx={{ color: '#999', fontStyle: 'italic', mt: 1 }}>
+                <Typography variant="body2" sx={{ color: '#999', fontStyle: 'italic', mb: 2 }}>
                   Seleccione las opciones para personalizar su producto
                 </Typography>
               )}
 
               {data.criterios.map((criterio) => (
                 <Box key={criterio.id} sx={{ mb: 2 }}>
-                  <Typography variant="subtitle1" sx={{ mb: 0.5 }}>{criterio.nombre}:</Typography>
+                  <Typography variant="subtitle1" sx={{ mb: 0.5, fontWeight: 'medium' }}>
+                    {criterio.nombre}:
+                  </Typography>
                   <select
                     value={opcionesSeleccionadas[criterio.id]?.id || ''}
                     onChange={(e) => handleOpcionChange(criterio.id, e)}
                     style={{
                       width: '100%',
-                      padding: '8px',
+                      padding: '12px',
                       borderRadius: '4px',
                       border: '1px solid #ccc',
                       fontSize: '14px',
-                      color: opcionesSeleccionadas[criterio.id]?.id ? '#000' : '#666'
+                      color: opcionesSeleccionadas[criterio.id]?.id ? '#000' : '#666',
+                      backgroundColor: '#fff'
                     }}
                     disabled={calculandoPrecio}
                   >
@@ -419,18 +489,31 @@ export function DetalleProductos({ isShopping }) {
               ))}
 
               {/* Precio total destacado con conversión */}
-              <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d83b6a' }}>
-                {t('precio_total', 'Precio Total')}: {formatPrice(precioTotal)}
-              </Typography>
-              {calculandoPrecio && (
-                <Typography variant="body2" sx={{ color: '#666', mt: 1 }}>
-                  Actualizando precio...
+              <Box sx={{ 
+                mt: 3, 
+                p: 2, 
+                backgroundColor: '#f8f9fa', 
+                borderRadius: 2, 
+                border: '2px solid #d83b6a' 
+              }}>
+                <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d83b6a', textAlign: 'center' }}>
+                  {t('precio_total', 'Precio Total')}: {formatPrice(precioTotal)}
                 </Typography>
-              )}
+                {calculandoPrecio && (
+                  <Typography variant="body2" sx={{ color: '#666', mt: 1, textAlign: 'center' }}>
+                    Actualizando precio...
+                  </Typography>
+                )}
+                {Object.keys(opcionesSeleccionadas).length > 0 && (
+                  <Typography variant="body2" sx={{ color: '#666', mt: 1, textAlign: 'center', fontStyle: 'italic' }}>
+                    Precio base: {formatPrice(precioBaseConDescuento)} + Personalizaciones: {formatPrice(precioTotal - precioBaseConDescuento)}
+                  </Typography>
+                )}
+              </Box>
             </Box>
           )}
 
-
+          {/* Selector de cantidad */}
           {isShopping && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
               <Typography variant="body1">
@@ -454,6 +537,7 @@ export function DetalleProductos({ isShopping }) {
             </Box>
           )}
 
+          {/* Botón agregar al carrito */}
           {isShopping && (
             <Button
               variant="contained"
@@ -470,44 +554,92 @@ export function DetalleProductos({ isShopping }) {
                 },
                 '&:disabled': {
                   backgroundColor: '#ccc'
-                }
+                },
+                py: 1.5,
+                px: 3,
+                fontSize: '1.1rem'
               }}
             >
-              {calculandoPrecio ? 'Calculando...' : t('agregarAlCarrito')}
+              {calculandoPrecio ? 'Calculando...' : t('agregarAlCarrito', 'Agregar al Carrito')}
             </Button>
+          )}
+
+          {/* Información adicional del producto */}
+          {(data.stock !== undefined || data.disponible !== undefined) && (
+            <Box sx={{ mt: 2 }}>
+              {data.stock !== undefined && (
+                <Typography variant="body2" color={data.stock > 0 ? 'success.main' : 'error.main'}>
+                  <strong>Stock:</strong> {data.stock > 0 ? `${data.stock} disponibles` : 'Sin stock'}
+                </Typography>
+              )}
+              {data.disponible !== undefined && (
+                <Typography variant="body2" color={data.disponible ? 'success.main' : 'error.main'}>
+                  <strong>Estado:</strong> {data.disponible ? 'Disponible' : 'No disponible'}
+                </Typography>
+              )}
+            </Box>
           )}
         </Grid>
 
         <Grid item xs={12}>
-          <Button variant="outlined" color="secondary" onClick={() => navigate(-1)} sx={{ mt: 2 }}>
-            {t('Return')}
+          <Button 
+            variant="outlined" 
+            color="secondary" 
+            onClick={() => navigate(-1)} 
+            sx={{ mt: 2 }}
+          >
+            {t('Return', 'Regresar')}
           </Button>
         </Grid>
 
         <Grid item xs={12}>
           <Divider sx={{ my: 3 }} />
-          <Typography variant="h5" gutterBottom sx={{ color: '#d83b6a' }}>{t('FProduct_Reviews')}</Typography>
+          <Typography variant="h5" gutterBottom sx={{ color: '#d83b6a' }}>
+            {t('FProduct_Reviews', 'Reseñas del Producto')}
+          </Typography>
 
           <Grid container spacing={2} sx={{ mb: 4 }}>
             {Array.isArray(data.resenas) && data.resenas.length > 0
               ? data.resenas.filter((r) => r && !r.status && r.resenasId).map((resena) => (
-                  <Grid key={resena.resenasId} item xs={12} sx={{ mb: 2, borderBottom: '1px solid #d83b6a', pb: 2, backgroundColor: '#f9f9f9', borderRadius: 1, p: 2 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{resena.nombre || resena.usuario_nombre}</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{formatearFecha(resena.fecha)}</Typography>
-                    <Typography variant="body1" sx={{ mb: 1 }}>{resena.comentario}</Typography>
+                  <Grid key={resena.resenasId} item xs={12} sx={{ 
+                    mb: 2, 
+                    borderBottom: '1px solid #d83b6a', 
+                    pb: 2, 
+                    backgroundColor: '#f9f9f9', 
+                    borderRadius: 1, 
+                    p: 2 
+                  }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                      {resena.nombre || resena.usuario_nombre}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      {formatearFecha(resena.fecha)}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      {resena.comentario}
+                    </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Rating value={parseInt(resena.calificacion)} readOnly size="small" />
                     </Box>
                   </Grid>
                 ))
-              : <Typography variant="body1" color="text.secondary">{t('FNoreview')}</Typography>}
+              : <Grid item xs={12}>
+                  <Typography variant="body1" color="text.secondary">
+                    {t('FNoreview', 'No hay reseñas disponibles')}
+                  </Typography>
+                </Grid>
+            }
           </Grid>
 
           <FormResena
             productoId={parseInt(id)}
             onNuevaResena={(nuevaResena, nuevoPromedio) => {
               if (nuevaResena && !nuevaResena.status && nuevaResena.resenasId) {
-                setData((prev) => ({ ...prev, resenas: [nuevaResena, ...(prev.resenas || [])], promedio_valoracion: nuevoPromedio || prev.promedio_valoracion }));
+                setData((prev) => ({ 
+                  ...prev, 
+                  resenas: [nuevaResena, ...(prev.resenas || [])], 
+                  promedio_valoracion: nuevoPromedio || prev.promedio_valoracion 
+                }));
               }
             }}
           />
