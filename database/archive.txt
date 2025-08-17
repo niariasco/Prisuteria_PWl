@@ -145,3 +145,31 @@ VALUES
 
 ALTER TABLE productos MODIFY precio DECIMAL(10,2);
 ALTER TABLE opciones MODIFY precio_adicional DECIMAL(10,2);
+
+
+____________________________________________________________________________________________________________________
+16/08/25 Priscilla
+
+CREATE TABLE UsuarioDetalle (
+    usuarioDetalleId INT AUTO_INCREMENT PRIMARY KEY, -- ID único autoincremental
+    usuarioId INT NOT NULL,                          -- Relación con la tabla usuario
+    nombre_completo VARCHAR(100) NOT NULL,
+    cedula VARCHAR(20) NOT NULL UNIQUE,
+    correo VARCHAR(100) NOT NULL,
+    telefono VARCHAR(20),
+    direccion_envio VARCHAR(255),
+    FOREIGN KEY (usuarioId) REFERENCES usuarios(usuarioId)
+);
+
+-- Insertar detalles de usuarios
+INSERT INTO UsuarioDetalle (usuarioId, nombre_completo, cedula, correo, telefono, direccion_envio)
+VALUES 
+(1, 'Mia Chacon',       '101230456', 'MiaChancon@gmail.com',    '8888-1111', 'San José, Curridabat, 200m norte del parque'),
+(2, 'Administrador',    '000000001', 'admin@pwi.com',           '2222-2222', 'San José, Oficinas Centrales'),
+(3, 'Adolfo Arias',     '201560789', 'juan@gmail.com',           '8888-3333', 'Heredia, Barva, 100m este de la iglesia'),
+(4, 'Maria Arias',      '301450123', 'maria@gmail.com',          '8999-4444', 'Cartago, Paraíso, frente a la plaza'),
+(5, 'Martina Gomes',    '401890456', 'martina@gmail.com',        '8888-5555', 'Alajuela, Grecia, 50m sur del colegio'),
+(6, 'Rachel Arias',     '501230987', 'rachel@gmail.com',         '8888-6666', 'San José, Escazú, condominio Los Cedros'),
+(7, 'Milagro O',        '601340111', 'kora@gmail.com',           '8888-7777', 'Limón, centro, contiguo al hospital'),
+(8, 'Mylene C',         '701980654', 'mylene@gmail.com',         '8888-8888', 'Puntarenas, El Roble, 100m oeste de la plaza'),
+(9, 'Niki Zamora',      '801650321', 'nikiarias40@gmail.com',    '8888-9999', 'Guanacaste, Liberia, barrio La Cruz');

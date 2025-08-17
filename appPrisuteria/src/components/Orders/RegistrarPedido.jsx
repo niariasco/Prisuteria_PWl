@@ -32,6 +32,7 @@ import { useCart } from '../../hooks/useCart';
 import { UserContext } from '../../context/UserContext';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import UsuarioDetalleService from '../../services/UsuariosDetalleService.js'; // Import corregido
 
 export function RegistrarPedido() {
   const { cart, getCountItems, clearCart } = useCart();
@@ -52,6 +53,11 @@ export function RegistrarPedido() {
   // Estados para información detallada del cliente
   const [detalleCliente, setDetalleCliente] = useState(null);
   const [loadingDetalle, setLoadingDetalle] = useState(false);
+
+  // Estados para manejo de datos reales del usuario
+  const [usuarioDetalleActual, setUsuarioDetalleActual] = useState(null);
+  const [loadingUsuarioDetalle, setLoadingUsuarioDetalle] = useState(false);
+  const [errorUsuarioDetalle, setErrorUsuarioDetalle] = useState(null);
 
   // Función para obtener la moneda según el idioma
   const getCurrency = () => {
@@ -173,56 +179,68 @@ export function RegistrarPedido() {
     return parseFloat(item.promocion || item.descuento_producto || item.descuento_categoria || 0);
   };
 
-  // Simular carga de clientes disponibles
-  useEffect(() => {
-    const cargarClientes = async () => {
-      setLoadingClientes(true);
-      // Simular llamada API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+  // Función para cargar los datos reales del usuario logueado
+  const cargarUsuarioDetalleActual = async () => {
+    if (!userData || !userData.usuarioId) {
+      console.log('No hay usuario logueado o falta usuarioId');
+      return;
+    }
+
+    setLoadingUsuarioDetalle(true);
+    setErrorUsuarioDetalle(null);
+
+    try {
+      // Obtener todos los detalles de usuario y buscar el del usuario actual
+      const response = await UsuarioDetalleService.getUsuarioDetalles();
       
-      // Datos simulados de clientes
-      const clientesSimulados = [
-        {
-          id: 1,
-          nombre: 'Juan Pérez',
-          email: 'juan.perez@email.com',
-          telefono: '+506 8888-8888',
-          cedula: '1-1111-1111',
-          direccion: 'San José, Costa Rica, Barrio Escalante, Casa #123'
-        },
-        {
-          id: 2,
-          nombre: 'María González',
-          email: 'maria.gonzalez@email.com',
-          telefono: '+506 7777-7777',
-          cedula: '2-2222-2222',
-          direccion: 'Cartago, Costa Rica, Centro, Apartamento 45'
-        },
-        {
-          id: 3,
-          nombre: 'Carlos Rodríguez',
-          email: 'carlos.rodriguez@email.com',
-          telefono: '+506 6666-6666',
-          cedula: '3-3333-3333',
-          direccion: 'Alajuela, Costa Rica, San Antonio, Casa Verde'
-        }
-      ];
-      
-      setClientesDisponibles(clientesSimulados);
-      
-      // Si hay usuario logueado, buscarlo en la lista
-      if (userData && userData.email) {
-        const clienteEncontrado = clientesSimulados.find(c => c.email === userData.email);
-        if (clienteEncontrado) {
-          setClienteSeleccionado(clienteEncontrado);
-          setDireccionEnvio(clienteEncontrado.direccion);
+      if (response.data && Array.isArray(response.data)) {
+        // Buscar el detalle del usuario actual
+        const detalleUsuario = response.data.find(
+          detalle => detalle.usuarioId === userData.usuarioId
+        );
+
+        if (detalleUsuario) {
+          setUsuarioDetalleActual(detalleUsuario);
+          
+          // Crear objeto cliente basado en los datos reales
+          const clienteReal = {
+            id: detalleUsuario.usuarioDetalleId,
+            nombre: detalleUsuario.nombre_completo,
+            email: detalleUsuario.correo,
+            telefono: detalleUsuario.telefono || 'No especificado',
+            cedula: detalleUsuario.cedula || 'No especificada',
+            direccion: detalleUsuario.direccion_envio || ''
+          };
+
+          // Establecer como cliente seleccionado
+          setClienteSeleccionado(clienteReal);
+          setDireccionEnvio(clienteReal.direccion);
+          
+          // Agregar a la lista de clientes disponibles (solo el usuario actual)
+          setClientesDisponibles([clienteReal]);
+          
+          // Cargar detalles del cliente
+          cargarDetalleCliente(clienteReal);
+          
+          console.log('Datos del usuario cargados:', detalleUsuario);
+        } else {
+          setErrorUsuarioDetalle('No se encontraron detalles para este usuario');
+          console.log('No se encontró detalle para usuarioId:', userData.usuarioId);
         }
       }
-      
-      setLoadingClientes(false);
-    };
+    } catch (error) {
+      console.error('Error al cargar los detalles del usuario:', error);
+      setErrorUsuarioDetalle('Error al cargar los datos del usuario');
+    } finally {
+      setLoadingUsuarioDetalle(false);
+    }
+  };
 
-    cargarClientes();
+  // Cargar datos del usuario al montar el componente
+  useEffect(() => {
+    if (userData && userData.usuarioId) {
+      cargarUsuarioDetalleActual();
+    }
   }, [userData]);
 
   // Función para cargar detalles del cliente seleccionado
@@ -233,25 +251,24 @@ export function RegistrarPedido() {
     }
 
     setLoadingDetalle(true);
-    // Simular llamada API asincrónica
+    // Simular carga para información adicional
     await new Promise(resolve => setTimeout(resolve, 800));
     
-    // Simular información detallada del cliente
+    // Usar los datos reales del usuario si está disponible
     const detalleCompleto = {
       ...cliente,
-      fechaRegistro: '2023-01-15',
-      pedidosAnteriores: Math.floor(Math.random() * 20),
-      totalCompras: (Math.random() * 500000).toFixed(2),
-      categoriaCliente: 'Premium',
-      metodoPagoPreferido: 'Tarjeta de Crédito'
+      fechaRegistro: usuarioDetalleActual?.created_at || '2023-01-15',
+      pedidosAnteriores: Math.floor(Math.random() * 20), // Esto podría venir de otra API
+      totalCompras: (Math.random() * 500000).toFixed(2), // Esto podría venir de otra API
+      categoriaCliente: 'Premium', // Esto podría calcularse basado en compras anteriores
+      metodoPagoPreferido: 'Tarjeta de Crédito' // Esto podría venir de preferencias del usuario
     };
     
     setDetalleCliente(detalleCompleto);
-    setDireccionEnvio(cliente.direccion);
     setLoadingDetalle(false);
   };
 
-  // Manejar cambio de cliente
+  // Manejar cambio de cliente (ahora solo permite seleccionar el usuario actual)
   const handleClienteChange = (event, newValue) => {
     setClienteSeleccionado(newValue);
     cargarDetalleCliente(newValue);
@@ -272,6 +289,24 @@ export function RegistrarPedido() {
           sx={{ backgroundColor: '#F06292' }}
         >
           Ir a Productos
+        </Button>
+      </Box>
+    );
+  }
+
+  // Si no hay usuario logueado
+  if (!userData || !userData.usuarioId) {
+    return (
+      <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Debes iniciar sesión para registrar un pedido.
+        </Alert>
+        <Button
+          variant="contained"
+          onClick={() => navigate('/user/login')}
+          sx={{ backgroundColor: '#F06292' }}
+        >
+          Iniciar Sesión
         </Button>
       </Box>
     );
@@ -318,6 +353,7 @@ export function RegistrarPedido() {
     // Aquí iría la lógica para enviar el pedido al backend
     const pedidoData = {
       cliente: clienteSeleccionado,
+      usuarioDetalle: usuarioDetalleActual, // Incluir datos completos del usuario
       fecha: fechaActual,
       direccionEnvio,
       estado: estadoPedido,
@@ -357,6 +393,13 @@ export function RegistrarPedido() {
           REGISTRAR PEDIDO
         </Typography>
       </Box>
+
+      {/* Mostrar errores si los hay */}
+      {errorUsuarioDetalle && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {errorUsuarioDetalle}
+        </Alert>
+      )}
 
       <Grid container spacing={4}>
         {/* Encabezado del Pedido */}
@@ -426,17 +469,18 @@ export function RegistrarPedido() {
                     getOptionLabel={(option) => `${option.nombre} - ${option.email}`}
                     value={clienteSeleccionado}
                     onChange={handleClienteChange}
-                    loading={loadingClientes}
+                    loading={loadingUsuarioDetalle}
+                    disabled={true} // Deshabilitar ya que solo hay un cliente (el usuario actual)
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Seleccionar Cliente"
+                        label="Cliente (Usuario actual)"
                         variant="outlined"
                         InputProps={{
                           ...params.InputProps,
                           endAdornment: (
                             <React.Fragment>
-                              {loadingClientes ? <CircularProgress color="inherit" size={20} /> : null}
+                              {loadingUsuarioDetalle ? <CircularProgress color="inherit" size={20} /> : null}
                               {params.InputProps.endAdornment}
                             </React.Fragment>
                           ),
@@ -659,7 +703,7 @@ export function RegistrarPedido() {
                 fullWidth
                 size="large"
                 onClick={procesarPedido}
-                disabled={loading || !clienteSeleccionado || !direccionEnvio.trim()}
+                disabled={loading || !clienteSeleccionado || !direccionEnvio.trim() || loadingUsuarioDetalle}
                 sx={{
                   backgroundColor: '#F06292',
                   color: 'white',

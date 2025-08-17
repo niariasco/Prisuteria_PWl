@@ -37,6 +37,8 @@ require_once "models/PromocionModel.php";
 require_once "models/ResenaModel.php";
 require_once "models/CategoriaModel.php";
 require_once "models/EtiquetasModel.php";
+require_once "models/UsuarioDetalleModel.php";
+
 
 
 
@@ -59,6 +61,7 @@ require_once "controllers/PromocionController.php";
 require_once "controllers/ResenaController.php";
 require_once "controllers/CategoriaController.php";
 require_once "controllers/EtiquetasController.php";
+require_once "controllers/UsuarioDetalleController.php";
 
 
 //Enrutador
