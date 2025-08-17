@@ -31,14 +31,71 @@ export function DetalleProductos({ isShopping }) {
   const [precioBase, setPrecioBase] = useState(0); 
   const [precioBaseConDescuento, setPrecioBaseConDescuento] = useState(0);
   const [calculandoPrecio, setCalculandoPrecio] = useState(false);
-  
+  const [errorCriterios, setErrorCriterios] = useState(''); //•	Se validará que el usuario haya seleccionado al menos una opción para cada criterio de personalización definida.
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const { addItem, cartItems } = useCart(); 
+  const { addItem } = useCart(); 
 
-  // Debug del carrito
-  console.log('Hook useCart disponible:', !!addItem);
-  console.log('Items en carrito:', cartItems?.length || 0);
+// Función que valida que todos los criterios tengan selección
+const validarCriterios = () => {
+  if (!data || !data.criterios) return true;
+
+  const faltantes = data.criterios.filter(
+    (criterio) => !opcionesSeleccionadas[criterio.id]
+  );
+
+  if (faltantes.length > 0) {
+    setErrorCriterios('Debe seleccionar al menos una opción para cada criterio.');
+    return false;
+  }
+
+  setErrorCriterios('');
+  return true;
+};
+
+const handleAddToCart = () => {
+  try {
+    // Validar criterios antes de continuar
+    if (!validarCriterios()) {
+      alert(' Seleccione al menos una opción en cada criterio de personalización.');
+      return;
+    }
+
+    if (!addItem) {
+      console.error('addItem no está disponible');
+      alert('Error: No se puede agregar al carrito en este momento');
+      return;
+    }
+
+    if (!data) {
+      console.error('No hay datos del producto');
+      return;
+    }
+
+    const productoPreparado = ProductoService.prepararProductoParaCarrito(data);
+    const precioFinal = precioTotal;
+
+    const productoParaCarrito = {
+      ...productoPreparado,
+      opcionesPersonalizacion: opcionesSeleccionadas,
+      precio_unitario: precioFinal,
+      precio_total: precioFinal,
+      nombre: getProductName(data),
+      descripcion: getProductDescription(data),
+      imagen: data.imagenes?.[0] || null,
+      id: data.productosId || data.id,
+      productoId: data.productosId || data.id
+    };
+
+    console.log('Agregando al carrito:', productoParaCarrito);
+
+    addItem(productoParaCarrito);
+    alert(`${getProductName(data)} agregado al carrito`);
+  } catch (error) {
+    console.error('Error al agregar producto al carrito:', error);
+    alert('Error al agregar el producto al carrito');
+  }
+};
 
   // Funciones de conversión de moneda (agregadas desde ListaCartasProductos)
   const EXCHANGE_RATE = 500; // 1 USD = 500 CRC
@@ -211,57 +268,6 @@ export function DetalleProductos({ isShopping }) {
     await actualizarPrecio(nuevasOpciones);
   };
 
-  const handleAddToCart = () => {
-    try {
-      // Verificar que addItem existe
-      if (!addItem) {
-        console.error('addItem no está disponible');
-        alert('Error: No se puede agregar al carrito en este momento');
-        return;
-      }
-
-      // Verificar que hay datos del producto
-      if (!data) {
-        console.error('No hay datos del producto');
-        return;
-      }
-
-      // Preparar el producto base
-      const productoPreparado = ProductoService.prepararProductoParaCarrito(data);
-
-      // Usar el precio total calculado (que ya incluye personalizaciones)
-      const precioFinal = precioTotal;
-
-      // Crear el objeto para el carrito
-      const productoParaCarrito = {
-        ...productoPreparado,
-        // Incluir las opciones seleccionadas
-        opcionesPersonalizacion: opcionesSeleccionadas,
-        precio_unitario: precioFinal,
-        precio_total: precioFinal,
-        // Información adicional útil
-        nombre: getProductName(data),
-        descripcion: getProductDescription(data),
-        imagen: data.imagenes?.[0] || null,
-        // IDs importantes
-        id: data.productosId || data.id,
-        productoId: data.productosId || data.id
-      };
-
-      console.log('Agregando al carrito:', productoParaCarrito);
-      
-      // Agregar al carrito
-      addItem(productoParaCarrito);
-
-      // Mostrar confirmación
-      alert(`${getProductName(data)} agregado al carrito`);
-      
-    } catch (error) {
-      console.error('Error al agregar producto al carrito:', error);
-      alert('Error al agregar el producto al carrito');
-    }
-  };
-
   useEffect(() => {
     ProductoService.getProductoById(id)
       .then((response) => {
@@ -389,6 +395,7 @@ export function DetalleProductos({ isShopping }) {
               )}
 
               {data.criterios.map((criterio) => (
+                
                 <Box key={criterio.id} sx={{ mb: 2 }}>
                   <Typography variant="subtitle1" sx={{ mb: 0.5 }}>{criterio.nombre}:</Typography>
                   <select
@@ -416,6 +423,12 @@ export function DetalleProductos({ isShopping }) {
                 </Box>
               ))}
 
+    {/*  Aquí mostramos el error si falta selección */}
+{errorCriterios && (
+  <Typography variant="body2" sx={{ color: 'red', mt: 1 }}>
+    {errorCriterios}
+  </Typography>
+)}
               {/* Precio total destacado con conversión */}
               <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d83b6a' }}>
                 {t('precio_total', 'Precio Total')}: {formatPrice(precioTotal)}
@@ -428,36 +441,27 @@ export function DetalleProductos({ isShopping }) {
             </Box>
           )}
 
-
           {isShopping && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-              <Typography variant="body1">
-                <strong>{t('cantidad', 'Cantidad')}:</strong>
-              </Typography>
-            </Box>
-          )}
-
-          {isShopping && (
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              startIcon={<AddShoppingCartIcon />}
-              onClick={handleAddToCart}  
-              disabled={calculandoPrecio}
-              sx={{ 
-                mt: 2,
-                backgroundColor: '#d83b6a',
-                '&:hover': {
-                  backgroundColor: '#c12955'
-                },
-                '&:disabled': {
-                  backgroundColor: '#ccc'
-                }
-              }}
-            >
-              {calculandoPrecio ? 'Calculando...' : t('agregarAlCarrito')}
-            </Button>
+          <Button
+  variant="contained"
+  color="primary"
+  size="large"
+  startIcon={<AddShoppingCartIcon />}
+  onClick={handleAddToCart}  
+  disabled={calculandoPrecio || (data.criterios?.length > 0 && Object.keys(opcionesSeleccionadas).length < data.criterios.length)}
+  sx={{ 
+    mt: 2,
+    backgroundColor: '#d83b6a',
+    '&:hover': {
+      backgroundColor: '#c12955'
+    },
+    '&:disabled': {
+      backgroundColor: '#ccc'
+    }
+  }}
+>
+  {calculandoPrecio ? 'Calculando...' : t('agregarAlCarrito')}
+</Button>
           )}
         </Grid>
 
