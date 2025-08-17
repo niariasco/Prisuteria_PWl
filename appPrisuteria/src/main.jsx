@@ -83,7 +83,8 @@ const rutas = createBrowserRouter([
       { path: '/user/create', element: <Signup /> },
 
       { path: '/producto', element: <ListaProductos /> },
-      { path: '/producto/:id', element: <DetalleProductos /> },
+      { path: '/producto/:id', element: <DetalleProductos isShopping={true} /> },
+
       { path: '/resena', element: <ListaResenas /> },
       { path: '/resena/:id', element: <DetalleResenas /> },
       { path: '/promocion', element: <ListaPromociones /> },
