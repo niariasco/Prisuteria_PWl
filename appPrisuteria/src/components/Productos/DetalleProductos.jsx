@@ -31,7 +31,6 @@ export function DetalleProductos({ isShopping }) {
   const [precioBase, setPrecioBase] = useState(0); 
   const [precioBaseConDescuento, setPrecioBaseConDescuento] = useState(0);
   const [calculandoPrecio, setCalculandoPrecio] = useState(false);
-  const [cantidad, setCantidad] = useState(1);
   
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
@@ -238,9 +237,8 @@ export function DetalleProductos({ isShopping }) {
         ...productoPreparado,
         // Incluir las opciones seleccionadas
         opcionesPersonalizacion: opcionesSeleccionadas,
-        cantidad: cantidad,
         precio_unitario: precioFinal,
-        precio_total: precioFinal * cantidad,
+        precio_total: precioFinal,
         // Información adicional útil
         nombre: getProductName(data),
         descripcion: getProductDescription(data),
@@ -256,7 +254,7 @@ export function DetalleProductos({ isShopping }) {
       addItem(productoParaCarrito);
 
       // Mostrar confirmación
-      alert(`${getProductName(data)} agregado al carrito (Cantidad: ${cantidad})`);
+      alert(`${getProductName(data)} agregado al carrito`);
       
     } catch (error) {
       console.error('Error al agregar producto al carrito:', error);
@@ -436,21 +434,6 @@ export function DetalleProductos({ isShopping }) {
               <Typography variant="body1">
                 <strong>{t('cantidad', 'Cantidad')}:</strong>
               </Typography>
-              <select
-                value={cantidad}
-                onChange={(e) => setCantidad(parseInt(e.target.value))}
-                style={{
-                  padding: '8px',
-                  borderRadius: '4px',
-                  border: '1px solid #ccc',
-                  fontSize: '14px',
-                  minWidth: '60px'
-                }}
-              >
-                {[1,2,3,4,5,6,7,8,9,10].map(num => (
-                  <option key={num} value={num}>{num}</option>
-                ))}
-              </select>
             </Box>
           )}
 
