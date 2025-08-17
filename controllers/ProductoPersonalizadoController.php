@@ -1,67 +1,92 @@
 <?php
-class ProductoPersonalizadoController
+class ProductoP
 {
-
-        public function index()
-    {
-        try {
-            $response = new Response();
-            //Instancia modelo
-            $productoM = new ProductoPersonalizadoModel;
-            //Método del modelo
-            $result = $productoM->getAll();
-            //Dar respuesta
-            $response->toJSON($result);
-        } catch (Exception $e) {
-            handleException($e);
-        }
-    }
-    // Listar personalizados de un usuario
-    public function personalizadosPorUsuario($usuarioId)
+    //GET listar todos los productos personalizados
+    public function index()
     {
         try {
             $response = new Response();
             $model = new ProductoPersonalizadoModel();
-
-            $result = $model->getPorUsuario($usuarioId);
-
+            $result = $model->getAll();
             $response->toJSON($result);
         } catch (Exception $e) {
             handleException($e);
         }
     }
 
-    // Crear producto personalizado
-    public function create()
-    {
-        try {
-            $request = new Request();
-            $response = new Response();
-            $inputJSON = $request->getJSON();
-
-            $model = new ProductoPersonalizadoModel();
-            $nuevo = $model->create($inputJSON);
-
-            $response->toJSON($nuevo);
-        } catch (Exception $e) {
-            handleException($e);
-        }
-    }
-
-    // Obtener un producto personalizado por ID
+    //GET obtener producto personalizado por ID
     public function get($id)
     {
         try {
             $response = new Response();
             $model = new ProductoPersonalizadoModel();
+            $producto = $model->get($id);
 
-            $result = $model->get($id);
-
-            if (!$result) {
+            if (!$producto) {
                 throw new Exception("Producto personalizado no encontrado");
             }
 
-            $response->toJSON($result);
+            $response->toJSON($producto);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+    //POST calcular precio total
+    public function calcularPrecioTotal()
+    {
+        try {
+            $response = new Response();
+            $request = new Request();
+            $data = $request->getJSON();
+
+            // Soporte GET para pruebas en navegador
+            if (!$data) {
+                $data = [
+                    "productoBaseId" => $_GET['productoBaseId'] ?? null,
+                    "opciones" => isset($_GET['opciones']) ? json_decode($_GET['opciones'], true) : []
+                ];
+            }
+
+            if (!$data['productoBaseId'] || !isset($data['opciones'])) {
+                throw new Exception("Datos incompletos para calcular precio.");
+            }
+
+            $model = new ProductoPersonalizadoModel();
+            $precioTotal = $model->calcularPrecioTotal($data['productoBaseId'], $data['opciones']);
+
+            $response->toJSON([
+                "success" => true,
+                "precioTotal" => $precioTotal
+            ]);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+    //POST crear producto personalizado
+    public function create()
+    {
+        try {
+            $response = new Response();
+            $request = new Request();
+            $data = $request->getJSON();
+
+            if (!$data['usuarioId'] || !$data['productoBaseId'] || !isset($data['opciones'])) {
+                throw new Exception("Datos incompletos para crear producto personalizado.");
+            }
+
+            $model = new ProductoPersonalizadoModel();
+            $idProducto = $model->guardarProductoPersonalizado(
+                $data['usuarioId'],
+                $data['productoBaseId'],
+                $data['opciones']
+            );
+
+            $response->toJSON([
+                "success" => true,
+                "productoPersonalizadoId" => $idProducto
+            ]);
         } catch (Exception $e) {
             handleException($e);
         }

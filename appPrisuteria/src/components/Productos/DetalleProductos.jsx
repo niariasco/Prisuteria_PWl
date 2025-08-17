@@ -5,56 +5,34 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Grid from '@mui/material/Grid';
 import ProductoService from '../../services/ProductoService';
 import PropTypes from 'prop-types';
-import { IconButton, Box, Rating, Divider, Chip } from '@mui/material';
+import { Button, Box, Rating, Divider, Chip } from '@mui/material';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import Button from '@mui/material/Button';
 import { FormResena } from './Forms/FormResena';
+import { useTranslation } from 'react-i18next';
 import productTranslations from '../../translations/productTranslations.json';
 import categoryTranslations from '../../translations/categoryTranslations.json';
-import { useTranslation } from 'react-i18next';
+import ProductosPService from '../../services/ProductosPService';
 
-export function DetalleProductos({ addItem }) {
-  const routeParams = useParams();
+export function DetalleProductos({ addItem, isShopping }) {
+  const { id } = useParams();
   const BASE_URL = import.meta.env.VITE_BASE_URL + 'uploads';
   const [data, setData] = useState(null);
-  const [error] = useState('');
   const [loaded, setLoaded] = useState(false);
-  const [selecciones] = useState({});
+  const [opcionesSeleccionadas, setOpcionesSeleccionadas] = useState({});
+  const [precioTotal, setPrecioTotal] = useState(0);
+  const [precioBase, setPrecioBase] = useState(0); 
+  const [calculandoPrecio, setCalculandoPrecio] = useState(false); // Estado para mostrar loading
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
 
-  const [opcionesSeleccionadas, setOpcionesSeleccionadas] = useState({});
-
-const formatCRC0 = (n) =>
-  Number(n ?? 0).toLocaleString('es-CR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-
-  // Precio total dinámico
-  const [precioTotal, setPrecioTotal] = useState(data ? data.precio : 0);
-
-  const calcularPrecioTotal = (opciones, productoBase) => {
-    if (!productoBase) return 0;
-
-    // Base: usa el precio con descuento si existe, sino el normal
-    const base = productoBase.precio_con_descuento != null
-      ? parseFloat(productoBase.precio_con_descuento)
-      : parseFloat(productoBase.precio) || 0;
-
-    // Suma de adicionales
-    let extras = 0;
-    Object.values(opciones).forEach((opcion) => {
-      extras += parseFloat(opcion?.precio_adicional || 0);
-    });
-
-    return base + extras;
-  };
+  const formatCRC0 = (n) =>
+    Number(n ?? 0).toLocaleString('es-CR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
   const getProductName = (producto) => {
-    if (producto.translations && producto.translations[i18n.language]) {
-      return producto.translations[i18n.language];
-    }
+    if (producto.translations && producto.translations[i18n.language]) return producto.translations[i18n.language];
     const productName = producto.nombre;
     if (productTranslations.products[productName] && productTranslations.products[productName][i18n.language]) {
       return productTranslations.products[productName][i18n.language];
@@ -63,9 +41,7 @@ const formatCRC0 = (n) =>
   };
 
   const getProductDescription = (producto) => {
-    if (producto.translations && producto.translations[i18n.language]?.description) {
-      return producto.translations[i18n.language].description;
-    }
+    if (producto.translations && producto.translations[i18n.language]?.description) return producto.translations[i18n.language].description;
     if (
       productTranslations.products[producto.nombre] &&
       productTranslations.products[producto.nombre].description &&
@@ -77,9 +53,7 @@ const formatCRC0 = (n) =>
   };
 
   const getCategoryName = (categoria) => {
-    if (categoria.translations && categoria.translations[i18n.language]) {
-      return categoria.translations[i18n.language];
-    }
+    if (categoria.translations && categoria.translations[i18n.language]) return categoria.translations[i18n.language];
     const categoryName = categoria.nombreSCategoria;
     if (categoryTranslations.categories[categoryName] && categoryTranslations.categories[categoryName][i18n.language]) {
       return categoryTranslations.categories[categoryName][i18n.language];
@@ -91,53 +65,196 @@ const formatCRC0 = (n) =>
     if (!fecha) return 'Fecha no disponible';
     let fechaObj;
     if (fecha instanceof Date) fechaObj = fecha;
-    else if (typeof fecha === 'string') {
-      if (fecha.includes('T')) fechaObj = new Date(fecha);
-      else fechaObj = new Date(fecha.replace(' ', 'T'));
-    } else if (typeof fecha === 'number') fechaObj = new Date(fecha);
+    else if (typeof fecha === 'string') fechaObj = new Date(fecha.includes('T') ? fecha : fecha.replace(' ', 'T'));
+    else if (typeof fecha === 'number') fechaObj = new Date(fecha);
     else return 'Fecha no disponible';
-    if (isNaN(fechaObj.getTime())) return 'Fecha no disponible';
-    return fechaObj.toLocaleDateString('es-CR', { year: 'numeric', month: 'long', day: 'numeric' });
+    return isNaN(fechaObj.getTime()) ? 'Fecha no disponible' : fechaObj.toLocaleDateString('es-CR', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
+  // Función para calcular precio localmente (fallback)
+  const calcularPrecioLocal = (opcionesSeleccionadas) => {
+    let precioCalculado = precioBase;
+    
+    Object.values(opcionesSeleccionadas).forEach(opcion => {
+      if (opcion && opcion.precio_adicional) {
+        precioCalculado += parseFloat(opcion.precio_adicional) || 0;
+      }
+    });
+    
+    return precioCalculado;
+  };
+
+  // Función para actualizar el precio
+  const actualizarPrecio = async (nuevasOpciones) => {
+    setCalculandoPrecio(true);
+    
+    try {
+      // Filtrar opciones válidas - manejar tanto string como number IDs
+      const opcionesValidas = Object.entries(nuevasOpciones)
+        .filter(([criterioId, opcion]) => opcion && opcion.id)
+        .map(([criterioId, opcion]) => ({
+          criterioId: parseInt(criterioId),
+          opcionId: parseInt(opcion.id) // Convertir a número para el servicio
+        }));
+
+      if (opcionesValidas.length === 0) {
+        setPrecioTotal(precioBase);
+        setCalculandoPrecio(false);
+        return;
+      }
+
+      // Intentar calcular precio con el servicio
+      try {
+        const response = await ProductosPService.calcularPrecioTotal(
+        data.productosId || data.id, 
+         opcionesValidas
+        );
+        
+        console.log('Respuesta del servicio:', response);
+        
+        if (response && response.precioTotal !== undefined) {
+          setPrecioTotal(parseFloat(response.precioTotal));
+        } else {
+          // Fallback: calcular localmente
+          console.warn('Respuesta inválida del servicio, calculando localmente');
+          setPrecioTotal(calcularPrecioLocal(nuevasOpciones));
+        }
+      } catch (serviceError) {
+        console.error('Error en servicio, calculando localmente:', serviceError);
+        // Fallback: calcular localmente
+        setPrecioTotal(calcularPrecioLocal(nuevasOpciones));
+      }
+    } catch (error) {
+      console.error('Error calculando precio:', error);
+      // En caso de error, mantener el precio actual o usar el base
+      setPrecioTotal(precioBase);
+    } finally {
+      setCalculandoPrecio(false);
+    }
+  };
+
+  // Manejar cambio de opción
+  const handleOpcionChange = async (criterioId, e) => {
+    const opcionIdStr = e.target.value; // Mantener como string
+    
+    console.log('=== DEBUG handleOpcionChange ===');
+    console.log('criterioId:', criterioId);
+    console.log('opcionIdStr:', opcionIdStr, typeof opcionIdStr);
+    
+    if (!opcionIdStr || opcionIdStr === '') {
+      // Si no se selecciona opción, remover del estado
+      const nuevasOpciones = { ...opcionesSeleccionadas };
+      delete nuevasOpciones[criterioId];
+      setOpcionesSeleccionadas(nuevasOpciones);
+      await actualizarPrecio(nuevasOpciones);
+      return;
+    }
+
+    // Encontrar la opción seleccionada
+    const criterio = data.criterios.find(c => c.id === criterioId || c.id === String(criterioId));
+    if (!criterio) {
+      console.error('Criterio no encontrado:', criterioId);
+      console.error('Criterios disponibles:', data.criterios.map(c => ({ id: c.id, nombre: c.nombre })));
+      return;
+    }
+
+    console.log('criterio encontrado:', criterio);
+    console.log('criterio.opciones:', criterio.opciones);
+
+    // Buscar opción comparando tanto string como número
+    const opcionSeleccionada = criterio.opciones?.find(op => 
+      op.id === opcionIdStr || op.id === parseInt(opcionIdStr) || String(op.id) === opcionIdStr
+    );
+    
+    if (!opcionSeleccionada) {
+      console.error('Opción no encontrada:', opcionIdStr);
+      console.error('Opciones disponibles en criterio:', criterio.opciones?.map(op => ({ id: op.id, tipo: typeof op.id, nombre: op.nombre })));
+      return;
+    }
+
+    console.log('opcionSeleccionada:', opcionSeleccionada);
+
+    // Actualizar estado con la nueva opción
+    const nuevasOpciones = {
+      ...opcionesSeleccionadas,
+      [criterioId]: {
+        ...opcionSeleccionada,
+        criterioId: criterioId
+      }
+    };
+
+    console.log('nuevasOpciones:', nuevasOpciones);
+    setOpcionesSeleccionadas(nuevasOpciones);
+    await actualizarPrecio(nuevasOpciones);
   };
 
   useEffect(() => {
-    ProductoService.getProductoById(routeParams.id)
+    ProductoService.getProductoById(id)
       .then((response) => {
         const producto = response.data;
+        
+        console.log('=== DEBUG PRODUCTO CARGADO ===');
+        console.log('producto completo:', producto);
+        console.log('criterios:', producto.criterios);
+        
+        // Log detallado de criterios y opciones
+        if (producto.criterios) {
+          producto.criterios.forEach((criterio, index) => {
+            console.log(`Criterio ${index}:`, {
+              id: criterio.id,
+              nombre: criterio.nombre,
+              opciones: criterio.opciones
+            });
+          });
+        }
+        
         producto.etiquetas = producto.etiquetas || [];
         producto.resenas = producto.resenas || [];
         producto.promedio_valoracion = producto.promedio_valoracion || 0;
+        
+        const precio = parseFloat(producto.precio) || 0;
+        setPrecioBase(precio);
+        setPrecioTotal(precio);
         setData(producto);
-        setPrecioTotal(producto.precio); // Inicializa precio base
         setLoaded(true);
       })
-      .catch((err) => console.error('Error al cargar producto:', err));
-  }, [routeParams.id]);
+      .catch((err) => {
+        console.error('Error al cargar producto:', err);
+        setLoaded(true);
+      });
+  }, [id]);
 
   if (!loaded) return <p>Cargando...</p>;
-  if (error) return <p>Error: {error.message}</p>;
+  if (!data) return <p>Producto no disponible</p>;
+
+  const handleAddToCart = (producto) => {
+    const seleccionesValidas = Object.entries(opcionesSeleccionadas)
+      .map(([criterioId, op]) => ({
+        criterioId: Number(criterioId),
+        opcionId: op?.id ?? null,
+      }))
+      .filter(sel => sel.opcionId !== null);
+
+    addItem({
+      ...producto,
+      selecciones: seleccionesValidas,
+      precio_total: precioTotal,
+    });
+  };
 
   return (
     <Container maxWidth="md" sx={{ mt: 6, mb: 6 }}>
       <Grid container spacing={4}>
-        {/* Imagen del producto */}
+        {/* Imagen */}
         <Grid item xs={12} md={6}>
           {data.imagenes && data.imagenes.length > 0 ? (
             data.imagenes.length === 1 ? (
-              <img
-                src={`${BASE_URL}/${data.imagenes[0]}`}
-                alt="producto"
-                style={{ width: '100%', maxHeight: 400, objectFit: 'contain', borderRadius: 10 }}
-              />
+              <img src={`${BASE_URL}/${data.imagenes[0]}`} alt="producto" style={{ width: '100%', maxHeight: 400, objectFit: 'contain', borderRadius: 10 }} />
             ) : (
               <Slider dots infinite speed={500} slidesToShow={1} slidesToScroll={1} arrows>
-                {data.imagenes.map((img, index) => (
-                  <div key={index}>
-                    <img
-                      src={`${BASE_URL}/${img}`}
-                      alt={`img-${index}`}
-                      style={{ width: '100%', maxHeight: 400, objectFit: 'contain', borderRadius: 10 }}
-                    />
+                {data.imagenes.map((img, idx) => (
+                  <div key={idx}>
+                    <img src={`${BASE_URL}/${img}`} alt={`img-${idx}`} style={{ width: '100%', maxHeight: 400, objectFit: 'contain', borderRadius: 10 }} />
                   </div>
                 ))}
               </Slider>
@@ -147,25 +264,17 @@ const formatCRC0 = (n) =>
           )}
         </Grid>
 
+        {/* Información */}
         <Grid item xs={12} md={6}>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#d83b6a' }}>
             {getProductName(data)}
           </Typography>
 
-          {data.precio_con_descuento && data.precio_con_descuento !== data.precio ? (
-            <>
-              <Typography sx={{ textDecoration: 'line-through', color: 'gray' }}>
-                ₡{formatCRC0(data.precio)}
-              </Typography>
-              <Typography variant="h6" sx={{ color: '#d83b6a', fontWeight: 'bold' }}>
-                ₡{Math.round(parseFloat(data.precio_con_descuento)).toLocaleString('es-CR')}
-              </Typography>
-            </>
-          ) : (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <Typography variant="h6" sx={{ color: '#d83b6a', fontWeight: 'bold' }}>
-              ₡{formatCRC0(data.precio)}
-            </Typography>
-          )}
+            {formatCRC0(precioBase)}
+            </Typography>      
+          </Box>
 
           <Typography variant="subtitle1" gutterBottom color="text.secondary">
             {getProductDescription(data)}
@@ -175,21 +284,14 @@ const formatCRC0 = (n) =>
             <strong>{t('promocion.options.category')}</strong> : {getCategoryName(data)}
           </Typography>
 
-          {typeof data.etiquetas === 'string' && data.etiquetas.length > 0 ? (
-            data.etiquetas.split(',').map((etiqueta, index) => (
-              <Chip
-                key={index}
-                label={t(`tags.${etiqueta.trim()}`, { defaultValue: etiqueta.trim() })}
-                variant="outlined"
-                color="primary"
-                sx={{ mr: 1, mb: 1 }}
-              />
-            ))
-          ) : (
-            <Typography variant="body2"></Typography>
-          )}
+          {/* Etiquetas */}
+          {typeof data.etiquetas === 'string' && data.etiquetas.length > 0
+            ? data.etiquetas.split(',').map((etiqueta, idx) => (
+                <Chip key={idx} label={t(`tags.${etiqueta.trim()}`, { defaultValue: etiqueta.trim() })} variant="outlined" color="primary" sx={{ mr: 1, mb: 1 }} />
+              ))
+            : null}
 
-          {/* Valoración promedio */}
+          {/* Valoración */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Typography variant="body1" sx={{ mr: 1 }}>
               <strong> {t('valoracion')}</strong> :
@@ -203,100 +305,81 @@ const formatCRC0 = (n) =>
             )}
           </Box>
 
-          {/* CRITERIOS DE PERSONALIZACIÓN */}
+          {/* Personalización */}
           {data.criterios && data.criterios.length > 0 && (
             <Box sx={{ mt: 3, mb: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
                 {t('personalizar_producto')}
               </Typography>
 
+              {/* Mostrar precio base */}
+                  {Object.keys(opcionesSeleccionadas).length === 0 && (
+                  <Typography variant="body2" sx={{ color: '#999', fontStyle: 'italic', mt: 1 }}>
+                    Seleccione las opciones para personalizar su producto
+                  </Typography>
+                )}
+
               {data.criterios.map((criterio) => (
                 <Box key={criterio.id} sx={{ mb: 2 }}>
                   <Typography variant="subtitle1" sx={{ mb: 0.5 }}>{criterio.nombre}:</Typography>
                   <select
-                    onChange={(e) => {
-                      const opcionSeleccionada = criterio.opciones.find(
-                        (op) => op.id === Number(e.target.value)
-                      );
-
-                      setOpcionesSeleccionadas((prev) => {
-                        const nuevoEstado = { ...prev, [criterio.id]: opcionSeleccionada };
-
-                        // Recalcular precio total dinámico
-                        const total = calcularPrecioTotal(nuevoEstado, data);
-                        setPrecioTotal(total);
-
-                        return nuevoEstado;
-                      });
+                    value={opcionesSeleccionadas[criterio.id]?.id || ''}
+                    onChange={(e) => handleOpcionChange(criterio.id, e)}
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '4px',
+                      border: '1px solid #ccc',
+                      fontSize: '14px',
+                      color: opcionesSeleccionadas[criterio.id]?.id ? '#000' : '#666'
                     }}
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                    disabled={calculandoPrecio}
                   >
-                    <option value="">{t('seleccione_opcion')}</option>
-                    {criterio.opciones.map((opcion) => (
-                      <option key={opcion.id} value={opcion.id}>
-                        {opcion.nombre} (+{formatCRC0(opcion.precio_adicional)})
+                    <option value="" style={{ color: '#666', fontStyle: 'italic' }}>
+                      {t('seleccione_opcion', 'Seleccione una opción...')}
+                    </option>
+                    {criterio.opciones && Array.isArray(criterio.opciones) && criterio.opciones.map((opcion) => (
+                      <option key={opcion.id} value={opcion.id} style={{ color: '#000' }}>
+                        {opcion.nombre} (+₡{formatCRC0(opcion.precio_adicional || 0)})
                       </option>
                     ))}
                   </select>
-
-                  {opcionesSeleccionadas[criterio.id] && (
-                    <Box sx={{ mt: 1, p: 2, backgroundColor: '#f0f8ff', borderRadius: 1 }}>
-                      <Typography variant="body2" color="primary">
-                        ✓ Seleccionado: {opcionesSeleccionadas[criterio.id].nombre}
-                        (+{formatCRC0(opcionesSeleccionadas[criterio.id].precio_adicional)})
-                      </Typography>
-                    </Box>
-                  )}
                 </Box>
               ))}
 
+              {/* Precio total destacado */}
              
-
-            
-              {/* Precio total */}
-           <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d83b6a', textAlign: 'center' }}>
-                {t('precio_total', 'Precio Total')}: {formatCRC0(precioTotal)}
-              </Typography>
-              {Object.entries(opcionesSeleccionadas).map(([criterioId, opcion]) => {
-                const criterio = data.criterios.find(c => c.id === Number(criterioId));
-                if (!criterio || !opcion) return null;
-                return (
-                  <Typography key={criterioId} variant="body2" color="text.secondary">
-                    {criterio.nombre}: +{formatCRC0(opcion.precio_adicional)}
+                <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d83b6a' }}>
+                  {t('precio_total', 'Precio Total')}: {formatCRC0(precioTotal)}
+                </Typography>
+                {calculandoPrecio && (
+                  <Typography variant="body2" sx={{ color: '#666', mt: 1 }}>
+                    Actualizando precio...
                   </Typography>
-                );
-              })}
+                )}
             </Box>
           )}
 
           {/* Botón agregar al carrito */}
-          <IconButton
-            aria-label="Comprar"
-            sx={{
-              ml: 'auto',
-              backgroundColor: '#d83b6a',
-              color: 'white',
-              '&:hover': { backgroundColor: '#b03052' },
-              padding: '12px',
-              borderRadius: '8px',
-            }}
-            onClick={() => addItem({ ...data, selecciones, precio_total: precioTotal })}
-          >
-            <AddShoppingCartIcon sx={{ mr: 1 }} />
-            <Typography component="span" variant="body1">
-              {t('agregarAlCarrito')}
-            </Typography>
-          </IconButton>
-
-          <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
-            {'_________________________________________________'}
-          </Typography>
-          <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
-            {t('msjEnvio')}
-          </Typography>
-          <Typography variant="body1" gutterBottom sx={{ color: '#d83b6a' }}>
-            {t('msjEnvio2')}
-          </Typography>
+          {isShopping && (
+            <Button
+              variant="contained"
+              startIcon={<AddShoppingCartIcon />}
+              onClick={() => handleAddToCart(data)}
+              disabled={calculandoPrecio}
+              sx={{
+                backgroundColor: '#d83b6a',
+                color: '#fff',
+                '&:hover': { backgroundColor: '#b03052' },
+                '&:disabled': { backgroundColor: '#ccc' },
+                padding: '12px 24px',
+                borderRadius: '8px',
+                mt: 2,
+              }}
+            >
+              {calculandoPrecio ? 'Calculando...' : t('agregarAlCarrito')}
+            </Button>
+          )}
         </Grid>
 
         {/* Botón regresar */}
@@ -309,53 +392,28 @@ const formatCRC0 = (n) =>
         {/* Reseñas */}
         <Grid item xs={12}>
           <Divider sx={{ my: 3 }} />
-          <Typography variant="h5" gutterBottom sx={{ color: '#d83b6a' }}>
-            {t('FProduct_Reviews')}
-          </Typography>
+          <Typography variant="h5" gutterBottom sx={{ color: '#d83b6a' }}>{t('FProduct_Reviews')}</Typography>
 
           <Grid container spacing={2} sx={{ mb: 4 }}>
-            {Array.isArray(data.resenas) && data.resenas.length > 0 ? (
-              data.resenas
-                .filter((resena) => resena && !resena.status && resena.resenasId)
-                .map((resena, index) => (
-                  <Grid
-                    item
-                    xs={12}
-                    key={resena.resenasId || index}
-                    sx={{ mb: 2, borderBottom: '1px solid #d83b6a', pb: 2, backgroundColor: '#f9f9f9', borderRadius: 1, p: 2 }}
-                  >
-                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                      {resena.nombre || resena.usuario_nombre}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      {formatearFecha(resena.fecha)}
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 1 }}>
-                      {resena.comentario}
-                    </Typography>
+            {Array.isArray(data.resenas) && data.resenas.length > 0
+              ? data.resenas.filter((r) => r && !r.status && r.resenasId).map((resena) => (
+                  <Grid key={resena.resenasId} item xs={12} sx={{ mb: 2, borderBottom: '1px solid #d83b6a', pb: 2, backgroundColor: '#f9f9f9', borderRadius: 1, p: 2 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{resena.nombre || resena.usuario_nombre}</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{formatearFecha(resena.fecha)}</Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>{resena.comentario}</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Rating value={parseInt(resena.calificacion)} readOnly size="small" />
                     </Box>
                   </Grid>
                 ))
-            ) : (
-              <Grid item xs={12}>
-                <Typography variant="body1" color="text.secondary">
-                  {t('FNoreview')}
-                </Typography>
-              </Grid>
-            )}
+              : <Typography variant="body1" color="text.secondary">{t('FNoreview')}</Typography>}
           </Grid>
 
           <FormResena
-            productoId={parseInt(routeParams.id)}
+            productoId={parseInt(id)}
             onNuevaResena={(nuevaResena, nuevoPromedio) => {
               if (nuevaResena && !nuevaResena.status && nuevaResena.resenasId) {
-                setData((prevData) => ({
-                  ...prevData,
-                  resenas: [nuevaResena, ...(prevData.resenas || [])],
-                  promedio_valoracion: nuevoPromedio || prevData.promedio_valoracion,
-                }));
+                setData((prev) => ({ ...prev, resenas: [nuevaResena, ...(prev.resenas || [])], promedio_valoracion: nuevoPromedio || prev.promedio_valoracion }));
               }
             }}
           />
@@ -365,6 +423,4 @@ const formatCRC0 = (n) =>
   );
 }
 
-DetalleProductos.propTypes = {
-  addItem: PropTypes.func.isRequired,
-};
+DetalleProductos.propTypes = { addItem: PropTypes.func.isRequired, isShopping: PropTypes.bool };
