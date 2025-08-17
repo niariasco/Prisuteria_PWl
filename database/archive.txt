@@ -65,7 +65,7 @@ ___________________________________________________________________________
 -- Tabla de criterios de personalización
 CREATE TABLE criterios (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(255) NOT NULL,         -- Ej: Color, Tamaño, Grabado
+    nombre VARCHAR(255) NOT NULL,         
     descripcion TEXT
 );
 

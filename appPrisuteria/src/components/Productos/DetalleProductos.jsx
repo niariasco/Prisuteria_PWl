@@ -15,8 +15,13 @@ import { useTranslation } from 'react-i18next';
 import productTranslations from '../../translations/productTranslations.json';
 import categoryTranslations from '../../translations/categoryTranslations.json';
 import ProductosPService from '../../services/ProductosPService';
+import { useCart } from '../../hooks/useCart'; 
 
-export function DetalleProductos({ addItem, isShopping }) {
+DetalleProductos.propTypes = { 
+  isShopping: PropTypes.bool.isRequired
+};
+
+export function DetalleProductos({ isShopping }) {
   const { id } = useParams();
   const BASE_URL = import.meta.env.VITE_BASE_URL + 'uploads';
   const [data, setData] = useState(null);
@@ -26,8 +31,15 @@ export function DetalleProductos({ addItem, isShopping }) {
   const [precioBase, setPrecioBase] = useState(0); 
   const [precioBaseConDescuento, setPrecioBaseConDescuento] = useState(0);
   const [calculandoPrecio, setCalculandoPrecio] = useState(false);
+  const [cantidad, setCantidad] = useState(1);
+  
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const { addItem, cartItems } = useCart(); 
+
+  // Debug del carrito
+  console.log('Hook useCart disponible:', !!addItem);
+  console.log('Items en carrito:', cartItems?.length || 0);
 
   // Funciones de conversión de moneda (agregadas desde ListaCartasProductos)
   const EXCHANGE_RATE = 500; // 1 USD = 500 CRC
@@ -200,6 +212,58 @@ export function DetalleProductos({ addItem, isShopping }) {
     await actualizarPrecio(nuevasOpciones);
   };
 
+  const handleAddToCart = () => {
+    try {
+      // Verificar que addItem existe
+      if (!addItem) {
+        console.error('addItem no está disponible');
+        alert('Error: No se puede agregar al carrito en este momento');
+        return;
+      }
+
+      // Verificar que hay datos del producto
+      if (!data) {
+        console.error('No hay datos del producto');
+        return;
+      }
+
+      // Preparar el producto base
+      const productoPreparado = ProductoService.prepararProductoParaCarrito(data);
+
+      // Usar el precio total calculado (que ya incluye personalizaciones)
+      const precioFinal = precioTotal;
+
+      // Crear el objeto para el carrito
+      const productoParaCarrito = {
+        ...productoPreparado,
+        // Incluir las opciones seleccionadas
+        opcionesPersonalizacion: opcionesSeleccionadas,
+        cantidad: cantidad,
+        precio_unitario: precioFinal,
+        precio_total: precioFinal * cantidad,
+        // Información adicional útil
+        nombre: getProductName(data),
+        descripcion: getProductDescription(data),
+        imagen: data.imagenes?.[0] || null,
+        // IDs importantes
+        id: data.productosId || data.id,
+        productoId: data.productosId || data.id
+      };
+
+      console.log('Agregando al carrito:', productoParaCarrito);
+      
+      // Agregar al carrito
+      addItem(productoParaCarrito);
+
+      // Mostrar confirmación
+      alert(`${getProductName(data)} agregado al carrito (Cantidad: ${cantidad})`);
+      
+    } catch (error) {
+      console.error('Error al agregar producto al carrito:', error);
+      alert('Error al agregar el producto al carrito');
+    }
+  };
+
   useEffect(() => {
     ProductoService.getProductoById(id)
       .then((response) => {
@@ -231,28 +295,12 @@ export function DetalleProductos({ addItem, isShopping }) {
   if (!loaded) return <p>Cargando...</p>;
   if (!data) return <p>Producto no disponible</p>;
 
-  const handleAddToCart = (producto) => {
-    const seleccionesValidas = Object.entries(opcionesSeleccionadas)
-      .map(([criterioId, op]) => ({
-        criterioId: Number(criterioId),
-        opcionId: op?.id ?? null,
-      }))
-      .filter(sel => sel.opcionId !== null);
-
-    addItem({
-      ...producto,
-      selecciones: seleccionesValidas,
-      precio_total: precioTotal,
-    });
-  };
-
   // Determinar si hay promoción
   const tienePromo = data.precio_con_descuento && data.precio_con_descuento !== data.precio;
 
   return (
     <Container maxWidth="md" sx={{ mt: 6, mb: 6 }}>
       <Grid container spacing={4}>
-        {/* Imagen */}
         <Grid item xs={12} md={6}>
           {data.imagenes && data.imagenes.length > 0 ? (
             data.imagenes.length === 1 ? (
@@ -271,13 +319,11 @@ export function DetalleProductos({ addItem, isShopping }) {
           )}
         </Grid>
 
-        {/* Información */}
         <Grid item xs={12} md={6}>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#d83b6a' }}>
             {getProductName(data)}
           </Typography>
 
-          {/* Precios con conversión de moneda */}
           {tienePromo ? (
             <>
               <Typography sx={{ textDecoration: 'line-through', color: 'gray' }}>
@@ -313,14 +359,12 @@ export function DetalleProductos({ addItem, isShopping }) {
             <strong>{t('promocion.options.category')}</strong> : {getCategoryName(data)}
           </Typography>
 
-          {/* Etiquetas */}
           {typeof data.etiquetas === 'string' && data.etiquetas.length > 0
             ? data.etiquetas.split(',').map((etiqueta, idx) => (
                 <Chip key={idx} label={t(`tags.${etiqueta.trim()}`, { defaultValue: etiqueta.trim() })} variant="outlined" color="primary" sx={{ mr: 1, mb: 1 }} />
               ))
             : null}
 
-          {/* Valoración */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Typography variant="body1" sx={{ mr: 1 }}>
               <strong> {t('valoracion')}</strong> :
@@ -334,7 +378,6 @@ export function DetalleProductos({ addItem, isShopping }) {
             )}
           </Box>
 
-          {/* Personalización */}
           {data.criterios && data.criterios.length > 0 && (
             <Box sx={{ mt: 3, mb: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
@@ -387,21 +430,47 @@ export function DetalleProductos({ addItem, isShopping }) {
             </Box>
           )}
 
-          {/* Botón agregar al carrito */}
+
+          {isShopping && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Typography variant="body1">
+                <strong>{t('cantidad', 'Cantidad')}:</strong>
+              </Typography>
+              <select
+                value={cantidad}
+                onChange={(e) => setCantidad(parseInt(e.target.value))}
+                style={{
+                  padding: '8px',
+                  borderRadius: '4px',
+                  border: '1px solid #ccc',
+                  fontSize: '14px',
+                  minWidth: '60px'
+                }}
+              >
+                {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                  <option key={num} value={num}>{num}</option>
+                ))}
+              </select>
+            </Box>
+          )}
+
           {isShopping && (
             <Button
               variant="contained"
+              color="primary"
+              size="large"
               startIcon={<AddShoppingCartIcon />}
-              onClick={() => handleAddToCart(data)}
+              onClick={handleAddToCart}  
               disabled={calculandoPrecio}
-              sx={{
-                backgroundColor: '#d83b6a',
-                color: '#fff',
-                '&:hover': { backgroundColor: '#b03052' },
-                '&:disabled': { backgroundColor: '#ccc' },
-                padding: '12px 24px',
-                borderRadius: '8px',
+              sx={{ 
                 mt: 2,
+                backgroundColor: '#d83b6a',
+                '&:hover': {
+                  backgroundColor: '#c12955'
+                },
+                '&:disabled': {
+                  backgroundColor: '#ccc'
+                }
               }}
             >
               {calculandoPrecio ? 'Calculando...' : t('agregarAlCarrito')}
@@ -409,14 +478,12 @@ export function DetalleProductos({ addItem, isShopping }) {
           )}
         </Grid>
 
-        {/* Botón regresar */}
         <Grid item xs={12}>
           <Button variant="outlined" color="secondary" onClick={() => navigate(-1)} sx={{ mt: 2 }}>
             {t('Return')}
           </Button>
         </Grid>
 
-        {/* Reseñas */}
         <Grid item xs={12}>
           <Divider sx={{ my: 3 }} />
           <Typography variant="h5" gutterBottom sx={{ color: '#d83b6a' }}>{t('FProduct_Reviews')}</Typography>
@@ -449,7 +516,3 @@ export function DetalleProductos({ addItem, isShopping }) {
     </Container>
   );
 }
-
-DetalleProductos.propTypes = { 
-  addItem: PropTypes.func.isRequired, 
-  isShopping: PropTypes.bool };
