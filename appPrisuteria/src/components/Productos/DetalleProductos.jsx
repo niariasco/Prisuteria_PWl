@@ -24,13 +24,38 @@ export function DetalleProductos({ addItem, isShopping }) {
   const [opcionesSeleccionadas, setOpcionesSeleccionadas] = useState({});
   const [precioTotal, setPrecioTotal] = useState(0);
   const [precioBase, setPrecioBase] = useState(0); 
-  const [precioBaseConDescuento, setPrecioBaseConDescuento] = useState(0); // Nuevo estado
+  const [precioBaseConDescuento, setPrecioBaseConDescuento] = useState(0);
   const [calculandoPrecio, setCalculandoPrecio] = useState(false);
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
 
-  const formatCRC0 = (n) =>
-    Number(n ?? 0).toLocaleString('es-CR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  // Funciones de conversión de moneda (agregadas desde ListaCartasProductos)
+  const EXCHANGE_RATE = 500; // 1 USD = 500 CRC
+  const BASE_CURRENCY = 'CRC'; // moneda base de la BD
+
+  const getCurrency = (language) => (language === 'es' ? 'CRC' : 'USD');
+
+  const convertPrice = (price, language) => {
+    const numPrice = parseFloat(price) || 0;
+
+    if ((language === 'en' && BASE_CURRENCY === 'USD') || (language === 'es' && BASE_CURRENCY === 'CRC')) {
+      return numPrice;
+    }
+
+    if (language === 'es' && BASE_CURRENCY === 'USD') return numPrice * EXCHANGE_RATE;
+    if (language === 'en' && BASE_CURRENCY === 'CRC') return numPrice / EXCHANGE_RATE;
+
+    return numPrice;
+  };
+
+  // Función mejorada para formatear precios con conversión de moneda
+  const formatPrice = (price, language = i18n.language) => {
+    const convertedPrice = convertPrice(price, language);
+    return convertedPrice.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }) + ' ' + getCurrency(language);
+  };
 
   const getProductName = (producto) => {
     if (producto.translations && producto.translations[i18n.language]) return producto.translations[i18n.language];
@@ -72,9 +97,9 @@ export function DetalleProductos({ addItem, isShopping }) {
     return isNaN(fechaObj.getTime()) ? 'Fecha no disponible' : fechaObj.toLocaleDateString('es-CR', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
-  // Función para calcular precio localmente (fallback)
+  // Función para calcular precio localmente (fallback) - modificada para usar conversión
   const calcularPrecioLocal = (opcionesSeleccionadas) => {
-    let precioCalculado = precioBaseConDescuento; // Usar precio con descuento como base
+    let precioCalculado = precioBaseConDescuento;
     
     Object.values(opcionesSeleccionadas).forEach(opcion => {
       if (opcion && opcion.precio_adicional) {
@@ -90,23 +115,21 @@ export function DetalleProductos({ addItem, isShopping }) {
     setCalculandoPrecio(true);
     
     try {
-      // Filtrar opciones válidas - manejar tanto string como number IDs
       const opcionesValidas = Object.entries(nuevasOpciones)
-        .filter(([criterioId, opcion]) => opcion && opcion.id &&criterioId) // Nicole : remove &&criterioId
+        .filter(([criterioId, opcion]) => opcion && opcion.id && criterioId)
         .map(([criterioId, opcion]) => ({ 
           criterioId: parseInt(criterioId),
-          opcionId: parseInt(opcion.id) // Convertir a número para el servicio
+          opcionId: parseInt(opcion.id)
         }));
         
       if (opcionesValidas.length === 0) {
-        setPrecioTotal(precioBaseConDescuento); // Usar precio con descuento
+        setPrecioTotal(precioBaseConDescuento);
         setCalculandoPrecio(false);
         return;
       }
-      precioBase; // Nicole : remove this. 
-      
+      precioBase;
       setPrecioTotal(calcularPrecioLocal(nuevasOpciones));
-      // Intentar calcular precio con el servicio
+      
       try {
         const response = await ProductosPService.calcularPrecioTotal(
         data.productosId || data.id, 
@@ -118,7 +141,6 @@ export function DetalleProductos({ addItem, isShopping }) {
         if (response && response.precioTotal !== undefined) {
           let precioServicio = parseFloat(response.precioTotal);
           
-          // Si hay descuento, aplicarlo al resultado del servicio
           if (data.precio_con_descuento && data.precio_con_descuento !== data.precio) {
             const factorDescuento = data.precio_con_descuento / data.precio;
             precioServicio = precioServicio * factorDescuento;
@@ -126,31 +148,24 @@ export function DetalleProductos({ addItem, isShopping }) {
           
           setPrecioTotal(precioServicio);
         } else {
-          // Fallback: calcular localmente
           console.warn('Respuesta inválida del servicio, calculando localmente');
           setPrecioTotal(calcularPrecioLocal(nuevasOpciones));
         }
       } catch (serviceError) {
         console.error('Error en servicio, calculando localmente:', serviceError);
-        // Fallback: calcular localmente
-      
       }
     } catch (error) {
       console.error('Error calculando precio:', error);
-      // En caso de error, mantener el precio actual o usar el base con descuento
       setPrecioTotal(precioBaseConDescuento);
     } finally {
       setCalculandoPrecio(false);
     }
   };
 
-  // Manejar cambio de opción
   const handleOpcionChange = async (criterioId, e) => {
-    const opcionIdStr = e.target.value; // Mantener como string
+    const opcionIdStr = e.target.value;
     
-   
     if (!opcionIdStr || opcionIdStr === '') {
-      // Si no se selecciona opción, remover del estado
       const nuevasOpciones = { ...opcionesSeleccionadas };
       delete nuevasOpciones[criterioId];
       setOpcionesSeleccionadas(nuevasOpciones);
@@ -158,31 +173,21 @@ export function DetalleProductos({ addItem, isShopping }) {
       return;
     }
 
-    // Encontrar la opción seleccionada
     const criterio = data.criterios.find(c => c.id === criterioId || c.id === String(criterioId));
     if (!criterio) {
       console.error('Criterio no encontrado:', criterioId);
-      console.error('Criterios disponibles:', data.criterios.map(c => ({ id: c.id, nombre: c.nombre })));
       return;
     }
 
-    console.log('criterio encontrado:', criterio);
-    console.log('criterio.opciones:', criterio.opciones);
-
-    // Buscar opción comparando tanto string como número
     const opcionSeleccionada = criterio.opciones?.find(op => 
       op.id === opcionIdStr || op.id === parseInt(opcionIdStr) || String(op.id) === opcionIdStr
     );
     
     if (!opcionSeleccionada) {
       console.error('Opción no encontrada:', opcionIdStr);
-      console.error('Opciones disponibles en criterio:', criterio.opciones?.map(op => ({ id: op.id, tipo: typeof op.id, nombre: op.nombre })));
       return;
     }
 
-    console.log('opcionSeleccionada:', opcionSeleccionada);
-
-    // Actualizar estado con la nueva opción
     const nuevasOpciones = {
       ...opcionesSeleccionadas,
       [criterioId]: {
@@ -191,7 +196,6 @@ export function DetalleProductos({ addItem, isShopping }) {
       }
     };
 
-    console.log('nuevasOpciones:', nuevasOpciones);
     setOpcionesSeleccionadas(nuevasOpciones);
     await actualizarPrecio(nuevasOpciones);
   };
@@ -203,18 +207,6 @@ export function DetalleProductos({ addItem, isShopping }) {
         
         console.log('=== DEBUG PRODUCTO CARGADO ===');
         console.log('producto completo:', producto);
-        console.log('criterios:', producto.criterios);
-        
-        // Log detallado de criterios y opciones
-        if (producto.criterios) {
-          producto.criterios.forEach((criterio, index) => {
-            console.log(`Criterio ${index}:`, {
-              id: criterio.id,
-              nombre: criterio.nombre,
-              opciones: criterio.opciones
-            });
-          });
-        }
         
         producto.etiquetas = producto.etiquetas || [];
         producto.resenas = producto.resenas || [];
@@ -225,8 +217,8 @@ export function DetalleProductos({ addItem, isShopping }) {
           parseFloat(producto.precio_con_descuento) : precio;
         
         setPrecioBase(precio);
-        setPrecioBaseConDescuento(precioConDescuento); // Nuevo estado
-        setPrecioTotal(precioConDescuento); // Inicializar con precio con descuento
+        setPrecioBaseConDescuento(precioConDescuento);
+        setPrecioTotal(precioConDescuento);
         setData(producto);
         setLoaded(true);
       })
@@ -253,6 +245,9 @@ export function DetalleProductos({ addItem, isShopping }) {
       precio_total: precioTotal,
     });
   };
+
+  // Determinar si hay promoción
+  const tienePromo = data.precio_con_descuento && data.precio_con_descuento !== data.precio;
 
   return (
     <Container maxWidth="md" sx={{ mt: 6, mb: 6 }}>
@@ -282,13 +277,14 @@ export function DetalleProductos({ addItem, isShopping }) {
             {getProductName(data)}
           </Typography>
 
-   {data.precio_con_descuento && data.precio_con_descuento !== data.precio ? (
+          {/* Precios con conversión de moneda */}
+          {tienePromo ? (
             <>
               <Typography sx={{ textDecoration: 'line-through', color: 'gray' }}>
-                {Number(data.precio).toLocaleString()}
+                {formatPrice(data.precio)}
               </Typography>
               <Typography variant="h5" sx={{ color: '#d83b6a', fontWeight: 'bold' }}>
-                {Math.round(data.precio_con_descuento).toLocaleString()}
+                {formatPrice(data.precio_con_descuento)}
               </Typography>
               {(data.descuento_producto || data.descuento_categoria) && (
                 <Typography variant="caption" color="primary">
@@ -304,7 +300,9 @@ export function DetalleProductos({ addItem, isShopping }) {
               )}
             </>
           ) : (
-            <Typography variant="h5">{Number(data.precio).toLocaleString()}</Typography>
+            <Typography variant="h5">
+              {formatPrice(data.precio)}
+            </Typography>
           )}
 
           <Typography variant="subtitle1" gutterBottom color="text.secondary">
@@ -343,12 +341,11 @@ export function DetalleProductos({ addItem, isShopping }) {
                 {t('personalizar_producto')}
               </Typography>
 
-              {/* Mostrar precio base */}
-                  {Object.keys(opcionesSeleccionadas).length === 0 && (
-                  <Typography variant="body2" sx={{ color: '#999', fontStyle: 'italic', mt: 1 }}>
-                    Seleccione las opciones para personalizar su producto
-                  </Typography>
-                )}
+              {Object.keys(opcionesSeleccionadas).length === 0 && (
+                <Typography variant="body2" sx={{ color: '#999', fontStyle: 'italic', mt: 1 }}>
+                  Seleccione las opciones para personalizar su producto
+                </Typography>
+              )}
 
               {data.criterios.map((criterio) => (
                 <Box key={criterio.id} sx={{ mb: 2 }}>
@@ -371,22 +368,22 @@ export function DetalleProductos({ addItem, isShopping }) {
                     </option>
                     {criterio.opciones && Array.isArray(criterio.opciones) && criterio.opciones.map((opcion) => (
                       <option key={opcion.id} value={opcion.id} style={{ color: '#000' }}>
-                        {opcion.nombre} (+{formatCRC0(opcion.precio_adicional || 0)})
+                        {opcion.nombre} (+{formatPrice(opcion.precio_adicional || 0)})
                       </option>
                     ))}
                   </select>
                 </Box>
               ))}
 
-              {/* Precio total destacado */}
-                <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d83b6a' }}>
-                  {t('precio_total', 'Precio Total')}: {formatCRC0(precioTotal)}
+              {/* Precio total destacado con conversión */}
+              <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d83b6a' }}>
+                {t('precio_total', 'Precio Total')}: {formatPrice(precioTotal)}
+              </Typography>
+              {calculandoPrecio && (
+                <Typography variant="body2" sx={{ color: '#666', mt: 1 }}>
+                  Actualizando precio...
                 </Typography>
-                {calculandoPrecio && (
-                  <Typography variant="body2" sx={{ color: '#666', mt: 1 }}>
-                    Actualizando precio...
-                  </Typography>
-                )}
+              )}
             </Box>
           )}
 
@@ -453,4 +450,6 @@ export function DetalleProductos({ addItem, isShopping }) {
   );
 }
 
-DetalleProductos.propTypes = { addItem: PropTypes.func.isRequired, isShopping: PropTypes.bool };
+DetalleProductos.propTypes = { 
+  addItem: PropTypes.func.isRequired, 
+  isShopping: PropTypes.bool };
