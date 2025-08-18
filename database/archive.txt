@@ -145,3 +145,30 @@ VALUES
 
 ALTER TABLE productos MODIFY precio DECIMAL(10,2);
 ALTER TABLE opciones MODIFY precio_adicional DECIMAL(10,2);
+
+___________________________________________________________________________
+Nicole - 17/8/2025
+
+UPDATE opciones
+SET nombre = 'Dorado'
+WHERE id = 24;
+
+UPDATE opciones
+SET nombre = 'Plateado'
+WHERE id = 25;
+
+UPDATE opciones
+SET nombre = 'Oro Rosa'
+WHERE id = 26;
+
+UPDATE opciones
+SET nombre = 'Pequeña : Pulsera 16 cm | Aretes 15 mm'
+WHERE id = 27;
+
+UPDATE opciones
+SET nombre = 'Mediana : Pulsera 17-18 cm | Aretes 20 mm'
+WHERE id = 28;
+
+UPDATE opciones
+SET nombre = 'Grande :  Pulsera 19 cm | Aretes 40 mm'
+WHERE id = 29;
