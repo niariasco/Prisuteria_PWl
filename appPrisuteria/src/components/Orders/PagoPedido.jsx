@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import OrderService from '../../services/OrderService';
 import {
   Box,
   Button,
@@ -24,14 +25,33 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from "@mui/material";
-import { CheckCircle } from '@mui/icons-material';
-import OrderService from '../../services/OrderService';
+import { 
+  CheckCircle, 
+  Receipt, 
+  Print, 
+  Business, 
+  Person, 
+  LocationOn, 
+  CreditCard, 
+  AttachMoney 
+} from '@mui/icons-material';
 
-export default function PagoPage() {
+const PagoPedido = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Estados principales
+  const [pedidoData, setPedidoData] = useState({});
   const [metodoPago, setMetodoPago] = useState("tarjeta-credito");
-  const [pedidoData, setPedidoData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [cargandoDatos, setCargandoDatos] = useState(true);
 
   const initialFormData = {
     numeroTarjeta: "",
@@ -46,33 +66,50 @@ export default function PagoPage() {
   const [mensaje, setMensaje] = useState("");
   const [alertType, setAlertType] = useState("info");
   const [cambio, setCambio] = useState(0);
-  const [loading, setLoading] = useState(false);
 
   // Estados para los selectores de fecha
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
 
-  // Estados para el modal de confirmación
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  // Estados para el modal de factura
+  const [showFacturaDialog, setShowFacturaDialog] = useState(false);
   const [ordenCreada, setOrdenCreada] = useState(null);
 
-  // Cargar datos del pedido desde localStorage
+  // useEffect para cargar datos
   useEffect(() => {
-    try {
-      const pedidoGuardado = localStorage.getItem('pedidoEnProceso');
-      if (pedidoGuardado) {
-        const datosRecuperados = JSON.parse(pedidoGuardado);
-        setPedidoData(datosRecuperados);
-        console.log('Datos del pedido recuperados:', datosRecuperados);
-      } else {
-        console.log('No se encontraron datos del pedido en localStorage');
-        setPedidoData(null);
+    console.log('PagoPedido - location.state:', location.state);
+    
+    let datosPedido = null;
+
+    // Intentar obtener datos del state primero
+    if (location.state?.pedidoData) {
+      console.log('Datos obtenidos desde location.state');
+      datosPedido = location.state.pedidoData;
+    } else {
+      // Si no hay datos en state, intentar desde localStorage
+      console.log('Intentando obtener datos desde localStorage');
+      try {
+        const datosGuardados = localStorage.getItem('pedidoEnProceso');
+        if (datosGuardados) {
+          datosPedido = JSON.parse(datosGuardados);
+          console.log('Datos obtenidos desde localStorage');
+        }
+      } catch (error) {
+        console.error('Error al leer localStorage:', error);
       }
-    } catch (error) {
-      console.error('Error al recuperar datos del pedido:', error);
-      setPedidoData(null);
     }
-  }, []);
+
+    if (datosPedido && datosPedido.productos && datosPedido.productos.length > 0) {
+      console.log('Estableciendo datos del pedido:', datosPedido);
+      setPedidoData(datosPedido);
+      setCargandoDatos(false);
+    } else {
+      console.error('No se encontraron datos del pedido, redirigiendo al carrito');
+      setTimeout(() => {
+        navigate('/cart');
+      }, 2000);
+    }
+  }, [location.state, navigate]);
 
   const totalCompra = pedidoData?.total || 0;
   const usuarioId = pedidoData?.usuarioDetalle?.usuarioId || 1;
@@ -172,6 +209,11 @@ export default function PagoPage() {
     }
   };
 
+  // Obtener símbolo de moneda
+  const getCurrencySymbol = () => {
+    return pedidoData.moneda === 'USD' ? '$' : '₡';
+  };
+
   // Validaciones de tarjeta (aplica tanto para crédito como débito)
   const validarTarjeta = () => {
     const { numeroTarjeta, fechaExpiracion, cvv, nombreTitular } = formData;
@@ -245,6 +287,7 @@ export default function PagoPage() {
     }
   };
 
+  // Función de pago corregida usando finalizarPago
   const handlePagar = async () => {
     if (!pedidoData) {
       setMensaje("No hay datos del pedido disponibles.");
@@ -270,75 +313,74 @@ export default function PagoPage() {
         return;
       }
 
-      // 1. Crear Orden Principal
-      const orden = {
-        usuario_id: usuarioId,
-        subtotal: pedidoData.subtotalSinImpuestos,
-        total: pedidoData.total,
-        estado: "Pendiente",
-        metodo_pago: getTipoMetodo(),
-        direccion_envio: pedidoData.direccionEnvio,
-        impuestos: pedidoData.ivaTotal || 0
-      };
-
-      console.log('Enviando orden:', orden);
-      const { data: ordenCreada } = await OrderService.createOrden(orden);
-      console.log('Orden creada:', ordenCreada);
+      // Preparar datos del pago usando el método transformarDatosPago
+      const datosAdicionales = {};
       
-      const ordenId = ordenCreada.id;
-
-      // 2. Crear pago según método
-      if (esTarjeta()) {
-        const pagoData = {
-          orden_id: ordenId,
-          numero_tarjeta: formData.numeroTarjeta.replace(/\s/g, ''),
-          fecha_expiracion: formData.fechaExpiracion,
+      if (metodoPago === "efectivo") {
+        datosAdicionales.montoEfectivo = formData.montoEfectivo;
+      } else if (esTarjeta()) {
+        datosAdicionales.datosTarjeta = {
+          numeroTarjeta: formData.numeroTarjeta,
+          fechaExpiracion: formData.fechaExpiracion,
           cvv: formData.cvv,
-          nombre_titular: formData.nombreTitular,
-          tipo_tarjeta: metodoPago === "tarjeta-credito" ? "credito" : "debito",
-          monto: pedidoData.total
+          nombreTitular: formData.nombreTitular
         };
-        
-        console.log('Enviando pago tarjeta:', pagoData);
-        await OrderService.createPagoTarjeta(pagoData);
-        
-      } else if (metodoPago === "efectivo") {
-        const pagoData = {
-          orden_id: ordenId,
-          monto_pagado: parseFloat(formData.montoEfectivo),
-          cambio: cambio,
-        };
-        
-        console.log('Enviando pago efectivo:', pagoData);
-        await OrderService.createPagoEfectivo(pagoData);
       }
 
-      // 3. Actualizar estado de la orden a "Pagado"
-      await OrderService.updateOrden(ordenId, {
-        ...orden,
-        estado: "Pagado",
-      });
+      // Usar el método transformarDatosPago del OrderService
+      const datosTransformados = OrderService.transformarDatosPago(
+        pedidoData, 
+        getTipoMetodo(), 
+        datosAdicionales
+      );
 
-      // 4. Guardar información de la orden creada para mostrar en el modal
-      setOrdenCreada({
-        id: ordenId,
-        metodoPago: getTipoMetodo(),
-        cambio: cambio,
-        fecha: new Date().toISOString(),
-        ...pedidoData
-      });
+      console.log('Datos transformados para enviar:', datosTransformados);
 
-      // 5. Limpiar localStorage después del pago exitoso
-      localStorage.removeItem('pedidoEnProceso');
+      // Llamar al método finalizarPago
+      const response = await OrderService.finalizarPago(datosTransformados);
+      
+      console.log('Respuesta del servidor:', response);
 
-      // 6. Limpiar formulario
-      setFormData(initialFormData);
-      setSelectedMonth("");
-      setSelectedYear("");
-      setCambio(0);
+      // Procesar la respuesta
+      const resultado = OrderService.procesarRespuesta(response);
+      
+      if (resultado && (resultado.success !== false)) {
+        // Guardar información de la orden creada
+        const ordenCompleta = {
+          id: resultado.orden_id || resultado.id || resultado.ordenesId,
+          metodoPago: getTipoMetodo(),
+          cambio: cambio,
+          fecha: new Date().toISOString(),
+          total: resultado.total || totalCompra,
+          subtotalSinImpuestos: pedidoData.subtotalSinImpuestos,
+          ivaTotal: pedidoData.ivaTotal,
+          productos: pedidoData.productos,
+          cliente: pedidoData.cliente,
+          direccionEnvio: pedidoData.direccionEnvio,
+          moneda: pedidoData.moneda || 'CRC'
+        };
+        
+        setOrdenCreada(ordenCompleta);
 
-      // 7. Mostrar modal de confirmación
-      setShowConfirmDialog(true);
+        // Limpiar localStorage después del pago exitoso
+        localStorage.removeItem('pedidoEnProceso');
+
+        // Limpiar formulario
+        setFormData(initialFormData);
+        setSelectedMonth("");
+        setSelectedYear("");
+        setCambio(0);
+
+        // Mostrar modal de factura
+        setShowFacturaDialog(true);
+
+        setMensaje("¡Pago procesado exitosamente!");
+        setAlertType("success");
+        setOpenSnackbar(true);
+        
+      } else {
+        throw new Error(resultado.message || 'Error al procesar el pago');
+      }
 
     } catch (error) {
       console.error("Error completo:", error);
@@ -351,6 +393,8 @@ export default function PagoPage() {
         errorMessage = "El endpoint del servidor no fue encontrado. Verifica la configuración de la API.";
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       
       setMensaje(errorMessage);
@@ -363,18 +407,37 @@ export default function PagoPage() {
 
   // Función para ver el detalle de la orden
   const verDetalleOrden = () => {
-    setShowConfirmDialog(false);
+    setShowFacturaDialog(false);
     navigate(`/orden/${ordenCreada.id}`);
   };
 
   // Función para ir a la lista de órdenes
   const irAOrdenes = () => {
-    setShowConfirmDialog(false);
-    navigate('/ordenes');
+    setShowFacturaDialog(false);
+    navigate('/orden');
   };
 
+  // Función para imprimir factura
+  const handleImprimir = () => {
+    window.print();
+  };
+
+  // Validación inicial mejorada
+  if (cargandoDatos) {
+    return (
+      <Container maxWidth="sm" sx={{ mt: 6, textAlign: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+          <CircularProgress size={50} sx={{ color: '#d83b6a' }} />
+          <Typography variant="h6" sx={{ ml: 2 }}>
+            Cargando datos del pedido...
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
+
   // Si no hay datos del pedido, mostrar mensaje
-  if (!pedidoData) {
+  if (!pedidoData || !pedidoData.productos || pedidoData.productos.length === 0) {
     return (
       <Container maxWidth="sm" sx={{ mt: 6, textAlign: 'center' }}>
         <Typography variant="h5" color="error" gutterBottom>
@@ -386,7 +449,7 @@ export default function PagoPage() {
         <Button
           variant="contained"
           color="primary"
-          onClick={() => navigate('/carrito')}
+          onClick={() => navigate('/cart')}
           sx={{ mt: 2 }}
         >
           Volver al Carrito
@@ -394,6 +457,8 @@ export default function PagoPage() {
       </Container>
     );
   }
+
+  const currencySymbol = getCurrencySymbol();
 
   return (
     <>
@@ -427,12 +492,32 @@ export default function PagoPage() {
                 
                 {pedidoData.productos?.map((producto, index) => (
                   <Box key={index} sx={{ mb: 1, p: 2, backgroundColor: '#f8f9fa', borderRadius: 2, border: '1px solid #e9ecef' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                      {producto.nombre} x {producto.cantidad}
-                    </Typography>
-                    <Typography variant="body2" color="primary.main" sx={{ fontWeight: 'bold' }}>
-                      {pedidoData.moneda} {Math.round(producto.totalConIva).toLocaleString()}
-                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                          {producto.nombre}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Cantidad: {producto.cantidad}
+                        </Typography>
+                        {producto.esPersonalizado && (
+                          <Chip 
+                            label="Personalizado" 
+                            size="small"
+                            sx={{
+                              backgroundColor: '#E3F2FD',
+                              color: '#1976D2',
+                              fontSize: '0.7rem',
+                              height: '20px',
+                              mt: 0.5
+                            }}
+                          />
+                        )}
+                      </Box>
+                      <Typography variant="body2" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                        {currencySymbol} {Math.round(producto.totalConIva || (producto.precioUnitario * producto.cantidad) || (producto.precio * producto.cantidad)).toLocaleString()}
+                      </Typography>
+                    </Box>
                   </Box>
                 ))}
 
@@ -440,11 +525,11 @@ export default function PagoPage() {
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography>Subtotal:</Typography>
-                  <Typography>{pedidoData.moneda} {Math.round(pedidoData.subtotalSinImpuestos).toLocaleString()}</Typography>
+                  <Typography>{currencySymbol} {Math.round(pedidoData.subtotalSinImpuestos).toLocaleString()}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography>IVA (13%):</Typography>
-                  <Typography>{pedidoData.moneda} {Math.round(pedidoData.ivaTotal).toLocaleString()}</Typography>
+                  <Typography>{currencySymbol} {Math.round(pedidoData.ivaTotal).toLocaleString()}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography>Envío:</Typography>
@@ -454,7 +539,7 @@ export default function PagoPage() {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Total:</Typography>
                   <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                    {pedidoData.moneda} {Math.round(pedidoData.total).toLocaleString()}
+                    {currencySymbol} {Math.round(pedidoData.total).toLocaleString()}
                   </Typography>
                 </Box>
               </CardContent>
@@ -469,7 +554,7 @@ export default function PagoPage() {
               </Typography>
 
               <Typography variant="h6" align="center" gutterBottom sx={{ color: 'secondary.main', mb: 3 }}>
-                Total a pagar: <strong>{pedidoData.moneda} {Math.round(totalCompra).toLocaleString()}</strong>
+                Total a pagar: <strong>{currencySymbol} {Math.round(totalCompra).toLocaleString()}</strong>
               </Typography>
 
               {/* Selección del método de pago */}
@@ -613,16 +698,16 @@ export default function PagoPage() {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          {pedidoData.moneda}
+                          {currencySymbol}
                         </InputAdornment>
                       ),
                     }}
-                    helperText={`Mínimo: ${pedidoData.moneda} ${Math.round(totalCompra).toLocaleString()}`}
+                    helperText={`Mínimo: ${currencySymbol} ${Math.round(totalCompra).toLocaleString()}`}
                   />
                   {cambio > 0 && (
                     <Box sx={{ mt: 2, p: 2, backgroundColor: 'success.light', borderRadius: 2, border: '2px solid', borderColor: 'success.main' }}>
                       <Typography variant="h6" color="success.dark" sx={{ fontWeight: 'bold' }}>
-                        💵 Cambio: {pedidoData.moneda} {cambio.toLocaleString()}
+                        💵 Cambio: {currencySymbol} {cambio.toLocaleString()}
                       </Typography>
                     </Box>
                   )}
@@ -633,7 +718,7 @@ export default function PagoPage() {
                 <Button
                   variant="outlined"
                   size="large"
-                  onClick={() => navigate(-1)}
+                  onClick={() => navigate('/registrar-pedido')}
                   disabled={loading}
                   sx={{ flex: 1 }}
                 >
@@ -690,10 +775,11 @@ export default function PagoPage() {
         `}</style>
       </Container>
 
-      {/* Modal de Confirmación de Pago Exitoso */}
+      {/* Modal de Factura Completa */}
       <Dialog 
-        open={showConfirmDialog} 
-        maxWidth="md" 
+        open={showFacturaDialog} 
+        onClose={() => setShowFacturaDialog(false)}
+        maxWidth="lg" 
         fullWidth
         PaperProps={{
           sx: {
@@ -702,6 +788,7 @@ export default function PagoPage() {
           }
         }}
       >
+        {/* Header con logo de éxito */}
         <DialogTitle sx={{ 
           textAlign: 'center', 
           pb: 2,
@@ -711,102 +798,273 @@ export default function PagoPage() {
         }}>
           <CheckCircle sx={{ fontSize: 48, mb: 1 }} />
           <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-            ¡Pago Exitoso!
+            ¡Pago Procesado Exitosamente!
+          </Typography>
+          <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
+            Su orden ha sido confirmada y guardada
           </Typography>
         </DialogTitle>
-        
-        <DialogContent sx={{ p: 3 }}>
+
+        <DialogContent sx={{ p: 0 }}>
           {ordenCreada && (
-            <Box>
-              <Typography variant="h6" gutterBottom sx={{ color: '#4caf50', fontWeight: 'bold', textAlign: 'center', mb: 3 }}>
-                Tu orden ha sido procesada correctamente
-              </Typography>
-
-              <Card sx={{ mb: 2, backgroundColor: '#f8f9fa', borderLeft: '4px solid #4caf50' }}>
-                <CardContent>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Número de Orden:</strong>
+            <Paper sx={{ m: 3, p: 3, backgroundColor: '#fafafa' }}>
+              {/* Header de la factura */}
+              <Box sx={{ mb: 3 }}>
+                <Grid container justifyContent="space-between" alignItems="center">
+                  <Grid item>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Business sx={{ mr: 1, color: '#1976d2' }} />
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                        TuTienda.com
                       </Typography>
-                      <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
-                        #{ordenCreada.id}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Fecha:</strong>
-                      </Typography>
-                      <Typography variant="body1">
-                        {new Date(ordenCreada.fecha).toLocaleDateString('es-ES', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Método de Pago:</strong>
-                      </Typography>
-                      <Typography variant="body1">
-                        {ordenCreada.metodoPago}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Total Pagado:</strong>
-                      </Typography>
-                      <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
-                        {pedidoData.moneda} {Math.round(ordenCreada.total).toLocaleString()}
-                      </Typography>
-                    </Grid>
-                    {ordenCreada.cambio > 0 && (
-                      <Grid item xs={12}>
-                        <Box sx={{ p: 2, backgroundColor: '#e8f5e8', borderRadius: 2, border: '1px solid #4caf50' }}>
-                          <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
-                            💵 Cambio a devolver: {pedidoData.moneda} {ordenCreada.cambio.toLocaleString()}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                    )}
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      Carrillos, Alajuela, Costa Rica
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Tel: +506 2222-3333 | Email: info@tutienda.com
+                    </Typography>
                   </Grid>
-                </CardContent>
-              </Card>
+                  <Grid item>
+                    <Receipt sx={{ fontSize: 60, color: '#1976d2', opacity: 0.3 }} />
+                  </Grid>
+                </Grid>
+              </Box>
 
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 2 }}>
-                Se ha enviado un email de confirmación a tu dirección de correo electrónico.
-                Puedes ver el detalle completo de tu orden haciendo clic en el botón de abajo.
+              <Divider sx={{ mb: 3 }} />
+
+              {/* Información de la orden */}
+              <Grid container spacing={3} sx={{ mb: 3 }}>
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ p: 2, backgroundColor: 'white', borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                    <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2, color: '#1976d2' }}>
+                      <Receipt sx={{ mr: 1 }} />
+                      Datos de la Orden
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>Número de Orden:</strong> #{ordenCreada.id}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>Fecha:</strong> {new Date(ordenCreada.fecha).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>Estado:</strong> 
+                      <Chip 
+                        label="Confirmado" 
+                        color="success" 
+                        size="small" 
+                        sx={{ ml: 1 }}
+                      />
+                    </Typography>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ p: 2, backgroundColor: 'white', borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                    <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2, color: '#1976d2' }}>
+                      <Person sx={{ mr: 1 }} />
+                      Información del Cliente
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>Cliente:</strong> {ordenCreada.cliente?.nombre || 'Cliente Registrado'}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>Email:</strong> {ordenCreada.cliente?.email || 'cliente@email.com'}
+                    </Typography>
+                    <Typography variant="body2" sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                      <LocationOn sx={{ mr: 0.5, fontSize: 16, mt: 0.2 }} />
+                      <span>
+                        <strong>Dirección:</strong><br />
+                        {ordenCreada.direccionEnvio}
+                      </span>
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+
+              {/* Método de pago */}
+              <Box sx={{ p: 2, backgroundColor: 'white', borderRadius: 2, border: '1px solid #e0e0e0', mb: 3 }}>
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2, color: '#1976d2' }}>
+                  {ordenCreada.metodoPago === 'Efectivo' ? <AttachMoney sx={{ mr: 1 }} /> : <CreditCard sx={{ mr: 1 }} />}
+                  Método de Pago
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>Tipo:</strong> {ordenCreada.metodoPago}
+                    </Typography>
+                  </Grid>
+                  {ordenCreada.cambio > 0 && (
+                    <Grid item xs={12} md={6}>
+                      <Box sx={{ p: 2, backgroundColor: '#e8f5e8', borderRadius: 2, border: '1px solid #4caf50' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
+                          💵 Cambio: {currencySymbol} {ordenCreada.cambio.toLocaleString()}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
+                </Grid>
+              </Box>
+
+              {/* Detalle de productos */}
+              <Typography variant="h6" sx={{ mb: 2, color: '#1976d2', display: 'flex', alignItems: 'center' }}>
+                📦 Detalle de Productos
               </Typography>
-            </Box>
+              
+              <TableContainer component={Paper} sx={{ mb: 3, boxShadow: 1 }}>
+                <Table>
+                  <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+                    <TableRow>
+                      <TableCell><strong>Producto</strong></TableCell>
+                      <TableCell align="center"><strong>Cantidad</strong></TableCell>
+                      <TableCell align="right"><strong>Precio Unit.</strong></TableCell>
+                      <TableCell align="right"><strong>Total</strong></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {ordenCreada.productos?.map((producto, index) => (
+                      <TableRow key={index} sx={{ '&:nth-of-type(odd)': { backgroundColor: '#fafafa' } }}>
+                        <TableCell>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                              {producto.nombre}
+                            </Typography>
+                            {producto.esPersonalizado && (
+                              <Chip 
+                                label="Personalizado" 
+                                size="small"
+                                sx={{
+                                  backgroundColor: '#E3F2FD',
+                                  color: '#1976D2',
+                                  fontSize: '0.7rem',
+                                  height: '20px',
+                                  mt: 0.5
+                                }}
+                              />
+                            )}
+                          </Box>
+                        </TableCell>
+                        <TableCell align="center">{producto.cantidad}</TableCell>
+                        <TableCell align="right">
+                          {currencySymbol} {Math.round(producto.precioUnitario || producto.precio || 0).toLocaleString()}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                          {currencySymbol} {Math.round(producto.totalConIva || (producto.precioUnitario || producto.precio) * producto.cantidad).toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              {/* Totales */}
+              <Box sx={{ backgroundColor: 'white', borderRadius: 2, border: '1px solid #e0e0e0', p: 2 }}>
+                <Grid container>
+                  <Grid item xs={12} md={8}></Grid>
+                  <Grid item xs={12} md={4}>
+                    <Box sx={{ p: 2, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="body2">Subtotal:</Typography>
+                        <Typography variant="body2">
+                          {currencySymbol} {Math.round(ordenCreada.subtotalSinImpuestos || 0).toLocaleString()}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="body2">IVA (13%):</Typography>
+                        <Typography variant="body2">
+                          {currencySymbol} {Math.round(ordenCreada.ivaTotal || 0).toLocaleString()}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="body2">Envío:</Typography>
+                        <Typography variant="body2" color="success.main" sx={{ fontWeight: 'bold' }}>
+                          GRATIS
+                        </Typography>
+                      </Box>
+                      <Divider sx={{ my: 1 }} />
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Total:</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                          {currencySymbol} {Math.round(ordenCreada.total || 0).toLocaleString()}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              {/* Nota de agradecimiento */}
+              <Box sx={{ mt: 3, p: 2, backgroundColor: '#e3f2fd', borderRadius: 2, textAlign: 'center' }}>
+                <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  ¡Gracias por su compra! 🎉
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Se ha enviado un email de confirmación a su dirección de correo electrónico.
+                  Su pedido será procesado en las próximas 24 horas.
+                </Typography>
+              </Box>
+
+              {/* Información adicional */}
+              <Box sx={{ mt: 2, p: 2, backgroundColor: '#fff3e0', borderRadius: 2, border: '1px dashed #ff9800' }}>
+                <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#f57c00', mb: 1 }}>
+                  ℹ️ Información importante:
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
+                  • Conserve este comprobante para cualquier consulta<br />
+                  • Tiempo estimado de entrega: 3-5 días hábiles<br />
+                  • Para consultas contacte: +506 2222-3333<br />
+                  • Puede rastrear su pedido en la sección "Mis Órdenes"
+                </Typography>
+              </Box>
+            </Paper>
           )}
         </DialogContent>
-        
-        <DialogActions sx={{ p: 3, justifyContent: 'center', gap: 2 }}>
-          <Button 
-            variant="outlined" 
-            onClick={irAOrdenes}
-            sx={{ minWidth: 140 }}
-          >
-            Ver Mis Órdenes
-          </Button>
-          <Button 
-            variant="contained" 
-            onClick={verDetalleOrden}
-            sx={{ 
-              minWidth: 140,
-              background: 'linear-gradient(45deg, #4caf50 30%, #45a049 90%)',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #45a049 30%, #388e3c 90%)',
-              }
-            }}
-          >
-            Ver Detalle de Orden
-          </Button>
+
+        {/* Botones de acción */}
+        <DialogActions sx={{ p: 3, justifyContent: 'space-between', backgroundColor: '#f5f5f5' }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button 
+              variant="outlined" 
+              startIcon={<Print />}
+              onClick={handleImprimir}
+              size="small"
+            >
+              Imprimir
+            </Button>
+          </Box>
+          
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button 
+              variant="outlined" 
+              onClick={irAOrdenes}
+              sx={{ minWidth: 120 }}
+            >
+              Mis Órdenes
+            </Button>
+            <Button 
+              variant="contained" 
+              onClick={verDetalleOrden}
+              sx={{ 
+                minWidth: 120,
+                background: 'linear-gradient(45deg, #1976d2 30%, #21cbf3 90%)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #1565c0 30%, #1e88e5 90%)',
+                }
+              }}
+            >
+              Ver Detalle
+            </Button>
+          </Box>
         </DialogActions>
       </Dialog>
     </>
   );
-}
+};
+
+export default PagoPedido;

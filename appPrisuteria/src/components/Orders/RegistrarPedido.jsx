@@ -510,50 +510,55 @@ export function RegistrarPedido() {
 
   // FUNCIONES MODIFICADAS PARA REDIRIGIR AL PAGO
 
-  // Nueva función para proceder al pago - CORREGIDA LA RUTA
-  const proceedToPayment = () => {
-    console.log('Procediendo al pago...'); // Debug
-    
-    // Preparar los datos del pedido para pasarlos a la página de pago
-    const pedidoData = {
-      cliente: clienteSeleccionado,
-      usuarioDetalle: usuarioDetalleActual,
-      fecha: fechaActual,
-      direccionEnvio,
-      estado: estadoPedido,
-      productos: validItems.map(item => ({
-        ...item,
-        cantidad: getCantidadActual(item.id),
-        precioUnitario: getPrecioUnitario(item),
-        subtotal: getPrecioUnitario(item) * getCantidadActual(item.id),
-        iva: calcularIVA(getPrecioUnitario(item) * getCantidadActual(item.id)),
-        totalConIva: getPrecioUnitario(item) * getCantidadActual(item.id) + calcularIVA(getPrecioUnitario(item) * getCantidadActual(item.id)),
-        esPersonalizado: tienePersonalizaciones(item),
-        opcionesPersonalizacion: item.opcionesPersonalizacion || null
-      })),
-      subtotalSinImpuestos,
-      ivaTotal,
-      totalConImpuestos,
-      envio: shipping,
-      total,
-      moneda: currency
-    };
+// Reemplazar la función proceedToPayment en RegistrarPedido.js
 
-    console.log('Datos del pedido a guardar:', pedidoData); // Debug
-
-    try {
-      // Guardar los datos del pedido en localStorage para acceder desde PagoPage
-      localStorage.setItem('pedidoEnProceso', JSON.stringify(pedidoData));
-      console.log('Datos guardados en localStorage'); // Debug
-      
-      // CORRECCIÓN: Cambiar '/pago' por '/pago-pedido' para coincidir con las rutas
-      console.log('Navegando a /pago-pedido'); // Debug
-      navigate('/pago-pedido');
-    } catch (error) {
-      console.error('Error al guardar datos o navegar:', error);
-      alert('Error al procesar el pedido. Por favor intente nuevamente.');
-    }
+const proceedToPayment = () => {
+  console.log('Procediendo al pago...'); // Debug
+  
+  // Preparar los datos del pedido para pasarlos a la página de pago
+  const pedidoData = {
+    cliente: clienteSeleccionado,
+    usuarioDetalle: usuarioDetalleActual,
+    fecha: fechaActual,
+    direccionEnvio,
+    estado: estadoPedido,
+    productos: validItems.map(item => ({
+      ...item,
+      cantidad: getCantidadActual(item.id),
+      precioUnitario: getPrecioUnitario(item),
+      subtotal: getPrecioUnitario(item) * getCantidadActual(item.id),
+      iva: calcularIVA(getPrecioUnitario(item) * getCantidadActual(item.id)),
+      totalConIva: getPrecioUnitario(item) * getCantidadActual(item.id) + calcularIVA(getPrecioUnitario(item) * getCantidadActual(item.id)),
+      esPersonalizado: tienePersonalizaciones(item),
+      opcionesPersonalizacion: item.opcionesPersonalizacion || null
+    })),
+    subtotalSinImpuestos,
+    ivaTotal,
+    totalConImpuestos,
+    envio: shipping,
+    total,
+    moneda: currency
   };
+
+  console.log('Datos del pedido a enviar:', pedidoData); // Debug
+
+  try {
+    // OPCIÓN 1: Usar navigate con state (recomendado)
+    console.log('Navegando a /pago-pedido con state'); // Debug
+    navigate('/pago-pedido', { 
+      state: { 
+        pedidoData: pedidoData 
+      }
+    });
+
+    // OPCIÓN 2: También guardar en localStorage como respaldo
+    localStorage.setItem('pedidoEnProceso', JSON.stringify(pedidoData));
+    
+  } catch (error) {
+    console.error('Error al navegar:', error);
+    alert('Error al procesar el pedido. Por favor intente nuevamente.');
+  }
+};
 
   // Función para procesar el pedido - MODIFICADA
   const procesarPedido = async () => {
