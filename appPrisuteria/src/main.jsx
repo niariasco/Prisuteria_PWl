@@ -37,12 +37,7 @@ import { CreatePromocion } from "./components/Promociones/CreatePromocion";
 import { UpdatePromocion } from "./components/Promociones/UpdatePromocion";
 import { ListaCarrito } from "./components/Carrito/ListaCarrito";
 import { RegistrarPedido } from "./components/Orders/RegistrarPedido";
-
-
-
-
-
-
+import PagoPedido from "./components/Orders/PagoPedido";
 
 const rutas = createBrowserRouter([
   {
@@ -92,14 +87,13 @@ const rutas = createBrowserRouter([
       { path: '/orden', element: <ListOrders /> },
       { path: '/orden/:id', element: <DetalleOrder /> },
       { path: '/cart', element: <ListaCarrito /> },
-     { path: '/registrar-pedido', element: <RegistrarPedido /> }
+     { path: '/registrar-pedido', element: <RegistrarPedido /> },
+      { path: '/pago-pedido', element: <PagoPedido/> }
 
       
     ]
   }
 ]);
-
-
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
