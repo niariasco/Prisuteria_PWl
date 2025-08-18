@@ -20,7 +20,7 @@ export function DetalleOrder() {
   useEffect(() => {
     OrderService.getById(id)
       .then((res) => {
-        console.log('Datos recibidos:', res.data); 
+        console.log('Datos recibidos:', res.data);
         setOrden(res.data);
         setLoaded(true);
       })
@@ -32,11 +32,11 @@ export function DetalleOrder() {
   if (!loaded) return <p>Cargando...</p>;
   if (error) return <p>Error: {error}</p>;
 
-  const { pedido, productos, personalizados = [] } = orden;
+  const { pedido, productos = [], personalizados = [] } = orden || {};
 
   const subtotalCalculado =
-    productos.reduce((acc, p) => acc + parseFloat(p.subtotal), 0) +
-    personalizados.reduce((acc, p) => acc + (p.total_personalizado || 0), 0);
+    (productos || []).reduce((acc, p) => acc + parseFloat(p.subtotal || 0), 0) +
+    (personalizados || []).reduce((acc, p) => acc + (p.total_personalizado || 0), 0);
 
   const impuestosCalculados = subtotalCalculado * 0.13;
   const totalCalculado = subtotalCalculado + impuestosCalculados;
@@ -44,17 +44,17 @@ export function DetalleOrder() {
   return (
     <Container maxWidth="md" sx={{ mt: 6 }}>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#d83b6a' }}>
-        Factura - Orden #{pedido.ordenesId}
+        Factura - Orden #{pedido?.ordenesId}
       </Typography>
 
       <Typography variant="body1" gutterBottom>
-        <strong>Fecha:</strong> {new Date(pedido.fecha).toLocaleString()}
+        <strong>Fecha:</strong> {pedido?.fecha ? new Date(pedido.fecha).toLocaleString() : 'N/A'}
       </Typography>
       <Typography variant="body1" gutterBottom>
-        <strong>Cliente:</strong> {pedido.nombre_usuario}
+        <strong>Cliente:</strong> {pedido?.nombre_usuario || 'N/A'}
       </Typography>
       <Typography variant="body1" gutterBottom>
-        <strong>Dirección:</strong> {pedido.direccion_envio}
+        <strong>Dirección:</strong> {pedido?.direccion_envio || 'N/A'}
       </Typography>
 
       <Typography variant="h6" sx={{ mt: 4, color: '#ce9fc4' }}>Productos</Typography>
@@ -68,7 +68,7 @@ export function DetalleOrder() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {productos.map((p, idx) => (
+          {(productos || []).map((p, idx) => (
             <TableRow key={idx}>
               <TableCell>{p.nombre}</TableCell>
               <TableCell>{p.cantidad}</TableCell>
@@ -83,10 +83,10 @@ export function DetalleOrder() {
                     </span>
                   </>
                 ) : (
-                  `₡${parseFloat(p.precio_unitario).toLocaleString()}`
+                  `₡${parseFloat(p.precio_unitario || 0).toLocaleString()}`
                 )}
               </TableCell>
-              <TableCell>₡{parseFloat(p.subtotal).toLocaleString()}</TableCell>
+              <TableCell>₡{parseFloat(p.subtotal || 0).toLocaleString()}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -98,17 +98,17 @@ export function DetalleOrder() {
           {personalizados.map((prod, idx) => (
             <div key={idx} style={{ marginBottom: 16 }}>
               <Typography variant="subtitle1">
-                <strong>{prod.nombre}</strong> - Base: ₡{prod.costo_base.toLocaleString()}
+                <strong>{prod.nombre}</strong> - Base: ₡{(prod.costo_base || 0).toLocaleString()}
               </Typography>
               <ul>
-                {prod.criterios.map((crit, i) => (
+                {(prod.criterios || []).map((crit, i) => (
                   <li key={i}>
-                    {crit.nombre_criterio}: {crit.opcion} (₡{crit.costo.toLocaleString()})
+                    {crit.nombre_criterio}: {crit.opcion} (₡{(crit.costo || 0).toLocaleString()})
                   </li>
                 ))}
               </ul>
               <Typography variant="body2">
-                <strong>Total Personalizado:</strong> ₡{prod.total_personalizado.toLocaleString()}
+                <strong>Total Personalizado:</strong> ₡{(prod.total_personalizado || 0).toLocaleString()}
               </Typography>
             </div>
           ))}
@@ -126,7 +126,7 @@ export function DetalleOrder() {
         Total: ₡{totalCalculado.toLocaleString(undefined, { minimumFractionDigits: 2 })}
       </Typography>
       <Typography variant="body1">
-        Método de Pago: {pedido.metodo_pago}
+        Método de Pago: {pedido?.metodo_pago || 'N/A'}
       </Typography>
 
       <Button

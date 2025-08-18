@@ -6,51 +6,40 @@ class OrdenModel
     {
         $this->enlace = new MySqlConnect();
     }
-
-    /*Listar todas las órdenes */
+    
+    /*Listar */
     public function all(){
         try {
-            $vSql = "SELECT 
-                        o.ordenesId,
-                        o.usuario_id,
-                        u.nombre_usuario,
-                        o.fecha,
-                        o.subtotal,
-                        o.impuestos,
-                        o.total,
-                        o.estado,
-                        o.metodo_pago,
-                        o.direccion_envio
-                     FROM ordenes o
-                     INNER JOIN usuarios u ON o.usuario_id = u.usuarioId
-                     ORDER BY o.fecha DESC";
-            
-            $vResultado = $this->enlace->ExecuteSQL($vSql);
-            return $vResultado;
-        } catch (Exception $e) {
+            //Consulta sql
+			$vSql = "SELECT * FROM ordenes;";
+			
+            //Ejecutar la consulta
+			$vResultado = $this->enlace->ExecuteSQL ($vSql);
+				
+			// Retornar el objeto
+			return $vResultado;
+		} catch (Exception $e) {
             handleException($e);
         }
     }
-
-    /*Obtener orden por ID con detalles completos*/
+    
     public function get($id) {
         $vResultado = null;
         try {
             // Obtener datos generales del pedido y usuario
             $vSql = "SELECT 
-                        o.ordenesId,
-                        o.fecha,
-                        o.direccion_envio,
-                        o.subtotal,
-                        o.impuestos,
-                        o.total,
-                        o.estado,
-                        o.metodo_pago,
-                        u.usuarioId,
-                        u.nombre_usuario
-                    FROM ordenes o
-                    JOIN usuarios u ON o.usuario_id = u.usuarioId
-                    WHERE o.ordenesId = " . (int)$id;
+                    o.ordenesId,
+                    o.fecha,
+                    o.direccion_envio,
+                    o.subtotal,
+                    o.impuestos,
+                    o.total,
+                    o.metodo_pago,
+                    u.usuarioId,
+                    u.nombre_usuario AS nombre_usuario
+                FROM ordenes o
+                JOIN usuarios u ON o.usuario_id = u.usuarioId
+                WHERE o.ordenesId = $id";
 
             $pedido = $this->enlace->ExecuteSQL($vSql);
 
@@ -58,205 +47,126 @@ class OrdenModel
                 return null;
             }
 
-            // Obtener detalle de productos
+            // Obtener detalle productos con cálculo correcto del precio unitario y subtotal con promociones activas
             $vSql = "SELECT 
-                        p.nombre,
-                        d.cantidad,
-                        d.precio_unitario as precio,
-                        (d.cantidad * d.precio_unitario) as subtotal
-                    FROM detalle_orden d
-                    JOIN productos p ON d.producto_id = p.productosId
-                    WHERE d.orden_id = " . (int)$id;
+                    p.nombre,
+                    d.cantidad,
+                    p.precio AS precio_original,
+
+                    -- Obtener máximo descuento activo (producto o categoría)
+                    (
+                        SELECT MAX(pr.descuento)
+                        FROM promociones pr
+                        WHERE pr.activo = 1
+                          AND NOW() BETWEEN pr.fecha_inicio AND pr.fecha_fin
+                          AND (
+                            (pr.tipo = 'Producto' AND pr.ProductoID = p.productosId)
+                            OR
+                            (pr.tipo = 'Categoria' AND pr.CategoriaID = p.categoria_id)
+                          )
+                    ) AS descuento_activo,
+
+                    -- Calcular precio unitario con descuento aplicado
+                    ROUND(
+                        p.precio * 
+                        (1 - COALESCE(
+                            (
+                                SELECT MAX(pr.descuento) / 100
+                                FROM promociones pr
+                                WHERE pr.activo = 1
+                                  AND NOW() BETWEEN pr.fecha_inicio AND pr.fecha_fin
+                                  AND (
+                                    (pr.tipo = 'Producto' AND pr.ProductoID = p.productosId)
+                                    OR
+                                    (pr.tipo = 'Categoria' AND pr.CategoriaID = p.categoria_id)
+                                  )
+                            ), 0)
+                        ), 2) AS precio_unitario,
+
+                    -- Calcular subtotal acorde a cantidad y precio unitario
+                    ROUND(
+                        d.cantidad * p.precio * 
+                        (1 - COALESCE(
+                            (
+                                SELECT MAX(pr.descuento) / 100
+                                FROM promociones pr
+                                WHERE pr.activo = 1
+                                  AND NOW() BETWEEN pr.fecha_inicio AND pr.fecha_fin
+                                  AND (
+                                    (pr.tipo = 'Producto' AND pr.ProductoID = p.productosId)
+                                    OR
+                                    (pr.tipo = 'Categoria' AND pr.CategoriaID = p.categoria_id)
+                                  )
+                            ), 0)
+                        ), 2) AS subtotal
+
+                FROM detalle_orden d
+                JOIN productos p ON d.producto_id = p.productosId
+                WHERE d.orden_id = $id";
 
             $productos = $this->enlace->ExecuteSQL($vSql);
-
-            // Obtener información de pago según el método
-            $infoPago = [];
-            if ($pedido[0]['metodo_pago'] === 'Efectivo') {
-                $vSql = "SELECT monto_pagado, cambio FROM orden_pago_efectivo WHERE orden_id = " . (int)$id;
-                $infoPago = $this->enlace->ExecuteSQL($vSql);
-            } elseif ($pedido[0]['metodo_pago'] === 'Tarjeta') {
-                $vSql = "SELECT numero_tarjeta, fecha_expiracion, cvv, nombre_titular FROM orden_pago_tarjeta WHERE orden_id = " . (int)$id;
-                $infoPago = $this->enlace->ExecuteSQL($vSql);
-            }
 
             $vResultado = [
                 'pedido' => $pedido[0], 
                 'productos' => $productos,
-                'pago' => !empty($infoPago) ? $infoPago[0] : [],
-                'personalizados' => []
+                'personalizados' => [] // vacío aun no hay
             ];
 
             return $vResultado;
 
         } catch (Exception $e) {
-            handleException($e);
+            die($e->getMessage());
         }
     }
-
-    /*Crear nueva orden*/
-    public function create($data) {
+    
+    public function create($data)
+    {
         try {
-            // Validar datos requeridos
-            if (!isset($data['usuario_id'], $data['productos'], $data['direccion_envio'], $data['metodo_pago'])) {
-                throw new Exception("Datos incompletos para crear la orden");
-            }
+            // 1. Insertar en tabla ordenes usando MySqlConnect
+            $sql = "INSERT INTO ordenes 
+                    (usuario_id, fecha, subtotal, impuestos, total, estado, metodo_pago, direccion_envio) 
+                    VALUES 
+                    ({$data['usuario_id']}, NOW(), {$data['subtotal']}, {$data['impuestos']}, {$data['total']}, '{$data['estado']}', '{$data['metodo_pago']}', '{$data['direccion_envio']}')";
 
-            // Calcular totales
-            $subtotal = 0;
-            foreach ($data['productos'] as $producto) {
-                $precio = isset($producto['precio']) ? $producto['precio'] : $producto['precio_unitario'];
-                $subtotal += $precio * $producto['cantidad'];
-            }
+            // Ejecutar la consulta
+            $resultado = $this->enlace->ExecuteSQL($sql);
             
-            $impuestos = $subtotal * 0.13; // 13% IVA Costa Rica
-            $total = $subtotal + $impuestos;
+            // Obtener el último ID insertado
+            $sqlLastId = "SELECT LAST_INSERT_ID() as orden_id";
+            $lastIdResult = $this->enlace->ExecuteSQL($sqlLastId);
+            $orden_id = $lastIdResult[0]['orden_id'];
 
-            // Insertar orden principal
-            $vSql = "INSERT INTO ordenes 
-                        (usuario_id, fecha, subtotal, impuestos, total, estado, metodo_pago, direccion_envio)
-                     VALUES (
-                        " . (int)$data['usuario_id'] . ",
-                        NOW(),
-                        " . (float)$subtotal . ",
-                        " . (float)$impuestos . ",
-                        " . (float)$total . ",
-                        'Procesando',
-                        '" . $this->enlace->real_escape_string($data['metodo_pago']) . "',
-                        '" . $this->enlace->real_escape_string($data['direccion_envio']) . "'
-                     )";
-
-            $this->enlace->ExecuteSQL($vSql);
-
-            // Obtener ID de la orden creada
-            $vSqlId = "SELECT LAST_INSERT_ID() as orden_id";
-            $resultado = $this->enlace->ExecuteSQL($vSqlId);
-            $ordenId = $resultado[0]['orden_id'];
-
-            // Insertar detalle de productos
-            foreach ($data['productos'] as $producto) {
-                $productoId = isset($producto['producto_id']) ? $producto['producto_id'] : $producto['id'];
-                $precio = isset($producto['precio']) ? $producto['precio'] : $producto['precio_unitario'];
-                
-                $vSql = "INSERT INTO detalle_orden (orden_id, producto_id, cantidad, precio_unitario)
-                         VALUES (
-                            " . (int)$ordenId . ",
-                            " . (int)$productoId . ",
-                            " . (int)$producto['cantidad'] . ",
-                            " . (float)$precio . "
-                         )";
-                $this->enlace->ExecuteSQL($vSql);
+            // 2. Insertar detalle de productos
+            if (!empty($data['productos'])) {
+                foreach ($data['productos'] as $producto) {
+                    $sqlDetalle = "INSERT INTO detalle_orden 
+                                   (orden_id, producto_id, cantidad, precio_unitario) 
+                                   VALUES 
+                                   ($orden_id, {$producto['id']}, {$producto['cantidad']}, {$producto['precio']})";
+                    $this->enlace->ExecuteSQL($sqlDetalle);
+                }
             }
 
-            // Insertar información de pago según el método
-            if ($data['metodo_pago'] === 'Efectivo' && isset($data['pago_efectivo'])) {
-                $vSql = "INSERT INTO orden_pago_efectivo (orden_id, monto_pagado, cambio)
-                         VALUES (
-                            " . (int)$ordenId . ",
-                            " . (float)$data['pago_efectivo']['monto_pagado'] . ",
-                            " . (float)$data['pago_efectivo']['cambio'] . "
-                         )";
-                $this->enlace->ExecuteSQL($vSql);
-            } elseif ($data['metodo_pago'] === 'Tarjeta' && isset($data['pago_tarjeta'])) {
-                $tarjeta = $data['pago_tarjeta'];
-                $vSql = "INSERT INTO orden_pago_tarjeta 
-                            (orden_id, numero_tarjeta, fecha_expiracion, cvv, nombre_titular)
-                         VALUES (
-                            " . (int)$ordenId . ",
-                            '" . $this->enlace->real_escape_string($tarjeta['numero_tarjeta']) . "',
-                            '" . $this->enlace->real_escape_string($tarjeta['fecha_expiracion']) . "',
-                            '" . $this->enlace->real_escape_string($tarjeta['cvv']) . "',
-                            '" . $this->enlace->real_escape_string($tarjeta['nombre_titular']) . "'
-                         )";
-                $this->enlace->ExecuteSQL($vSql);
+            // 3. Insertar según método de pago
+            if ($data['metodo_pago'] === "Tarjeta") {
+                $sqlTarjeta = "INSERT INTO orden_pago_tarjeta 
+                               (orden_id, numero_tarjeta, fecha_expiracion, cvv, nombre_titular)
+                               VALUES 
+                               ($orden_id, '{$data['numero_tarjeta']}', '{$data['fecha_expiracion']}', '{$data['cvv']}', '{$data['nombre_titular']}')";
+                $this->enlace->ExecuteSQL($sqlTarjeta);
+            } elseif ($data['metodo_pago'] === "Efectivo") {
+                $sqlEfectivo = "INSERT INTO orden_pago_efectivo 
+                                (orden_id, monto_pagado, cambio)
+                                VALUES 
+                                ($orden_id, {$data['monto_pagado']}, {$data['cambio']})";
+                $this->enlace->ExecuteSQL($sqlEfectivo);
             }
 
-            return [
-                'success' => true,
-                'orden_id' => $ordenId,
-                'total' => $total,
-                'message' => 'Orden creada exitosamente'
-            ];
-
+            return $orden_id; // Retorna el id de la orden creada
         } catch (Exception $e) {
-            error_log("Error en OrdenModel::create: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'Error al crear la orden: ' . $e->getMessage()
-            ];
-        }
-    }
-
-    /*Actualizar estado de orden*/
-    public function updateStatus($id, $estado) {
-        try {
-            $estadosValidos = ['Procesando', 'Enviado', 'Entregado', 'Cancelado', 'Pendiente'];
-            
-            if (!in_array($estado, $estadosValidos)) {
-                throw new Exception("Estado no válido");
-            }
-
-            $vSql = "UPDATE ordenes 
-                     SET estado = '" . $this->enlace->real_escape_string($estado) . "'
-                     WHERE ordenesId = " . (int)$id;
-
-            $this->enlace->ExecuteSQL($vSql);
-
-            return [
-                'success' => true,
-                'message' => 'Estado actualizado correctamente'
-            ];
-
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'message' => 'Error al actualizar el estado: ' . $e->getMessage()
-            ];
-        }
-    }
-
-    /*Obtener órdenes por usuario*/
-    public function getByUser($userId) {
-        try {
-            $vSql = "SELECT 
-                        o.ordenesId,
-                        o.fecha,
-                        o.subtotal,
-                        o.impuestos,
-                        o.total,
-                        o.estado,
-                        o.metodo_pago,
-                        o.direccion_envio
-                     FROM ordenes o
-                     WHERE o.usuario_id = " . (int)$userId . "
-                     ORDER BY o.fecha DESC";
-
-            return $this->enlace->ExecuteSQL($vSql);
-
-        } catch (Exception $e) {
-            handleException($e);
-        }
-    }
-
-    /*Eliminar orden (soft delete cambiando estado)*/
-    public function delete($id) {
-        try {
-            $vSql = "UPDATE ordenes 
-                     SET estado = 'Cancelado'
-                     WHERE ordenesId = " . (int)$id;
-
-            $this->enlace->ExecuteSQL($vSql);
-
-            return [
-                'success' => true,
-                'message' => 'Orden cancelada correctamente'
-            ];
-
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'message' => 'Error al cancelar la orden: ' . $e->getMessage()
-            ];
+            // Log del error para debugging
+            error_log("Error en OrdenModel::create(): " . $e->getMessage());
+            throw $e;
         }
     }
 }

@@ -75,7 +75,7 @@ const PagoPedido = () => {
   const [showFacturaDialog, setShowFacturaDialog] = useState(false);
   const [ordenCreada, setOrdenCreada] = useState(null);
 
-  // useEffect para cargar datos
+  // Cargar datos del pedido
   useEffect(() => {
     console.log('PagoPedido - location.state:', location.state);
     
@@ -114,7 +114,7 @@ const PagoPedido = () => {
   const totalCompra = pedidoData?.total || 0;
   const usuarioId = pedidoData?.usuarioDetalle?.usuarioId || 1;
 
-  // Función para formatear número de tarjeta con espacios cada 4 dígitos
+  // Formatear número de tarjeta
   const formatCardNumber = (value) => {
     const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
     const matches = v.match(/\d{4,16}/g);
@@ -132,7 +132,7 @@ const PagoPedido = () => {
     }
   };
 
-  // Detectar tipo de tarjeta basado en el número
+  // Detectar tipo de tarjeta
   const getCardType = (number) => {
     const cleanNumber = number.replace(/\s/g, '');
     if (cleanNumber.startsWith('4')) return 'Visa';
@@ -141,7 +141,7 @@ const PagoPedido = () => {
     return '';
   };
 
-  // Generar años (actual + 15 años)
+  // Generar años para selector
   const generateYears = () => {
     const currentYear = new Date().getFullYear();
     const years = [];
@@ -151,7 +151,7 @@ const PagoPedido = () => {
     return years;
   };
 
-  // Generar meses
+  // Meses para selector
   const months = [
     { value: '01', label: '01 - Enero' },
     { value: '02', label: '02 - Febrero' },
@@ -167,7 +167,7 @@ const PagoPedido = () => {
     { value: '12', label: '12 - Diciembre' },
   ];
 
-  // Actualizar fechaExpiracion cuando cambian mes o año
+  // Actualizar fecha expiración
   useEffect(() => {
     if (selectedMonth && selectedYear) {
       const yearShort = selectedYear.toString().slice(-2);
@@ -178,7 +178,7 @@ const PagoPedido = () => {
     }
   }, [selectedMonth, selectedYear]);
 
-  // Función de validación Luhn (tarjeta)
+  // Validación algoritmo Luhn
   const validarLuhn = (numero) => {
     let suma = 0;
     let alternar = false;
@@ -194,12 +194,12 @@ const PagoPedido = () => {
     return suma % 10 === 0;
   };
 
-  // Determinar si es método de tarjeta (crédito o débito)
+  // Determinar si es método de tarjeta
   const esTarjeta = () => {
     return metodoPago === "tarjeta-credito" || metodoPago === "tarjeta-debito";
   };
 
-  // Obtener el tipo de método para mostrar
+  // Obtener tipo de método para mostrar
   const getTipoMetodo = () => {
     switch(metodoPago) {
       case "tarjeta-credito": return "Crédito";
@@ -214,7 +214,7 @@ const PagoPedido = () => {
     return pedidoData.moneda === 'USD' ? '$' : '₡';
   };
 
-  // Validaciones de tarjeta (aplica tanto para crédito como débito)
+  // Validación de tarjeta
   const validarTarjeta = () => {
     const { numeroTarjeta, fechaExpiracion, cvv, nombreTitular } = formData;
     const cleanCardNumber = numeroTarjeta.replace(/\s/g, '');
@@ -251,7 +251,7 @@ const PagoPedido = () => {
     return null;
   };
 
-  // Validaciones de efectivo
+  // Validación de efectivo
   const validarEfectivo = () => {
     const monto = parseFloat(formData.montoEfectivo);
     if (isNaN(monto) || monto <= 0) {
@@ -263,6 +263,7 @@ const PagoPedido = () => {
     return null;
   };
 
+  // Manejar cambios en el formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
     
@@ -272,7 +273,6 @@ const PagoPedido = () => {
         setFormData((prev) => ({ ...prev, [name]: formattedValue }));
       }
     } else if (name === "cvv") {
-      // Solo permitir números para CVV
       const numericValue = value.replace(/[^0-9]/g, '');
       if (numericValue.length <= 4) {
         setFormData((prev) => ({ ...prev, [name]: numericValue }));
@@ -287,9 +287,14 @@ const PagoPedido = () => {
     }
   };
 
-  // Función de pago corregida usando finalizarPago
+  // Procesar el pago y crear la orden
   const handlePagar = async () => {
-    if (!pedidoData) {
+    console.log('Iniciando proceso de pago...');
+    console.log('Datos del pedido:', pedidoData);
+    console.log('Método de pago:', metodoPago);
+    console.log('Form data:', formData);
+
+    if (!pedidoData || !pedidoData.productos || pedidoData.productos.length === 0) {
       setMensaje("No hay datos del pedido disponibles.");
       setAlertType("error");
       setOpenSnackbar(true);
@@ -297,7 +302,9 @@ const PagoPedido = () => {
     }
 
     setLoading(true);
+    
     try {
+      // Validar según método de pago
       let error = null;
       if (esTarjeta()) {
         error = validarTarjeta();
@@ -313,13 +320,16 @@ const PagoPedido = () => {
         return;
       }
 
-      // Preparar datos del pago usando el método transformarDatosPago
-      const datosAdicionales = {};
+      // Preparar datos específicos del método de pago
+      let datosMetodoPago = {};
       
       if (metodoPago === "efectivo") {
-        datosAdicionales.montoEfectivo = formData.montoEfectivo;
+        datosMetodoPago = {
+          montoEfectivo: formData.montoEfectivo,
+          cambio: cambio
+        };
       } else if (esTarjeta()) {
-        datosAdicionales.datosTarjeta = {
+        datosMetodoPago = {
           numeroTarjeta: formData.numeroTarjeta,
           fechaExpiracion: formData.fechaExpiracion,
           cvv: formData.cvv,
@@ -327,31 +337,32 @@ const PagoPedido = () => {
         };
       }
 
-      // Usar el método transformarDatosPago del OrderService
+      console.log('Datos método de pago:', datosMetodoPago);
+
+      // Transformar datos para enviar al backend
       const datosTransformados = OrderService.transformarDatosPago(
-        pedidoData, 
-        getTipoMetodo(), 
-        datosAdicionales
+        pedidoData,
+        getTipoMetodo(),
+        datosMetodoPago
       );
 
-      console.log('Datos transformados para enviar:', datosTransformados);
+      console.log('Datos transformados para envío:', datosTransformados);
 
-      // Llamar al método finalizarPago
+      // Enviar al backend
       const response = await OrderService.finalizarPago(datosTransformados);
       
       console.log('Respuesta del servidor:', response);
 
-      // Procesar la respuesta
-      const resultado = OrderService.procesarRespuesta(response);
-      
-      if (resultado && (resultado.success !== false)) {
-        // Guardar información de la orden creada
+      if (response && response.success !== false && response.orden_id) {
+        console.log('Pago procesado exitosamente, ID de orden:', response.orden_id);
+
+        // Crear objeto orden completa
         const ordenCompleta = {
-          id: resultado.orden_id || resultado.id || resultado.ordenesId,
+          id: response.orden_id,
           metodoPago: getTipoMetodo(),
           cambio: cambio,
           fecha: new Date().toISOString(),
-          total: resultado.total || totalCompra,
+          total: response.total || totalCompra,
           subtotalSinImpuestos: pedidoData.subtotalSinImpuestos,
           ivaTotal: pedidoData.ivaTotal,
           productos: pedidoData.productos,
@@ -360,39 +371,54 @@ const PagoPedido = () => {
           moneda: pedidoData.moneda || 'CRC'
         };
         
+        console.log('Orden completa creada:', ordenCompleta);
         setOrdenCreada(ordenCompleta);
 
-        // Limpiar localStorage después del pago exitoso
+        // Limpiar localStorage y formulario
         localStorage.removeItem('pedidoEnProceso');
-
-        // Limpiar formulario
         setFormData(initialFormData);
         setSelectedMonth("");
         setSelectedYear("");
         setCambio(0);
 
-        // Mostrar modal de factura
+        // Mostrar modal de éxito
         setShowFacturaDialog(true);
-
+        
+        // Mensaje de éxito
         setMensaje("¡Pago procesado exitosamente!");
         setAlertType("success");
         setOpenSnackbar(true);
-        
+
+        // Redirigir después de 5 segundos
+        setTimeout(() => {
+          if (ordenCompleta.id) {
+            navigate(`/orden/${ordenCompleta.id}`);
+          } else {
+            navigate('/orden');
+          }
+        }, 5000);
+
       } else {
-        throw new Error(resultado.message || 'Error al procesar el pago');
+        throw new Error(response?.message || 'Error al procesar el pago - respuesta inválida');
       }
 
     } catch (error) {
-      console.error("Error completo:", error);
-      console.error("Response data:", error.response?.data);
-      console.error("Response status:", error.response?.status);
+      console.error("Error al procesar el pago:", error);
       
-      let errorMessage = `Hubo un error al procesar el pago con ${getTipoMetodo().toLowerCase()}.`;
+      let errorMessage = 'Hubo un error al procesar el pago.';
       
-      if (error.response?.status === 404) {
-        errorMessage = "El endpoint del servidor no fue encontrado. Verifica la configuración de la API.";
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+      if (error.response) {
+        console.log('Error response:', error.response);
+        
+        if (error.response.status === 404) {
+          errorMessage = "El servicio de pagos no está disponible. Contacte al administrador.";
+        } else if (error.response.status === 400) {
+          errorMessage = error.response.data?.message || "Datos inválidos. Verifique la información ingresada.";
+        } else if (error.response.status >= 500) {
+          errorMessage = "Error interno del servidor. Por favor, intente nuevamente.";
+        } else if (error.response.data?.message) {
+          errorMessage = error.response.data.message;
+        }
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -400,29 +426,34 @@ const PagoPedido = () => {
       setMensaje(errorMessage);
       setAlertType("error");
       setOpenSnackbar(true);
+      
     } finally {
       setLoading(false);
     }
   };
 
-  // Función para ver el detalle de la orden
+  // Ver detalle de la orden (desde el modal)
   const verDetalleOrden = () => {
     setShowFacturaDialog(false);
-    navigate(`/orden/${ordenCreada.id}`);
+    if (ordenCreada?.id) {
+      navigate(`/orden/${ordenCreada.id}`);
+    } else {
+      navigate('/orden');
+    }
   };
 
-  // Función para ir a la lista de órdenes
+  // Ir a la lista de órdenes
   const irAOrdenes = () => {
     setShowFacturaDialog(false);
     navigate('/orden');
   };
 
-  // Función para imprimir factura
+  // Imprimir factura
   const handleImprimir = () => {
     window.print();
   };
 
-  // Validación inicial mejorada
+  // Estado de carga inicial
   if (cargandoDatos) {
     return (
       <Container maxWidth="sm" sx={{ mt: 6, textAlign: 'center' }}>
@@ -436,7 +467,7 @@ const PagoPedido = () => {
     );
   }
 
-  // Si no hay datos del pedido, mostrar mensaje
+  // Si no hay datos del pedido
   if (!pedidoData || !pedidoData.productos || pedidoData.productos.length === 0) {
     return (
       <Container maxWidth="sm" sx={{ mt: 6, textAlign: 'center' }}>
@@ -459,12 +490,11 @@ const PagoPedido = () => {
   }
 
   const currencySymbol = getCurrencySymbol();
-
   return (
     <>
       <Container maxWidth="md" sx={{ mt: 4, pb: 4 }}>
         <Grid container spacing={4}>
-          {/* Información del Pedido */}
+          {/* Resumen del Pedido */}
           <Grid item xs={12} md={6}>
             <Card sx={{ mb: 3, boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}>
               <CardContent>
@@ -472,6 +502,7 @@ const PagoPedido = () => {
                   Resumen del Pedido
                 </Typography>
                 
+                {/* Información del cliente */}
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="h6" color="secondary">
                     Cliente: {pedidoData.cliente?.nombre}
@@ -486,6 +517,7 @@ const PagoPedido = () => {
 
                 <Divider sx={{ my: 2 }} />
 
+                {/* Lista de productos */}
                 <Typography variant="h6" gutterBottom>
                   Productos ({pedidoData.productos?.length || 0}):
                 </Typography>
@@ -523,6 +555,7 @@ const PagoPedido = () => {
 
                 <Divider sx={{ my: 2 }} />
 
+                {/* Totales */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography>Subtotal:</Typography>
                   <Typography>{currencySymbol} {Math.round(pedidoData.subtotalSinImpuestos).toLocaleString()}</Typography>
@@ -565,22 +598,22 @@ const PagoPedido = () => {
                   onChange={(e) => setMetodoPago(e.target.value)}
                   disabled={loading}
                 >
-                  <MenuItem value="tarjeta-credito">💳 Tarjeta de Crédito</MenuItem>
-                  <MenuItem value="tarjeta-debito">💳 Tarjeta de Débito</MenuItem>
-                  <MenuItem value="efectivo">💰 Efectivo</MenuItem>
+                  <MenuItem value="tarjeta-credito">Tarjeta de Crédito</MenuItem>
+                  <MenuItem value="tarjeta-debito">Tarjeta de Débito</MenuItem>
+                  <MenuItem value="efectivo">Efectivo</MenuItem>
                 </Select>
               </FormControl>
 
-              {/* Formulario de Tarjeta (Crédito y Débito) */}
+              {/* Formulario de Tarjeta */}
               {esTarjeta() && (
                 <Box sx={{ animation: 'fadeIn 0.3s ease-in' }}>
                   <Box sx={{ mb: 2, p: 2, backgroundColor: 'primary.light', borderRadius: 2 }}>
                     <Typography variant="body2" color="primary.contrastText" sx={{ fontWeight: 'bold' }}>
-                      🔒 Pagando con tarjeta de {getTipoMetodo().toLowerCase()}
+                      Pagando con tarjeta de {getTipoMetodo().toLowerCase()}
                     </Typography>
                   </Box>
 
-                  {/* Número de Tarjeta con detección de tipo */}
+                  {/* Número de Tarjeta */}
                   <Box sx={{ position: 'relative' }}>
                     <TextField
                       fullWidth
@@ -612,7 +645,7 @@ const PagoPedido = () => {
                     />
                   </Box>
 
-                  {/* Fecha de Expiración con Selectores */}
+                  {/* Fecha de Expiración */}
                   <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
                     <FormControl fullWidth>
                       <InputLabel>Mes</InputLabel>
@@ -682,7 +715,7 @@ const PagoPedido = () => {
                 <Box sx={{ animation: 'fadeIn 0.3s ease-in' }}>
                   <Box sx={{ mb: 2, p: 2, backgroundColor: 'success.light', borderRadius: 2 }}>
                     <Typography variant="body2" color="success.contrastText" sx={{ fontWeight: 'bold' }}>
-                      💰 Pago en efectivo
+                      Pago en efectivo
                     </Typography>
                   </Box>
 
@@ -707,13 +740,14 @@ const PagoPedido = () => {
                   {cambio > 0 && (
                     <Box sx={{ mt: 2, p: 2, backgroundColor: 'success.light', borderRadius: 2, border: '2px solid', borderColor: 'success.main' }}>
                       <Typography variant="h6" color="success.dark" sx={{ fontWeight: 'bold' }}>
-                        💵 Cambio: {currencySymbol} {cambio.toLocaleString()}
+                        Cambio: {currencySymbol} {cambio.toLocaleString()}
                       </Typography>
                     </Box>
                   )}
                 </Box>
               )}
 
+              {/* Botones de acción */}
               <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
                 <Button
                   variant="outlined"
@@ -745,7 +779,7 @@ const PagoPedido = () => {
                       Procesando...
                     </>
                   ) : (
-                    "💳 Finalizar Pago"
+                    "Finalizar Pago"
                   )}
                 </Button>
               </Box>
@@ -788,7 +822,6 @@ const PagoPedido = () => {
           }
         }}
       >
-        {/* Header con logo de éxito */}
         <DialogTitle sx={{ 
           textAlign: 'center', 
           pb: 2,
@@ -904,7 +937,7 @@ const PagoPedido = () => {
                     <Grid item xs={12} md={6}>
                       <Box sx={{ p: 2, backgroundColor: '#e8f5e8', borderRadius: 2, border: '1px solid #4caf50' }}>
                         <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
-                          💵 Cambio: {currencySymbol} {ordenCreada.cambio.toLocaleString()}
+                          Cambio: {currencySymbol} {ordenCreada.cambio.toLocaleString()}
                         </Typography>
                       </Box>
                     </Grid>
@@ -913,8 +946,8 @@ const PagoPedido = () => {
               </Box>
 
               {/* Detalle de productos */}
-              <Typography variant="h6" sx={{ mb: 2, color: '#1976d2', display: 'flex', alignItems: 'center' }}>
-                📦 Detalle de Productos
+              <Typography variant="h6" sx={{ mb: 2, color: '#1976d2' }}>
+                Detalle de Productos
               </Typography>
               
               <TableContainer component={Paper} sx={{ mb: 3, boxShadow: 1 }}>
@@ -1002,7 +1035,7 @@ const PagoPedido = () => {
               {/* Nota de agradecimiento */}
               <Box sx={{ mt: 3, p: 2, backgroundColor: '#e3f2fd', borderRadius: 2, textAlign: 'center' }}>
                 <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold', mb: 1 }}>
-                  ¡Gracias por su compra! 🎉
+                  ¡Gracias por su compra!
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Se ha enviado un email de confirmación a su dirección de correo electrónico.
@@ -1013,7 +1046,7 @@ const PagoPedido = () => {
               {/* Información adicional */}
               <Box sx={{ mt: 2, p: 2, backgroundColor: '#fff3e0', borderRadius: 2, border: '1px dashed #ff9800' }}>
                 <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#f57c00', mb: 1 }}>
-                  ℹ️ Información importante:
+                  Información importante:
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
                   • Conserve este comprobante para cualquier consulta<br />
