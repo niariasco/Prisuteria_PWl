@@ -31,15 +31,98 @@ export function DetalleProductos({ isShopping }) {
   const [precioBase, setPrecioBase] = useState(0); 
   const [precioBaseConDescuento, setPrecioBaseConDescuento] = useState(0);
   const [calculandoPrecio, setCalculandoPrecio] = useState(false);
-  const [cantidad, setCantidad] = useState(1);
-  
+ const [errorCriterios, setErrorCriterios] = useState({});//•	Se validará que el usuario haya seleccionado al menos una opción para cada criterio de personalización definida.
+  const [mostrarErrores, setMostrarErrores] = useState(false);
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const { addItem, cartItems } = useCart(); 
+  const { addItem } = useCart(); 
 
-  // Debug del carrito
-  console.log('Hook useCart disponible:', !!addItem);
-  console.log('Items en carrito:', cartItems?.length || 0);
+  
+// Función que valida que todos los criterios tengan selección
+const validarCriterios = () => {
+  if (!data || !data.criterios || data.criterios.length === 0) {
+    return { esValido: true, errores: {} };
+  }
+
+  const errores = {};
+  
+  data.criterios.forEach((criterio) => {
+    const opcionSeleccionada = opcionesSeleccionadas[criterio.id];
+    
+    if (!opcionSeleccionada || !opcionSeleccionada.id) {
+      errores[criterio.id] = `Debe seleccionar una opción para ${criterio.nombre}`;
+    }
+  });
+
+  const esValido = Object.keys(errores).length === 0;
+  
+  return { esValido, errores };
+};
+
+const handleAddToCart = () => {
+  try {
+    setMostrarErrores(true);
+    const validacion = validarCriterios();
+    
+    if (!validacion.esValido) {
+      setErrorCriterios(validacion.errores);
+      
+      // Crear mensaje de error más específico
+      const criteriosFaltantes = Object.values(validacion.errores);
+      const mensajeError = criteriosFaltantes.length === 1 
+        ? criteriosFaltantes[0]
+        : `Faltan selecciones en ${criteriosFaltantes.length} criterios de personalización`;
+      
+      alert(mensajeError);
+      
+      // Hacer scroll al primer criterio con error (opcional)
+      const primerCriterioConError = Object.keys(validacion.errores)[0];
+      const elemento = document.querySelector(`[data-criterio-id="${primerCriterioConError}"]`);
+      if (elemento) {
+        elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      
+      return;
+    }
+
+    // Limpiar errores si la validación es exitosa
+    setErrorCriterios({});
+    setMostrarErrores(false);
+     if (!addItem) {
+      console.error('addItem no está disponible');
+      alert('Error: No se puede agregar al carrito en este momento');
+      return;
+    }
+
+    if (!data) {
+      console.error('No hay datos del producto');
+      return;
+    }
+
+     const productoPreparado = ProductoService.prepararProductoParaCarrito(data);
+    const precioFinal = precioTotal;
+
+    const productoParaCarrito = {
+      ...productoPreparado,
+      opcionesPersonalizacion: opcionesSeleccionadas,
+      precio_unitario: precioFinal,
+      precio_total: precioFinal,
+      nombre: getProductName(data),
+      descripcion: getProductDescription(data),
+      imagen: data.imagenes?.[0] || null,
+      id: data.productosId || data.id,
+      productoId: data.productosId || data.id
+    };
+
+    console.log('Agregando al carrito:', productoParaCarrito);
+
+    addItem(productoParaCarrito);
+    alert(`${getProductName(data)} agregado al carrito`);
+  } catch (error) {
+    console.error('Error al agregar producto al carrito:', error);
+    alert('Error al agregar el producto al carrito');
+  }
+};
 
   // Funciones de conversión de moneda (agregadas desde ListaCartasProductos)
   const EXCHANGE_RATE = 500; // 1 USD = 500 CRC
@@ -174,114 +257,59 @@ export function DetalleProductos({ isShopping }) {
     }
   };
 
-  const handleOpcionChange = async (criterioId, e) => {
-    const opcionIdStr = e.target.value;
-    
-    if (!opcionIdStr || opcionIdStr === '') {
-      const nuevasOpciones = { ...opcionesSeleccionadas };
-      delete nuevasOpciones[criterioId];
-      setOpcionesSeleccionadas(nuevasOpciones);
-      await actualizarPrecio(nuevasOpciones);
-      return;
-    }
-
-    const criterio = data.criterios.find(c => c.id === criterioId || c.id === String(criterioId));
-    if (!criterio) {
-      console.error('Criterio no encontrado:', criterioId);
-      return;
-    }
-
-    const opcionSeleccionada = criterio.opciones?.find(op => 
-      op.id === opcionIdStr || op.id === parseInt(opcionIdStr) || String(op.id) === opcionIdStr
-    );
-    
-    if (!opcionSeleccionada) {
-      console.error('Opción no encontrada:', opcionIdStr);
-      return;
-    }
-
-    const nuevasOpciones = {
-      ...opcionesSeleccionadas,
-      [criterioId]: {
-        ...opcionSeleccionada,
-        criterioId: criterioId
-      }
-    };
-
+const handleOpcionChange = async (criterioId, e) => {
+  const opcionIdStr = e.target.value;
+  
+  if (!opcionIdStr || opcionIdStr === '') {
+    const nuevasOpciones = { ...opcionesSeleccionadas };
+    delete nuevasOpciones[criterioId];
     setOpcionesSeleccionadas(nuevasOpciones);
     await actualizarPrecio(nuevasOpciones);
-  };
+    return;
+  }
 
-  const handleAddToCart = () => {
-    try {
-      // Verificar que addItem existe
-      if (!addItem) {
-        console.error('addItem no está disponible');
-        alert('Error: No se puede agregar al carrito en este momento');
-        return;
-      }
+  const criterio = data.criterios.find(c => c.id === criterioId || c.id === String(criterioId));
+  if (!criterio) {
+    console.error('Criterio no encontrado:', criterioId);
+    return;
+  }
 
-      // Verificar que hay datos del producto
-      if (!data) {
-        console.error('No hay datos del producto');
-        return;
-      }
+  const opcionSeleccionada = criterio.opciones?.find(op => 
+    op.id === opcionIdStr || op.id === parseInt(opcionIdStr) || String(op.id) === opcionIdStr
+  );
+  
+  if (!opcionSeleccionada) {
+    console.error('Opción no encontrada:', opcionIdStr);
+    return;
+  }
 
-      // Preparar el producto base
-      const productoPreparado = ProductoService.prepararProductoParaCarrito(data);
-
-      // Usar el precio total calculado (que ya incluye personalizaciones)
-      const precioFinal = precioTotal;
-
-      // Preparar las opciones con nombres de criterios
-      const opcionesConNombres = {};
-      Object.entries(opcionesSeleccionadas).forEach(([criterioId, opcion]) => {
-        const criterio = data.criterios?.find(c => c.id == criterioId);
-        opcionesConNombres[criterioId] = {
-          ...opcion,
-          criterioNombre: criterio?.nombre || `Criterio ${criterioId}`
-        };
-      });
-
-      // Crear el objeto para el carrito
-      const productoParaCarrito = {
-        ...productoPreparado,
-        // Incluir las opciones seleccionadas con nombres
-        opcionesPersonalizacion: opcionesConNombres,
-        cantidad: cantidad,
-        precio_unitario: precioFinal,
-        precio_total: precioFinal * cantidad,
-        precio_base_original: parseFloat(data.precio) || 0,
-        // Información adicional útil
-        nombre: getProductName(data),
-        descripcion: getProductDescription(data),
-        imagen: data.imagenes?.[0] || null,
-        // IDs importantes
-        id: data.productosId || data.id,
-        productoId: data.productosId || data.id,
-        // Marcar como personalizado si tiene opciones
-        esPersonalizado: Object.keys(opcionesSeleccionadas).length > 0,
-        // Información para mostrar en el carrito
-        tienePersonalizaciones: Object.keys(opcionesSeleccionadas).length > 0
-      };
-
-      console.log('Agregando al carrito:', productoParaCarrito);
-      
-      // Agregar al carrito
-      addItem(productoParaCarrito);
-
-      // Mostrar confirmación
-      const mensajePersonalizacion = Object.keys(opcionesSeleccionadas).length > 0 
-        ? ' (Personalizado)' 
-        : '';
-      
-      alert(`${getProductName(data)}${mensajePersonalizacion} agregado al carrito (Cantidad: ${cantidad})`);
-      
-    } catch (error) {
-      console.error('Error al agregar producto al carrito:', error);
-      alert('Error al agregar el producto al carrito');
+  const nuevasOpciones = {
+    ...opcionesSeleccionadas,
+    [criterioId]: {
+      ...opcionSeleccionada,
+      criterioId: criterioId
     }
   };
+
+  setOpcionesSeleccionadas(nuevasOpciones);
+  await actualizarPrecio(nuevasOpciones);
+  
+  if (errorCriterios[criterioId]) {
+    const nuevosErrores = { ...errorCriterios };
+    delete nuevosErrores[criterioId];
+    setErrorCriterios(nuevosErrores);
+  }
+};
+//  Función para verificar si todos los criterios están completos
+const todosLosCriteriosCompletos = () => {
+  if (!data || !data.criterios || data.criterios.length === 0) return true;
+  
+  return data.criterios.every(criterio => 
+    opcionesSeleccionadas[criterio.id] && opcionesSeleccionadas[criterio.id].id
+  );
+};
+
+todosLosCriteriosCompletos;
 
   useEffect(() => {
     ProductoService.getProductoById(id)
@@ -444,141 +472,158 @@ export function DetalleProductos({ isShopping }) {
             )}
           </Box>
 
-          {/* Sección de personalización */}
-          {data.criterios && data.criterios.length > 0 && (
-            <Box sx={{ mt: 3, mb: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: '#d83b6a' }}>
-                {t('personalizar_producto', 'Personalizar Producto')}
-              </Typography>
+       {data.criterios && data.criterios.length > 0 && (
+  <Box sx={{ mt: 3, mb: 3 }}>
+    <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+      {t('Personalizar Producto')}
+    </Typography>
 
-              {Object.keys(opcionesSeleccionadas).length === 0 && (
-                <Typography variant="body2" sx={{ color: '#999', fontStyle: 'italic', mb: 2 }}>
-                  Seleccione las opciones para personalizar su producto
-                </Typography>
-              )}
+    {/* Indicador de progreso */}
+    {data.criterios.length > 1 && (
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="body2" color="text.secondary">
+          {Object.keys(opcionesSeleccionadas).length} de {data.criterios.length} criterios seleccionados
+        </Typography>
+        <Box sx={{ 
+          width: '100%', 
+          height: 4, 
+          bgcolor: '#f0f0f0', 
+          borderRadius: 2,
+          mt: 0.5
+        }}>
+          <Box sx={{ 
+            width: `${(Object.keys(opcionesSeleccionadas).length / data.criterios.length) * 100}%`,
+            height: '100%',
+            bgcolor: todosLosCriteriosCompletos() ? '#d83b6a' : '#d83b6a',
+            borderRadius: 2,
+            transition: 'all 0.3s ease'
+          }} />
+        </Box>
+      </Box>
+    )}
 
-              {data.criterios.map((criterio) => (
-                <Box key={criterio.id} sx={{ mb: 2 }}>
-                  <Typography variant="subtitle1" sx={{ mb: 0.5, fontWeight: 'medium' }}>
-                    {criterio.nombre}:
-                  </Typography>
-                  <select
-                    value={opcionesSeleccionadas[criterio.id]?.id || ''}
-                    onChange={(e) => handleOpcionChange(criterio.id, e)}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      borderRadius: '4px',
-                      border: '1px solid #ccc',
-                      fontSize: '14px',
-                      color: opcionesSeleccionadas[criterio.id]?.id ? '#000' : '#666',
-                      backgroundColor: '#fff'
-                    }}
-                    disabled={calculandoPrecio}
-                  >
-                    <option value="" style={{ color: '#666', fontStyle: 'italic' }}>
-                      {t('seleccione_opcion', 'Seleccione una opción...')}
-                    </option>
-                    {criterio.opciones && Array.isArray(criterio.opciones) && criterio.opciones.map((opcion) => (
-                      <option key={opcion.id} value={opcion.id} style={{ color: '#000' }}>
-                        {opcion.nombre} (+{formatPrice(opcion.precio_adicional || 0)})
-                      </option>
-                    ))}
-                  </select>
-                </Box>
-              ))}
+    {Object.keys(opcionesSeleccionadas).length === 0 && (
+      <Typography variant="body2" sx={{ color: '#999', fontStyle: 'italic', mt: 1 }}>
+        Seleccione las opciones para personalizar su producto
+      </Typography>
+    )}
 
-              {/* Precio total destacado con conversión */}
-              <Box sx={{ 
-                mt: 3, 
-                p: 2, 
-                backgroundColor: '#f8f9fa', 
-                borderRadius: 2, 
-                border: '2px solid #d83b6a' 
-              }}>
-                <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d83b6a', textAlign: 'center' }}>
-                  {t('precio_total', 'Precio Total')}: {formatPrice(precioTotal)}
-                </Typography>
-                {calculandoPrecio && (
-                  <Typography variant="body2" sx={{ color: '#666', mt: 1, textAlign: 'center' }}>
-                    Actualizando precio...
-                  </Typography>
-                )}
-                {Object.keys(opcionesSeleccionadas).length > 0 && (
-                  <Typography variant="body2" sx={{ color: '#666', mt: 1, textAlign: 'center', fontStyle: 'italic' }}>
-                    Precio base: {formatPrice(precioBaseConDescuento)} + Personalizaciones: {formatPrice(precioTotal - precioBaseConDescuento)}
-                  </Typography>
-                )}
-              </Box>
-            </Box>
+    {data.criterios.map((criterio) => {
+      const tieneError = mostrarErrores && errorCriterios[criterio.id];
+      const estaSeleccionado = opcionesSeleccionadas[criterio.id]?.id;
+      
+      return (
+        <Box 
+          key={criterio.id} 
+          sx={{ mb: 2 }}
+          data-criterio-id={criterio.id}
+        >
+          <Typography 
+            variant="subtitle1" 
+            sx={{ 
+              mb: 0.5,
+              color: tieneError ? 'error.main' : 'text.primary',
+              fontWeight: tieneError ? 'bold' : 'normal'
+            }}
+          >
+            {criterio.nombre}
+            {tieneError && ' *'}
+            :
+          </Typography>
+          
+          <select
+            value={opcionesSeleccionadas[criterio.id]?.id || ''}
+            onChange={(e) => handleOpcionChange(criterio.id, e)}
+            style={{
+              width: '100%',
+              padding: '8px',
+              borderRadius: '4px',
+              border: tieneError ? '2px solid #f44336' : '1px solid #ccc',
+              fontSize: '14px',
+              color: estaSeleccionado ? '#000' : '#666',
+              backgroundColor: tieneError ? '#ffeaea' : '#fff'
+            }}
+            disabled={calculandoPrecio}
+          >
+            <option value="" style={{ color: '#666', fontStyle: 'italic' }}>
+              {t('seleccione_opcion', 'Seleccione una opción...')}
+            </option>
+            {criterio.opciones && Array.isArray(criterio.opciones) && criterio.opciones.map((opcion) => (
+              <option key={opcion.id} value={opcion.id} style={{ color: '#000' }}>
+                {opcion.nombre} (+{formatPrice(opcion.precio_adicional || 0)})
+              </option>
+            ))}
+          </select>
+          
+          {/* Mostrar error específico */}
+          {tieneError && (
+            <Typography variant="caption" sx={{ color: 'error.main', display: 'block', mt: 0.5 }}>
+              {errorCriterios[criterio.id]}
+            </Typography>
           )}
-
-          {/* Selector de cantidad */}
-          {isShopping && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-              <Typography variant="body1">
-                <strong>{t('cantidad', 'Cantidad')}:</strong>
-              </Typography>
-              <select
-                value={cantidad}
-                onChange={(e) => setCantidad(parseInt(e.target.value))}
-                style={{
-                  padding: '8px',
-                  borderRadius: '4px',
-                  border: '1px solid #ccc',
-                  fontSize: '14px',
-                  minWidth: '60px'
-                }}
-              >
-                {[1,2,3,4,5,6,7,8,9,10].map(num => (
-                  <option key={num} value={num}>{num}</option>
-                ))}
-              </select>
-            </Box>
+          
+          {/* Indicador visual de éxito */}
+          {estaSeleccionado && !tieneError && (
+            <Typography variant="caption" sx={{ color: '##d83b6a ', display: 'block', mt: 0.5 }}>
+              Seleccionado: {opcionesSeleccionadas[criterio.id].nombre}
+            </Typography>
           )}
+        </Box>
+      );
+    })}
 
-          {/* Botón agregar al carrito */}
-          {isShopping && (
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              startIcon={<AddShoppingCartIcon />}
-              onClick={handleAddToCart}  
-              disabled={calculandoPrecio}
-              sx={{ 
-                mt: 2,
-                backgroundColor: '#d83b6a',
-                '&:hover': {
-                  backgroundColor: '#c12955'
-                },
-                '&:disabled': {
-                  backgroundColor: '#ccc'
-                },
-                py: 1.5,
-                px: 3,
-                fontSize: '1.1rem'
-              }}
-            >
-              {calculandoPrecio ? 'Calculando...' : t('agregarAlCarrito', 'Agregar al Carrito')}
-            </Button>
-          )}
+    {/* Mensaje de error general */}
+    {mostrarErrores && Object.keys(errorCriterios).length > 0 && (
+      <Box sx={{ 
+        p: 2, 
+        bgcolor: '#ffeaea', 
+        border: '1px solid #d83b6a', 
+        borderRadius: 1,
+        mt: 2
+      }}>
+        <Typography variant="body2" sx={{ color: 'error.main', fontWeight: 'bold' }}>
+          Atención: Debe completar todos los criterios de personalización antes de agregar al carrito
+        </Typography>
+      </Box>
+    )}
 
-          {/* Información adicional del producto */}
-          {(data.stock !== undefined || data.disponible !== undefined) && (
-            <Box sx={{ mt: 2 }}>
-              {data.stock !== undefined && (
-                <Typography variant="body2" color={data.stock > 0 ? 'success.main' : 'error.main'}>
-                  <strong>Stock:</strong> {data.stock > 0 ? `${data.stock} disponibles` : 'Sin stock'}
-                </Typography>
-              )}
-              {data.disponible !== undefined && (
-                <Typography variant="body2" color={data.disponible ? 'success.main' : 'error.main'}>
-                  <strong>Estado:</strong> {data.disponible ? 'Disponible' : 'No disponible'}
-                </Typography>
-              )}
-            </Box>
-          )}
+    {/* Precio total destacado con conversión */}
+    <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d83b6a', mt: 2 }}>
+      {t('precio_total', 'Precio Total')}: {formatPrice(precioTotal)}
+    </Typography>
+    {calculandoPrecio && (
+      <Typography variant="body2" sx={{ color: '#d83b6a', mt: 1 }}>
+        Actualizando precio...
+      </Typography>
+    )}
+  </Box>
+)}
+
+{isShopping && (
+  <Button
+    variant="contained"
+    color="primary"
+    size="large"
+    startIcon={<AddShoppingCartIcon />}
+    onClick={handleAddToCart}  
+    disabled={calculandoPrecio || !todosLosCriteriosCompletos()}
+    sx={{ 
+      mt: 2,
+      backgroundColor: todosLosCriteriosCompletos() ? '#d83b6a' : '#ccc',
+      '&:hover': {
+        backgroundColor: todosLosCriteriosCompletos() ? '#c12955' : '#ccc'
+      },
+      '&:disabled': {
+        backgroundColor: '#ccc'
+      }
+    }}
+  >
+    {calculandoPrecio ? 'Calculando...' : 
+     !todosLosCriteriosCompletos() ? 
+     `Seleccione ${data.criterios?.length - Object.keys(opcionesSeleccionadas).length} criterio(s) más` :
+     t('agregarAlCarrito')}
+  </Button>
+)}
         </Grid>
 
         <Grid item xs={12}>
