@@ -38,6 +38,9 @@ require_once "models/ResenaModel.php";
 require_once "models/CategoriaModel.php";
 require_once "models/EtiquetasModel.php";
 require_once "models/UsuarioDetalleModel.php";
+require_once "models/OrdenPagoEfectivoModel.php";
+require_once "models/OrdenPagoTarjetaModel.php";
+
 
 
 

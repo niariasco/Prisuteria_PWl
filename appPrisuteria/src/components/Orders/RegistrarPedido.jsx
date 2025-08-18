@@ -368,9 +368,6 @@ export function RegistrarPedido() {
     return errores.length === 0;
   };
 
-  // Resto del código permanece igual...
-  // [El resto de las funciones y componentes no cambian]
-
   // Función para cargar los datos del usuario
   const cargarUsuarioDetalleActual = async () => {
     if (!userData || !userData.usuarioId) {
@@ -511,42 +508,13 @@ export function RegistrarPedido() {
   const shipping = 0;
   const total = totalConImpuestos + shipping;
 
-  // Función para procesar el pedido
-  const procesarPedido = async () => {
-    // Validaciones básicas
-    if (!clienteSeleccionado || !direccionEnvio.trim()) {
-      alert('Por favor complete todos los campos requeridos');
-      return;
-    }
+  // FUNCIONES MODIFICADAS PARA REDIRIGIR AL PAGO
 
-    // Validar cantidades
-    const hayErroresCantidad = validItems.some(item => {
-      const cantidad = getCantidadActual(item.id);
-      return cantidad <= 0 || !Number.isInteger(cantidad);
-    });
-
-    if (hayErroresCantidad) {
-      alert('Todas las cantidades deben ser números enteros positivos');
-      return;
-    }
-
-    // Validar stock
-    const stockValido = await validarStock();
-    if (!stockValido) {
-      setDialogConfirmacion(true);
-      return;
-    }
-
-    proceedWithOrder();
-  };
-
-  const proceedWithOrder = async () => {
-    setLoading(true);
-    setDialogConfirmacion(false);
+  // Nueva función para proceder al pago - CORREGIDA LA RUTA
+  const proceedToPayment = () => {
+    console.log('Procediendo al pago...'); // Debug
     
-    // Simular procesamiento del pedido
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    // Preparar los datos del pedido para pasarlos a la página de pago
     const pedidoData = {
       cliente: clienteSeleccionado,
       usuarioDetalle: usuarioDetalleActual,
@@ -570,16 +538,73 @@ export function RegistrarPedido() {
       total,
       moneda: currency
     };
-    
-    console.log('Pedido registrado:', pedidoData);
-    
-    clearCart();
-    setLoading(false);
-    
-    alert('¡Pedido registrado exitosamente!');
-    navigate('/orden');
+
+    console.log('Datos del pedido a guardar:', pedidoData); // Debug
+
+    try {
+      // Guardar los datos del pedido en localStorage para acceder desde PagoPage
+      localStorage.setItem('pedidoEnProceso', JSON.stringify(pedidoData));
+      console.log('Datos guardados en localStorage'); // Debug
+      
+      // CORRECCIÓN: Cambiar '/pago' por '/pago-pedido' para coincidir con las rutas
+      console.log('Navegando a /pago-pedido'); // Debug
+      navigate('/pago-pedido');
+    } catch (error) {
+      console.error('Error al guardar datos o navegar:', error);
+      alert('Error al procesar el pedido. Por favor intente nuevamente.');
+    }
   };
 
+  // Función para procesar el pedido - MODIFICADA
+  const procesarPedido = async () => {
+    console.log('Iniciando procesamiento del pedido...'); // Debug
+    
+    // Validaciones básicas
+    if (!clienteSeleccionado || !direccionEnvio.trim()) {
+      alert('Por favor complete todos los campos requeridos');
+      return;
+    }
+
+    console.log('Cliente seleccionado:', clienteSeleccionado); // Debug
+    console.log('Dirección de envío:', direccionEnvio); // Debug
+
+    // Validar cantidades
+    const hayErroresCantidad = validItems.some(item => {
+      const cantidad = getCantidadActual(item.id);
+      return cantidad <= 0 || !Number.isInteger(cantidad);
+    });
+
+    if (hayErroresCantidad) {
+      alert('Todas las cantidades deben ser números enteros positivos');
+      return;
+    }
+
+    console.log('Validaciones básicas completadas'); // Debug
+
+    // Validar stock
+    try {
+      const stockValido = await validarStock();
+      console.log('Resultado de validación de stock:', stockValido); // Debug
+      
+      if (!stockValido) {
+        setDialogConfirmacion(true);
+        return;
+      }
+
+      // Si llegamos aquí, todo está bien
+      proceedToPayment();
+    } catch (error) {
+      console.error('Error en validación de stock:', error);
+      alert('Error al validar el inventario. Por favor intente nuevamente.');
+    }
+  };
+
+  // Función para proceder con el pedido a pesar de errores de stock - MODIFICADA
+  const proceedWithOrder = () => {
+    console.log('Procediendo con el pedido a pesar de errores de stock'); // Debug
+    setDialogConfirmacion(false);
+    proceedToPayment();
+  };
 
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3 }}>
@@ -1031,7 +1056,7 @@ export function RegistrarPedido() {
                 </Box>
               </Box>
 
-              {/* Botón de confirmar pedido */}
+              {/* Botón de confirmar pedido - MODIFICADO PARA IR AL PAGO */}
               <Button
                 variant="contained"
                 fullWidth
@@ -1055,7 +1080,7 @@ export function RegistrarPedido() {
                 {loading ? (
                   <CircularProgress size={24} color="inherit" />
                 ) : (
-                  'CONFIRMAR PEDIDO'
+                  'PROCEDER AL PAGO'
                 )}
               </Button>
 
@@ -1114,7 +1139,7 @@ export function RegistrarPedido() {
             variant="contained"
             sx={{ backgroundColor: '#F06292', '&:hover': { backgroundColor: '#E91E63' } }}
           >
-            Confirmar de todas formas
+            Continuar al Pago
           </Button>
         </DialogActions>
       </Dialog>
