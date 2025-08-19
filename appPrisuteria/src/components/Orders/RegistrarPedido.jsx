@@ -1148,6 +1148,7 @@ const proceedToPayment = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      
     </Box>
   );
 }

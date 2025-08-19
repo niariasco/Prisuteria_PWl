@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_BASE_URL + 'orden/';
+const BASE_URL = import.meta.env.VITE_BASE_URL + 'orden';
 
 class OrderService {
   // Obtener todas las órdenes
