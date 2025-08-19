@@ -119,89 +119,59 @@ class OrdenModel
         }
     }
     
-public function create($data)
-{
+public function create($data) {
     try {
-        // Campos obligatorios con valores por defecto
-        $usuario_id = isset($data['usuario_id']) ? (int)$data['usuario_id'] : 0;
-        $estado = isset($data['estado']) ? $data['estado'] : 'Pendiente';
-        $subtotal = isset($data['subtotal']) ? (float)$data['subtotal'] : 0;
-        $impuestos = isset($data['impuestos']) ? (float)$data['impuestos'] : 0;
-        $total = isset($data['total']) ? (float)$data['total'] : 0;
-        $metodo_pago = isset($data['metodo_pago']) ? $data['metodo_pago'] : 'Efectivo';
+        // Preparar valores
+        $usuario_id = (int)($data['usuario_id'] ?? 0);
+        $subtotal = (float)($data['subtotal'] ?? 0);
+        $impuestos = (float)($data['impuestos'] ?? 0);
+        $total = (float)($data['total'] ?? 0);
+        $direccion = isset($data['direccion_envio']) ? str_replace("'", "''", $data['direccion_envio']) : 'No especificada';
+        $estado = $data['estado'] ?? 'Pendiente';
+        $metodo_pago = $data['metodo_pago'] ?? 'Efectivo';
 
-        // Escapar la dirección para evitar errores de SQL
-        $direccion_envio_sql = isset($data['direccion_envio']) 
-            ? str_replace("'", "''", $data['direccion_envio']) 
-            : 'No especificada';
+        // Insertar orden principal
+        $sql = "INSERT INTO ordenes (usuario_id, fecha, subtotal, impuestos, total, estado, metodo_pago, direccion_envio)
+                VALUES ($usuario_id, NOW(), $subtotal, $impuestos, $total, '$estado', '$metodo_pago', '$direccion')";
 
-        // Insertar en tabla ordenes
-        $sql = "INSERT INTO ordenes 
-                (usuario_id, fecha, subtotal, impuestos, total, estado, metodo_pago, direccion_envio) 
-                VALUES 
-                ($usuario_id, NOW(), $subtotal, $impuestos, $total, '$estado', '$metodo_pago', '$direccion_envio_sql')";
+        // Ejecutar DML y obtener ID generado
+        $orden_id = $this->enlace->executeSQL_DML_last($sql);
 
-        $resultado = $this->enlace->ExecuteSQL($sql);
-        if ($resultado === false) {
-            throw new Exception("Error al insertar la orden: $sql");
+        // Insertar detalle de productos
+        if (!empty($data['productos'])) {
+            foreach ($data['productos'] as $p) {
+                $pid = (int)$p['id'];
+                $cant = (int)$p['cantidad'];
+                $precio = (float)$p['precio'];
+                $subtotal_producto = $cant * $precio;
+
+                $sqlDet = "INSERT INTO detalle_orden (orden_id, producto_id, cantidad, precio_unitario, subtotal)
+                           VALUES ($orden_id, $pid, $cant, $precio, $subtotal_producto)";
+                $this->enlace->executeSQL_DML($sqlDet);
+            }
         }
 
-        // Obtener el último ID insertado
-        $sqlLastId = "SELECT LAST_INSERT_ID() as orden_id";
-        $lastIdResult = $this->enlace->ExecuteSQL($sqlLastId);
-        if (!$lastIdResult || !isset($lastIdResult[0]['orden_id'])) {
-            throw new Exception("No se pudo obtener el ID de la orden");
-        }
-        $orden_id = $lastIdResult[0]['orden_id'];
+        // Insertar productos personalizados si existen
+        if (!empty($data['personalizados'])) {
+            foreach ($data['personalizados'] as $pp) {
+                $nombre = str_replace("'", "''", $pp['nombre']);
+                $costo_base = (float)$pp['costo_base'];
+                $total_personalizado = (float)$pp['total_personalizado'];
 
-// Insertar detalle de productos
-if (!empty($data['productos']) && is_array($data['productos'])) {
-    foreach ($data['productos'] as $producto) {
-        $producto_id = (int)$producto['id'];
-        $cantidad = (int)$producto['cantidad'];
-        $precio = (float)$producto['precio'];
-        $subtotal_producto = $cantidad * $precio; // calculamos subtotal
-
-        $sqlDetalle = "INSERT INTO detalle_orden 
-                       (orden_id, producto_id, cantidad, precio_unitario, subtotal) 
-                       VALUES 
-                       ($orden_id, $producto_id, $cantidad, $precio, $subtotal_producto)";
-        $detalleResultado = $this->enlace->ExecuteSQL($sqlDetalle);
-        if ($detalleResultado === false) {
-            throw new Exception("Error al insertar detalle de producto: $sqlDetalle");
-        }
-    }
-}
-
-        // Insertar método de pago
-        if ($metodo_pago === "Tarjeta" && isset($data['pago_tarjeta'])) {
-            $tarjeta = $data['pago_tarjeta'];
-            $numero = str_replace("'", "''", $tarjeta['numero_tarjeta']);
-            $fecha_exp = str_replace("'", "''", $tarjeta['fecha_expiracion']);
-            $cvv = str_replace("'", "''", $tarjeta['cvv']);
-            $titular = str_replace("'", "''", $tarjeta['nombre_titular']);
-            $sqlTarjeta = "INSERT INTO orden_pago_tarjeta 
-                           (orden_id, numero_tarjeta, fecha_expiracion, cvv, nombre_titular)
-                           VALUES 
-                           ($orden_id, '$numero', '$fecha_exp', '$cvv', '$titular')";
-            $this->enlace->ExecuteSQL($sqlTarjeta);
-        } elseif ($metodo_pago === "Efectivo" && isset($data['pago_efectivo'])) {
-            $efectivo = $data['pago_efectivo'];
-            $monto = (float)$efectivo['monto_pagado'];
-            $cambio = (float)$efectivo['cambio'];
-            $sqlEfectivo = "INSERT INTO orden_pago_efectivo 
-                            (orden_id, monto_pagado, cambio)
-                            VALUES 
-                            ($orden_id, $monto, $cambio)";
-            $this->enlace->ExecuteSQL($sqlEfectivo);
+                $sqlPers = "INSERT INTO detalle_personalizado (orden_id, nombre, costo_base, total_personalizado)
+                            VALUES ($orden_id, '$nombre', $costo_base, $total_personalizado)";
+                $this->enlace->executeSQL_DML($sqlPers);
+            }
         }
 
-        return $orden_id;
+        // Retornar la orden completa usando get($id)
+        return $this->get($orden_id);
+
     } catch (Exception $e) {
-        error_log("Error en OrdenModel::create(): " . $e->getMessage());
-        throw $e;
+        handleException($e);
     }
 }
+
 
 
 }

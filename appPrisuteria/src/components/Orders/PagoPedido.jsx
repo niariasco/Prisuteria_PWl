@@ -266,96 +266,112 @@ const PagoPedido = () => {
 
 
 
-  // Manejar cambios en el formulario
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+// Manejar cambios en el formulario
+const handleChange = (e) => {
+  const { name, value } = e.target;
+  setFormData(prev => ({ ...prev, [name]: value }));
 
-    if (name === "montoEfectivo") {
-      const total = parseFloat(pedidoData.total || 0);
-      const pago = parseFloat(value) || 0;
-      setCambio(pago >= total ? pago - total : 0);
-    }
+  // Actualizar cambio si es efectivo
+  if (name === "montoEfectivo") {
+    const total = parseFloat(ordenCreada?.pedido?.total || pedidoData?.total || 0);
+    const pago = parseFloat(value) || 0;
+    setCambio(pago >= total ? pago - total : 0);
+  }
+};
+
+// Preparar productos para backend (solo id y cantidad, precio será calculado por backend)
+const mapearProductos = () => {
+  return (pedidoData.productos || []).map((producto) => {
+    const id = producto.productosId || producto.id || producto.productoId;
+    const cantidad = Number(producto.cantidad) || 0;
+    const precio = Number(producto.precioUnitario ?? producto.precio ?? 0);
+    return { id, cantidad, precio };
+  }).filter(p => p.id && p.cantidad > 0 && !isNaN(p.precio));
+};
+
+const prepararDatosOrden = () => {
+  const productosBackend = mapearProductos();
+
+  const subtotal = productosBackend.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
+  const impuestos = parseFloat((subtotal * 0.13).toFixed(2)); // 13% ejemplo
+  const total = parseFloat((subtotal + impuestos).toFixed(2));
+console.log("Productos para backend:", productosBackend);
+console.log("Subtotal calculado:", subtotal, "Impuestos:", impuestos, "Total:", total);
+
+  const datosOrden = {
+    usuario_id: parseInt(usuarioId),
+    subtotal,
+    impuestos,
+    total,
+    direccion_envio: pedidoData.direccionEnvio || "No especificada",
+    estado: 'Pendiente',
+    metodo_pago: (metodoPago === "efectivo") ? "Efectivo" : "Tarjeta",
+    productos: productosBackend
   };
 
-  // Preparar productos para backend
-  const mapearProductos = () => {
-    return (pedidoData.productos || []).map((producto, index) => ({
-      id: producto.productosId || producto.id || producto.productoId,
-      cantidad: parseInt(producto.cantidad) || 0,
-      precio: parseFloat(producto.precioUnitario || producto.precio) || 0,
-    }));
-  };
-
-  // Preparar datos finales para backend
-  const prepararDatosOrden = () => {
-    const productosBackend = mapearProductos();
-    const subtotal = productosBackend.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
-    const impuestos = parseFloat((subtotal * 0.13).toFixed(2)); // ejemplo 13%
-    const total = parseFloat((subtotal + impuestos).toFixed(2));
-
-    const datosOrden = {
-      usuario_id: parseInt(usuarioId),
-      subtotal,
-      impuestos,
-      total,
-      direccion_envio: pedidoData.direccionEnvio || "No especificada",
-      estado: 'Pendiente',
-      metodo_pago: (metodoPago === "efectivo") ? "Efectivo" : "Tarjeta",
-      productos: productosBackend
+  if (metodoPago === "efectivo") {
+    datosOrden.pago_efectivo = {
+      monto_pagado: parseFloat(formData.montoEfectivo) || total,
+      cambio: cambio || 0
     };
+  } else if (metodoPago === "tarjeta-credito" || metodoPago === "tarjeta-debito") {
+    datosOrden.pago_tarjeta = {
+      numero_tarjeta: formData.numeroTarjeta.replace(/\s/g, ''),
+      fecha_expiracion: formData.fechaExpiracion,
+      cvv: formData.cvv,
+      nombre_titular: formData.nombreTitular
+    };
+  } else if (metodoPago === "mixto") {
+    datosOrden.pago_efectivo = {
+      monto_pagado: parseFloat(formData.montoEfectivo) || 0,
+      cambio: cambio || 0
+    };
+    datosOrden.pago_tarjeta = {
+      numero_tarjeta: formData.numeroTarjeta.replace(/\s/g, ''),
+      fecha_expiracion: formData.fechaExpiracion,
+      cvv: formData.cvv,
+      nombre_titular: formData.nombreTitular
+    };
+  }
 
-    if (metodoPago === "efectivo") {
-      datosOrden.pago_efectivo = {
-        monto_pagado: parseFloat(formData.montoEfectivo) || total,
-        cambio: cambio || 0
-      };
-    } else if (metodoPago === "tarjeta-credito" || metodoPago === "tarjeta-debito") {
-      datosOrden.pago_tarjeta = {
-        numero_tarjeta: formData.numeroTarjeta.replace(/\s/g, ''),
-        fecha_expiracion: formData.fechaExpiracion,
-        cvv: formData.cvv,
-        nombre_titular: formData.nombreTitular
-      };
-    } else if (metodoPago === "mixto") {
-      datosOrden.pago_efectivo = {
-        monto_pagado: parseFloat(formData.montoEfectivo) || 0,
-        cambio: cambio || 0
-      };
-      datosOrden.pago_tarjeta = {
-        numero_tarjeta: formData.numeroTarjeta.replace(/\s/g, ''),
-        fecha_expiracion: formData.fechaExpiracion,
-        cvv: formData.cvv,
-        nombre_titular: formData.nombreTitular
-      };
-    }
+  console.log("Subtotal final:", subtotal, "Impuestos:", impuestos, "Total:", total);
+  return datosOrden;
+};
 
-    return datosOrden;
-  };
 
-  // Manejar pago
-  const handlePagar = async () => {
-    try {
-      setLoading(true);
+// Manejar pago
+const handlePagar = async () => {
+  try {
+    setLoading(true);
 
-      if (!pedidoData?.productos?.length) throw new Error("No hay productos en el pedido");
+    if (!pedidoData?.productos?.length) throw new Error("No hay productos en el pedido");
 
-      const datosOrden = prepararDatosOrden();
-      console.log("Datos finales a enviar:", datosOrden);
+    const datosOrden = prepararDatosOrden();
+    console.log("Datos finales a enviar:", datosOrden);
 
-      const response = await OrderService.crearOrden(datosOrden);
-      console.log("Orden creada:", response);
-      setOrdenCreada(response);
-      setShowFacturaDialog(true);
+    // Ahora la respuesta incluye precios calculados y subtotales
+    const response = await OrderService.crearOrden(datosOrden);
+    console.log("Orden creada:", response);
 
-      setFormData(initialFormData);
-    } catch (error) {
-      console.error("Error al procesar el pago:", error);
-      alert(error.response?.data?.message || error.message || "Error al crear la orden");
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Guardar la orden completa (pedido, productos, personalizados) desde backend
+    setOrdenCreada(response);
+    setShowFacturaDialog(true);
+
+    // Reiniciar formulario
+    setFormData(initialFormData);
+
+    // Actualizar cambio en tiempo real
+    const total = parseFloat(response.pedido.total || 0);
+    const pago = parseFloat(formData.montoEfectivo || 0);
+    setCambio(pago >= total ? pago - total : 0);
+
+  } catch (error) {
+    console.error("Error al procesar el pago:", error);
+    alert(error.response?.data?.message || error.message || "Error al crear la orden");
+  } finally {
+    setLoading(false);
+  }
+};
 
 // Actualizar cambio en tiempo real
 const handleMontoEfectivoChange = (e) => {
