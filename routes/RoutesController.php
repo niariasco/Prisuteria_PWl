@@ -205,19 +205,4 @@ class RoutesController
             }
         }
     }
-
-
-    public function create() {
-    // Leer datos enviados en el POST
-    $data = json_decode(file_get_contents("php://input"), true);
-
-    if (!$data) {
-        http_response_code(400);
-        echo json_encode(['status' => 400, 'result' => 'No se recibieron datos para crear la orden']);
-        return;
-    }
-
-    $ordenController = new orden();
-    $ordenController->create($data);
-}
 }

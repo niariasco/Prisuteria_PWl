@@ -132,6 +132,7 @@ const PagoPedido = () => {
     }
   };
 
+
   // Detectar tipo de tarjeta
   const getCardType = (number) => {
     const cleanNumber = number.replace(/\s/g, '');
@@ -263,85 +264,108 @@ const PagoPedido = () => {
     return null;
   };
 
+
+
   // Manejar cambios en el formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
-    if (name === "numeroTarjeta") {
-      const formattedValue = formatCardNumber(value);
-      if (formattedValue.replace(/\s/g, '').length <= 16) {
-        setFormData((prev) => ({ ...prev, [name]: formattedValue }));
-      }
-    } else if (name === "cvv") {
-      const numericValue = value.replace(/[^0-9]/g, '');
-      if (numericValue.length <= 4) {
-        setFormData((prev) => ({ ...prev, [name]: numericValue }));
-      }
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
 
     if (name === "montoEfectivo") {
+      const total = parseFloat(pedidoData.total || 0);
       const pago = parseFloat(value) || 0;
-      setCambio(pago >= totalCompra ? pago - totalCompra : 0);
+      setCambio(pago >= total ? pago - total : 0);
     }
   };
 
-const prepararDatosOrden = () => {
-  // Datos básicos del pedido
-  const datosOrden = {
-    usuario_id: usuarioId,
-    productos: pedidoData.productos || [],
-    direccion_envio: pedidoData.direccionEnvio || "No especificada",
-    subtotal: pedidoData.subtotalSinImpuestos || 0,
-    impuestos: pedidoData.ivaTotal || 0,
-    total: pedidoData.total || 0,
-    metodo_pago: metodoPago.toLowerCase(),
+  // Preparar productos para backend
+  const mapearProductos = () => {
+    return (pedidoData.productos || []).map((producto, index) => ({
+      id: producto.productosId || producto.id || producto.productoId,
+      cantidad: parseInt(producto.cantidad) || 0,
+      precio: parseFloat(producto.precioUnitario || producto.precio) || 0,
+    }));
   };
 
-  // Datos de pago según método
-  if (metodoPago === "efectivo") {
-    datosOrden.pago_efectivo = {
-      monto_pagado: parseFloat(formData.montoEfectivo) || datosOrden.total,
-      cambio: cambio || 0
-    };
-  } else if (metodoPago === "tarjeta-credito" || metodoPago === "tarjeta-debito") {
-    datosOrden.pago_tarjeta = {
-      numero_tarjeta: formData.numeroTarjeta.replace(/\s/g, ''),
-      fecha_expiracion: formData.fechaExpiracion,
-      cvv: formData.cvv,
-      nombre_titular: formData.nombreTitular
-    };
-  } else if (metodoPago === "mixto") {
-    datosOrden.pago_efectivo = {
-      monto_pagado: parseFloat(formData.montoEfectivo) || 0,
-      cambio: cambio || 0
-    };
-    datosOrden.pago_tarjeta = {
-      numero_tarjeta: formData.numeroTarjeta.replace(/\s/g, ''),
-      fecha_expiracion: formData.fechaExpiracion,
-      cvv: formData.cvv,
-      nombre_titular: formData.nombreTitular
-    };
-  }
+  // Preparar datos finales para backend
+  const prepararDatosOrden = () => {
+    const productosBackend = mapearProductos();
+    const subtotal = productosBackend.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
+    const impuestos = parseFloat((subtotal * 0.13).toFixed(2)); // ejemplo 13%
+    const total = parseFloat((subtotal + impuestos).toFixed(2));
 
-  console.log("Enviando datos al backend:", datosOrden);
-  return datosOrden;
+    const datosOrden = {
+      usuario_id: parseInt(usuarioId),
+      subtotal,
+      impuestos,
+      total,
+      direccion_envio: pedidoData.direccionEnvio || "No especificada",
+      estado: 'Pendiente',
+      metodo_pago: (metodoPago === "efectivo") ? "Efectivo" : "Tarjeta",
+      productos: productosBackend
+    };
+
+    if (metodoPago === "efectivo") {
+      datosOrden.pago_efectivo = {
+        monto_pagado: parseFloat(formData.montoEfectivo) || total,
+        cambio: cambio || 0
+      };
+    } else if (metodoPago === "tarjeta-credito" || metodoPago === "tarjeta-debito") {
+      datosOrden.pago_tarjeta = {
+        numero_tarjeta: formData.numeroTarjeta.replace(/\s/g, ''),
+        fecha_expiracion: formData.fechaExpiracion,
+        cvv: formData.cvv,
+        nombre_titular: formData.nombreTitular
+      };
+    } else if (metodoPago === "mixto") {
+      datosOrden.pago_efectivo = {
+        monto_pagado: parseFloat(formData.montoEfectivo) || 0,
+        cambio: cambio || 0
+      };
+      datosOrden.pago_tarjeta = {
+        numero_tarjeta: formData.numeroTarjeta.replace(/\s/g, ''),
+        fecha_expiracion: formData.fechaExpiracion,
+        cvv: formData.cvv,
+        nombre_titular: formData.nombreTitular
+      };
+    }
+
+    return datosOrden;
+  };
+
+  // Manejar pago
+  const handlePagar = async () => {
+    try {
+      setLoading(true);
+
+      if (!pedidoData?.productos?.length) throw new Error("No hay productos en el pedido");
+
+      const datosOrden = prepararDatosOrden();
+      console.log("Datos finales a enviar:", datosOrden);
+
+      const response = await OrderService.crearOrden(datosOrden);
+      console.log("Orden creada:", response);
+      setOrdenCreada(response);
+      setShowFacturaDialog(true);
+
+      setFormData(initialFormData);
+    } catch (error) {
+      console.error("Error al procesar el pago:", error);
+      alert(error.response?.data?.message || error.message || "Error al crear la orden");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+// Actualizar cambio en tiempo real
+const handleMontoEfectivoChange = (e) => {
+  const valor = parseFloat(e.target.value) || 0;
+  setFormData(prev => ({ ...prev, montoEfectivo: valor }));
+  const total = pedidoData.totalConImpuestos || pedidoData.total || 0;
+  setCambio(valor >= total ? valor - total : 0);
 };
 
-
-const handlePagar = async () => {
-  try {
-    const datosOrden = prepararDatosOrden();
-    const respuesta = await OrderService.crearOrden(datosOrden);
-    console.log("Orden creada:", respuesta);
-    // Aquí puedes redirigir a confirmación o limpiar carrito
-  } catch (error) {
-    console.error("Error al procesar el pago:", error);
-  }
-};
-
-
+handleMontoEfectivoChange;
 
 
   // Ver detalle de la orden (desde el modal)
