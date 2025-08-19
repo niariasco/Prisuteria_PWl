@@ -227,3 +227,15 @@ VALUES
 (7, 'Milagro O',        '601340111', 'kora@gmail.com',           '8888-7777', 'Limón, centro, contiguo al hospital'),
 (8, 'Mylene C',         '701980654', 'mylene@gmail.com',         '8888-8888', 'Puntarenas, El Roble, 100m oeste de la plaza'),
 (9, 'Niki Zamora',      '801650321', 'nikiarias40@gmail.com',    '8888-9999', 'Guanacaste, Liberia, barrio La Cruz');
+___________________________________________________________________________
+UPDATE opciones
+SET nombre = 'Pequeña : Pulsera 16 cm | Aretes 15 mm | Collar : 40cm'
+WHERE id = 27;
+
+UPDATE opciones
+SET nombre = 'Mediana : Pulsera 17-18 cm | Aretes 20 mm | Collar : 50cm'
+WHERE id = 28;
+
+UPDATE opciones
+SET nombre = 'Grande :  Pulsera 19 cm | Aretes 40 mm | Collar : 60 cm'
+WHERE id = 29;

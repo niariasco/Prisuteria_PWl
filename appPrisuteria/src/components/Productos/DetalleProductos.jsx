@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef  } from 'react';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -36,9 +36,9 @@ export function DetalleProductos({ isShopping }) {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { addItem } = useCart(); 
+  const sliderRef = useRef(null);
 
-  
-// Función que valida que todos los criterios tengan selección
+  // Función que valida que todos los criterios tengan selección
 const validarCriterios = () => {
   if (!data || !data.criterios || data.criterios.length === 0) {
     return { esValido: true, errores: {} };
@@ -299,6 +299,10 @@ const handleOpcionChange = async (criterioId, e) => {
     delete nuevosErrores[criterioId];
     setErrorCriterios(nuevosErrores);
   }
+
+    if (sliderRef.current && data.imagenes && data.imagenes.length > 0) {
+    sliderRef.current.slickGoTo(data.imagenes.length - 1);
+  }
 };
 //  Función para verificar si todos los criterios están completos
 const todosLosCriteriosCompletos = () => {
@@ -310,12 +314,21 @@ const todosLosCriteriosCompletos = () => {
 };
 
 todosLosCriteriosCompletos;
+precioBase;
+
 
   useEffect(() => {
     ProductoService.getProductoById(id)
       .then((response) => {
         const producto = response.data;
-        
+     // Asegurarse de que haya imágenes
+      producto.imagenes = producto.imagenes || [];
+
+      // Mover la primera imagen al final para que la nueva se vea al final del carousel
+      if (producto.imagenes.length > 1) {
+        producto.imagenes = [...producto.imagenes.slice(1), producto.imagenes[0]];
+      }
+
         console.log('=== DEBUG PRODUCTO CARGADO ===');
         console.log('producto completo:', producto);
         
@@ -349,50 +362,50 @@ todosLosCriteriosCompletos;
     <Container maxWidth="md" sx={{ mt: 6, mb: 6 }}>
       <Grid container spacing={4}>
         <Grid item xs={12} md={6}>
-          {data.imagenes && data.imagenes.length > 0 ? (
-            data.imagenes.length === 1 ? (
-              <img 
-                src={`${BASE_URL}/${data.imagenes[0]}`} 
-                alt="producto" 
-                style={{ 
-                  width: '100%', 
-                  maxHeight: 400, 
-                  objectFit: 'contain', 
-                  borderRadius: 10 
-                }} 
-              />
-            ) : (
-              <Slider dots infinite speed={500} slidesToShow={1} slidesToScroll={1} arrows>
-                {data.imagenes.map((img, idx) => (
-                  <div key={idx}>
-                    <img 
-                      src={`${BASE_URL}/${img}`} 
-                      alt={`img-${idx}`} 
-                      style={{ 
-                        width: '100%', 
-                        maxHeight: 400, 
-                        objectFit: 'contain', 
-                        borderRadius: 10 
-                      }} 
-                    />
-                  </div>
-                ))}
-              </Slider>
-            )
-          ) : (
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              height: 400, 
-              backgroundColor: '#f5f5f5', 
-              borderRadius: 2 
-            }}>
-              <Typography variant="h6" color="text.secondary">
-                {t('NoImages', 'Sin imágenes disponibles')}
-              </Typography>
-            </Box>
-          )}
+       {data.imagenes && data.imagenes.length > 0 ? (
+  data.imagenes.length === 1 ? (
+    <img
+      src={`${BASE_URL}/${data.imagenes[0]}`}
+      alt="producto"
+      style={{ width: '100%', maxHeight: 400, objectFit: 'contain', borderRadius: 10 }}
+    />
+  ) : (
+  <Slider
+  ref={sliderRef} // <--- la referencia
+  dots
+  infinite
+  speed={500}
+  slidesToShow={1}
+  slidesToScroll={1}
+  arrows
+>
+      {data.imagenes.map((img, idx) => (
+        <div key={idx}>
+          <img
+            src={`${BASE_URL}/${img}`}
+            alt={`img-${idx}`}
+            style={{ width: '100%', maxHeight: 400, objectFit: 'contain', borderRadius: 10 }}
+          />
+        </div>
+      ))}
+    </Slider>
+  )
+) : (
+  <Box
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: 400,
+      backgroundColor: '#f5f5f5',
+      borderRadius: 2,
+    }}
+  >
+    <Typography variant="h6" color="text.secondary">
+      {t('NoImages', 'Sin imágenes disponibles')}
+    </Typography>
+  </Box>
+)}
         </Grid>
 
         <Grid item xs={12} md={6}>
