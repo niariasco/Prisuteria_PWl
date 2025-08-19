@@ -119,54 +119,85 @@ class OrdenModel
         }
     }
     
-    public function create($data)
-    {
-        try {
-            // 1. Insertar en tabla ordenes usando MySqlConnect
-            $sql = "INSERT INTO ordenes 
-                    (usuario_id, fecha, subtotal, impuestos, total, estado, metodo_pago, direccion_envio) 
-                    VALUES 
-                    ({$data['usuario_id']}, NOW(), {$data['subtotal']}, {$data['impuestos']}, {$data['total']}, '{$data['estado']}', '{$data['metodo_pago']}', '{$data['direccion_envio']}')";
+public function create($data)
+{
+    try {
+        // Validar campos obligatorios
+        $usuario_id = isset($data['usuario_id']) ? (int)$data['usuario_id'] : 0;
+        $estado = isset($data['estado']) ? $data['estado'] : 'Pendiente';
+        $subtotal = isset($data['subtotal']) ? (float)$data['subtotal'] : 0;
+        $impuestos = isset($data['impuestos']) ? (float)$data['impuestos'] : 0;
+        $total = isset($data['total']) ? (float)$data['total'] : 0;
+        $direccion_envio = isset($data['direccion_envio']) ? $data['direccion_envio'] : 'No especificada';
+        $metodo_pago = isset($data['metodo_pago']) ? $data['metodo_pago'] : 'Efectivo';
 
-            // Ejecutar la consulta
-            $resultado = $this->enlace->ExecuteSQL($sql);
-            
-            // Obtener el último ID insertado
-            $sqlLastId = "SELECT LAST_INSERT_ID() as orden_id";
-            $lastIdResult = $this->enlace->ExecuteSQL($sqlLastId);
-            $orden_id = $lastIdResult[0]['orden_id'];
+        // Insertar en tabla ordenes
+        $sql = "INSERT INTO ordenes 
+                (usuario_id, fecha, subtotal, impuestos, total, estado, metodo_pago, direccion_envio) 
+                VALUES 
+                ($usuario_id, NOW(), $subtotal, $impuestos, $total, '$estado', '$metodo_pago', '$direccion_envio')";
 
-            // 2. Insertar detalle de productos
-            if (!empty($data['productos'])) {
-                foreach ($data['productos'] as $producto) {
-                    $sqlDetalle = "INSERT INTO detalle_orden 
-                                   (orden_id, producto_id, cantidad, precio_unitario) 
-                                   VALUES 
-                                   ($orden_id, {$producto['id']}, {$producto['cantidad']}, {$producto['precio']})";
-                    $this->enlace->ExecuteSQL($sqlDetalle);
-                }
-            }
-
-            // 3. Insertar según método de pago
-            if ($data['metodo_pago'] === "Tarjeta") {
-                $sqlTarjeta = "INSERT INTO orden_pago_tarjeta 
-                               (orden_id, numero_tarjeta, fecha_expiracion, cvv, nombre_titular)
-                               VALUES 
-                               ($orden_id, '{$data['numero_tarjeta']}', '{$data['fecha_expiracion']}', '{$data['cvv']}', '{$data['nombre_titular']}')";
-                $this->enlace->ExecuteSQL($sqlTarjeta);
-            } elseif ($data['metodo_pago'] === "Efectivo") {
-                $sqlEfectivo = "INSERT INTO orden_pago_efectivo 
-                                (orden_id, monto_pagado, cambio)
-                                VALUES 
-                                ($orden_id, {$data['monto_pagado']}, {$data['cambio']})";
-                $this->enlace->ExecuteSQL($sqlEfectivo);
-            }
-
-            return $orden_id; // Retorna el id de la orden creada
-        } catch (Exception $e) {
-            // Log del error para debugging
-            error_log("Error en OrdenModel::create(): " . $e->getMessage());
-            throw $e;
+        $resultado = $this->enlace->ExecuteSQL($sql);
+        if (!$resultado) {
+            throw new Exception("Error al insertar la orden");
         }
+
+        $sqlLastId = "SELECT LAST_INSERT_ID() as orden_id";
+        $lastIdResult = $this->enlace->ExecuteSQL($sqlLastId);
+        if (!$lastIdResult || !isset($lastIdResult[0]['orden_id'])) {
+            throw new Exception("No se pudo obtener el ID de la orden");
+        }
+
+        $orden_id = $lastIdResult[0]['orden_id'];
+
+        // Insertar detalle de productos
+        if (!empty($data['productos']) && is_array($data['productos'])) {
+            foreach ($data['productos'] as $producto) {
+                $sqlDetalle = "INSERT INTO detalle_orden 
+                               (orden_id, producto_id, cantidad, precio_unitario) 
+                               VALUES 
+                               ($orden_id, {$producto['id']}, {$producto['cantidad']}, {$producto['precio']})";
+                $this->enlace->ExecuteSQL($sqlDetalle);
+            }
+        }
+
+        // Insertar método de pago
+        if ($metodo_pago === "Tarjeta" && isset($data['pago_tarjeta'])) {
+            $tarjeta = $data['pago_tarjeta'];
+            $sqlTarjeta = "INSERT INTO orden_pago_tarjeta 
+                           (orden_id, numero_tarjeta, fecha_expiracion, cvv, nombre_titular)
+                           VALUES 
+                           ($orden_id, '{$tarjeta['numero_tarjeta']}', '{$tarjeta['fecha_expiracion']}', '{$tarjeta['cvv']}', '{$tarjeta['nombre_titular']}')";
+            $this->enlace->ExecuteSQL($sqlTarjeta);
+        } elseif ($metodo_pago === "Efectivo" && isset($data['pago_efectivo'])) {
+            $efectivo = $data['pago_efectivo'];
+            $sqlEfectivo = "INSERT INTO orden_pago_efectivo 
+                            (orden_id, monto_pagado, cambio)
+                            VALUES 
+                            ($orden_id, {$efectivo['monto_pagado']}, {$efectivo['cambio']})";
+            $this->enlace->ExecuteSQL($sqlEfectivo);
+        } elseif ($metodo_pago === "Mixto" && isset($data['pago_tarjeta'], $data['pago_efectivo'])) {
+            $tarjeta = $data['pago_tarjeta'];
+            $efectivo = $data['pago_efectivo'];
+            $sqlTarjeta = "INSERT INTO orden_pago_tarjeta 
+                           (orden_id, numero_tarjeta, fecha_expiracion, cvv, nombre_titular)
+                           VALUES 
+                           ($orden_id, '{$tarjeta['numero_tarjeta']}', '{$tarjeta['fecha_expiracion']}', '{$tarjeta['cvv']}', '{$tarjeta['nombre_titular']}')";
+            $this->enlace->ExecuteSQL($sqlTarjeta);
+
+            $sqlEfectivo = "INSERT INTO orden_pago_efectivo 
+                            (orden_id, monto_pagado, cambio)
+                            VALUES 
+                            ($orden_id, {$efectivo['monto_pagado']}, {$efectivo['cambio']})";
+            $this->enlace->ExecuteSQL($sqlEfectivo);
+        }
+
+        return $orden_id;
+    } catch (Exception $e) {
+        error_log("Error en OrdenModel::create(): " . $e->getMessage());
+        throw $e;
     }
+}
+
+
 }

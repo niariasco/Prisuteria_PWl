@@ -28,47 +28,45 @@ class orden
         }
     }
     
-    public function create($data)
-    {
-        try {
-            $response = new Response();
-            
-            // Debug: Log de los datos recibidos
-            error_log("Datos recibidos en create: " . json_encode($data));
-            
-            // Verificar que se recibieron los datos necesarios
-            if (empty($data)) {
-                throw new Exception("No se recibieron datos para crear la orden");
-            }
-            
-            // Verificar campos requeridos
-            $camposRequeridos = ['usuario_id', 'subtotal', 'impuestos', 'total', 'metodo_pago', 'direccion_envio'];
-            foreach ($camposRequeridos as $campo) {
-                if (!isset($data[$campo])) {
-                    throw new Exception("Campo requerido faltante: " . $campo);
-                }
-            }
-            
-            $genero = new OrdenModel();
-            $orden_id = $genero->create($data);
-            
-            if (!$orden_id) {
-                throw new Exception("Error al crear la orden - ID no generado");
-            }
-            
-            // Debug: Log del ID generado
-            error_log("Orden creada con ID: " . $orden_id);
-            
-            $response->setResponse(true, "Orden creada exitosamente", [
-                "orden_id" => $orden_id,
-                "ordenesId" => $orden_id, // Para compatibilidad
-                "id" => $orden_id
-            ]);
-            $response->toJSON();
-            
-        } catch (Exception $e) {
-            error_log("Error en orden::create(): " . $e->getMessage());
-            handleException($e);
+public function create($data = null)
+{
+    try {
+        $response = new Response();
+
+        // Si $data no fue pasado, leer del JSON enviado por POST
+        if (!$data) {
+            $data = json_decode(file_get_contents('php://input'), true);
         }
+
+        if (empty($data)) {
+            throw new Exception("No se recibieron datos para crear la orden");
+        }
+
+        $camposRequeridos = ['usuario_id', 'subtotal', 'impuestos', 'total', 'metodo_pago', 'direccion_envio'];
+        foreach ($camposRequeridos as $campo) {
+            if (!isset($data[$campo])) {
+                throw new Exception("Campo requerido faltante: " . $campo);
+            }
+        }
+
+        $genero = new OrdenModel();
+        $orden_id = $genero->create($data);
+
+        if (!$orden_id) {
+            throw new Exception("Error al crear la orden - ID no generado");
+        }
+
+        $response->setResponse(true, "Orden creada exitosamente", [
+            "orden_id" => $orden_id,
+            "ordenesId" => $orden_id,
+            "id" => $orden_id
+        ]);
+        $response->toJSON();
+
+    } catch (Exception $e) {
+        error_log("Error en orden::create(): " . $e->getMessage());
+        handleException($e);
     }
+}
+
 }

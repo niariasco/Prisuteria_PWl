@@ -287,150 +287,62 @@ const PagoPedido = () => {
     }
   };
 
-  // Procesar el pago y crear la orden
-  const handlePagar = async () => {
-    console.log('Iniciando proceso de pago...');
-    console.log('Datos del pedido:', pedidoData);
-    console.log('Método de pago:', metodoPago);
-    console.log('Form data:', formData);
-
-    if (!pedidoData || !pedidoData.productos || pedidoData.productos.length === 0) {
-      setMensaje("No hay datos del pedido disponibles.");
-      setAlertType("error");
-      setOpenSnackbar(true);
-      return;
-    }
-
-    setLoading(true);
-    
-    try {
-      // Validar según método de pago
-      let error = null;
-      if (esTarjeta()) {
-        error = validarTarjeta();
-      } else if (metodoPago === "efectivo") {
-        error = validarEfectivo();
-      }
-
-      if (error) {
-        setMensaje(error);
-        setAlertType("warning");
-        setOpenSnackbar(true);
-        setLoading(false);
-        return;
-      }
-
-      // Preparar datos específicos del método de pago
-      let datosMetodoPago = {};
-      
-      if (metodoPago === "efectivo") {
-        datosMetodoPago = {
-          montoEfectivo: formData.montoEfectivo,
-          cambio: cambio
-        };
-      } else if (esTarjeta()) {
-        datosMetodoPago = {
-          numeroTarjeta: formData.numeroTarjeta,
-          fechaExpiracion: formData.fechaExpiracion,
-          cvv: formData.cvv,
-          nombreTitular: formData.nombreTitular
-        };
-      }
-
-      console.log('Datos método de pago:', datosMetodoPago);
-
-      // Transformar datos para enviar al backend
-      const datosTransformados = OrderService.transformarDatosPago(
-        pedidoData,
-        getTipoMetodo(),
-        datosMetodoPago
-      );
-
-      console.log('Datos transformados para envío:', datosTransformados);
-
-      // Enviar al backend
-      const response = await OrderService.finalizarPago(datosTransformados);
-      
-      console.log('Respuesta del servidor:', response);
-
-      if (response && response.success !== false && response.orden_id) {
-        console.log('Pago procesado exitosamente, ID de orden:', response.orden_id);
-
-        // Crear objeto orden completa
-        const ordenCompleta = {
-          id: response.orden_id,
-          metodoPago: getTipoMetodo(),
-          cambio: cambio,
-          fecha: new Date().toISOString(),
-          total: response.total || totalCompra,
-          subtotalSinImpuestos: pedidoData.subtotalSinImpuestos,
-          ivaTotal: pedidoData.ivaTotal,
-          productos: pedidoData.productos,
-          cliente: pedidoData.cliente,
-          direccionEnvio: pedidoData.direccionEnvio,
-          moneda: pedidoData.moneda || 'CRC'
-        };
-        
-        console.log('Orden completa creada:', ordenCompleta);
-        setOrdenCreada(ordenCompleta);
-
-        // Limpiar localStorage y formulario
-        localStorage.removeItem('pedidoEnProceso');
-        setFormData(initialFormData);
-        setSelectedMonth("");
-        setSelectedYear("");
-        setCambio(0);
-
-        // Mostrar modal de éxito
-        setShowFacturaDialog(true);
-        
-        // Mensaje de éxito
-        setMensaje("¡Pago procesado exitosamente!");
-        setAlertType("success");
-        setOpenSnackbar(true);
-
-        // Redirigir después de 5 segundos
-        setTimeout(() => {
-          if (ordenCompleta.id) {
-            navigate(`/orden/${ordenCompleta.id}`);
-          } else {
-            navigate('/orden');
-          }
-        }, 5000);
-
-      } else {
-        throw new Error(response?.message || 'Error al procesar el pago - respuesta inválida');
-      }
-
-    } catch (error) {
-      console.error("Error al procesar el pago:", error);
-      
-      let errorMessage = 'Hubo un error al procesar el pago.';
-      
-      if (error.response) {
-        console.log('Error response:', error.response);
-        
-        if (error.response.status === 404) {
-          errorMessage = "El servicio de pagos no está disponible. Contacte al administrador.";
-        } else if (error.response.status === 400) {
-          errorMessage = error.response.data?.message || "Datos inválidos. Verifique la información ingresada.";
-        } else if (error.response.status >= 500) {
-          errorMessage = "Error interno del servidor. Por favor, intente nuevamente.";
-        } else if (error.response.data?.message) {
-          errorMessage = error.response.data.message;
-        }
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      setMensaje(errorMessage);
-      setAlertType("error");
-      setOpenSnackbar(true);
-      
-    } finally {
-      setLoading(false);
-    }
+const prepararDatosOrden = () => {
+  // Datos básicos del pedido
+  const datosOrden = {
+    usuario_id: usuarioId,
+    productos: pedidoData.productos || [],
+    direccion_envio: pedidoData.direccionEnvio || "No especificada",
+    subtotal: pedidoData.subtotalSinImpuestos || 0,
+    impuestos: pedidoData.ivaTotal || 0,
+    total: pedidoData.total || 0,
+    metodo_pago: metodoPago.toLowerCase(),
   };
+
+  // Datos de pago según método
+  if (metodoPago === "efectivo") {
+    datosOrden.pago_efectivo = {
+      monto_pagado: parseFloat(formData.montoEfectivo) || datosOrden.total,
+      cambio: cambio || 0
+    };
+  } else if (metodoPago === "tarjeta-credito" || metodoPago === "tarjeta-debito") {
+    datosOrden.pago_tarjeta = {
+      numero_tarjeta: formData.numeroTarjeta.replace(/\s/g, ''),
+      fecha_expiracion: formData.fechaExpiracion,
+      cvv: formData.cvv,
+      nombre_titular: formData.nombreTitular
+    };
+  } else if (metodoPago === "mixto") {
+    datosOrden.pago_efectivo = {
+      monto_pagado: parseFloat(formData.montoEfectivo) || 0,
+      cambio: cambio || 0
+    };
+    datosOrden.pago_tarjeta = {
+      numero_tarjeta: formData.numeroTarjeta.replace(/\s/g, ''),
+      fecha_expiracion: formData.fechaExpiracion,
+      cvv: formData.cvv,
+      nombre_titular: formData.nombreTitular
+    };
+  }
+
+  console.log("Enviando datos al backend:", datosOrden);
+  return datosOrden;
+};
+
+
+const handlePagar = async () => {
+  try {
+    const datosOrden = prepararDatosOrden();
+    const respuesta = await OrderService.crearOrden(datosOrden);
+    console.log("Orden creada:", respuesta);
+    // Aquí puedes redirigir a confirmación o limpiar carrito
+  } catch (error) {
+    console.error("Error al procesar el pago:", error);
+  }
+};
+
+
+
 
   // Ver detalle de la orden (desde el modal)
   const verDetalleOrden = () => {
