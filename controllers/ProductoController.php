@@ -144,4 +144,18 @@ public function create()
             handleException($e);
         }
     }
+
+   public function cambiarEstado()
+{
+    try {
+        $request = new Request();
+        $response = new Response();
+        $inputJSON = $request->getJSON(); // <-- recibe JSON
+        $producto = new ProductoModel();
+        $result = $producto->cambiarEstado($inputJSON);
+        $response->toJSON($result);
+    } catch (Exception $e) {
+        handleException($e);
+    }
+}
 }

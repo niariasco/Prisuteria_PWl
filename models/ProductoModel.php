@@ -22,18 +22,18 @@ class ProductoModel
             // $vSQL = "SELECT * FROM productos order by nombre desc;";
             //Consulta SQL con JOIN para obtener las imágenes directamente
             $vSQL = "SELECT p.*, i.url_imagen AS imagen
-FROM productos p
-LEFT JOIN (
-    SELECT i1.*
-    FROM imagenes i1
-    INNER JOIN (
-        SELECT producto_id, MIN(imagenId) AS min_imagenId
-        FROM imagenes
-        GROUP BY producto_id
-    ) i2 ON i1.imagenId = i2.min_imagenId
-) i ON p.productosId = i.producto_id
-ORDER BY p.nombre DESC;
-";
+                 FROM productos p
+                 LEFT JOIN (
+                     SELECT i1.*
+                     FROM imagenes i1
+                     INNER JOIN (
+                         SELECT producto_id, MIN(imagenId) AS min_imagenId
+                         FROM imagenes
+                         GROUP BY producto_id
+                     ) i2 ON i1.imagenId = i2.min_imagenId
+                 ) i ON p.productosId = i.producto_id
+                 WHERE p.activo = 1
+                 ORDER BY p.nombre DESC;";
 
             $vResultado = $this->enlace->ExecuteSQL($vSQL);
             //Incluir imagenes
@@ -448,4 +448,27 @@ if (!empty($objeto->imagenes_nuevas)) {
         handleException($e);
     }
 }
+
+// ProductoController.php
+
+public function cambiarEstado($data)
+{
+    try {
+        if (!isset($data->productosId) || !isset($data->activo)) {
+            throw new Exception('Faltan datos para cambiar estado');
+        }
+
+        $id = (int)$data->productosId;
+        $activo = (int)$data->activo;
+
+        $sql = "UPDATE productos SET activo = $activo WHERE productosId = $id";
+        $this->enlace->executeSQL_DML($sql);
+
+        return ['success' => true, 'message' => 'Estado actualizado'];
+    } catch (Exception $e) {
+        return ['success' => false, 'message' => 'Error_Cambiar_Estado', 'error' => $e->getMessage()];
+    }
+}
+
+
 }

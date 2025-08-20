@@ -14,6 +14,12 @@ class ProductosService {
         throw error;
       });
   }
+// Cambiar estado de un producto (activar/desactivar)
+cambiarEstado({ productosId, activo }) {
+  return axios.put(`${API_URL}/cambiarEstado`, { productosId, activo }, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
   // Obtener todos los productos (alias para compatibilidad)
   getAllProductos() {
@@ -87,7 +93,7 @@ class ProductosService {
       });
   }
 
-  // Validar stock de múltiples productos
+ /*
   async validarStockMultiple(productos) {
     try {
       const validaciones = await Promise.allSettled(
@@ -132,7 +138,7 @@ class ProductosService {
       throw error;
     }
   }
-
+*/
   // Validar stock de un producto específico
   async validarStock(productId, cantidadSolicitada) {
     try {

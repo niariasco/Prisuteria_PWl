@@ -20,6 +20,7 @@ import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
 import AddIcon from '@mui/icons-material/Add';
 import { useTranslation } from 'react-i18next';
+import { Switch, FormControlLabel } from '@mui/material';
 
 export function UpdateProducto() {
   const { control, handleSubmit, reset } = useForm();
@@ -33,6 +34,7 @@ export function UpdateProducto() {
   const [totalResenas, setTotalResenas] = useState(0);
   const [productoActualizadoId, setProductoActualizadoId] = useState(null);
   const { t } = useTranslation(); //traduccion 
+  const [activo, setActivo] = useState(true);
 
   const [imagenesExistentes, setImagenesExistentes] = useState([]);
   const [imagenesAEliminar, setImagenesAEliminar] = useState([]);
@@ -55,10 +57,14 @@ export function UpdateProducto() {
   useEffect(() => {
     if (!productoSeleccionado) return;
     setLoading(true);
+    
     ProductoService.getProductoById(productoSeleccionado)
       .then(res => {
         const p = res.data;
+         console.log('Producto cargado:', res.data);
         if (!p) throw new Error('No se encontró el producto');
+
+          setActivo(p.activo === "1"); 
 
         // Etiquetas seleccionadas, transformar string a ids
         let etiquetasSeleccionadas = [];
@@ -259,6 +265,41 @@ export function UpdateProducto() {
       {productoSeleccionado && (
         <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data">
           <Grid container spacing={2}>
+
+<Grid item xs={12}>
+  <FormControlLabel
+    control={
+      <Switch
+        checked={activo}
+        onChange={async (e) => {
+          const nuevoEstado = e.target.checked;
+          setActivo(nuevoEstado);
+
+          try {
+            await ProductoService.cambiarEstado({
+              productosId: productoSeleccionado,
+              activo: nuevoEstado ? 1 : 0,
+            });
+            toast.success(
+              t('FSuccess_CambiarEstado'),
+              { duration: 3000, position: 'top-center' }
+            );
+          } catch (error) {
+            console.error('Error al cambiar estado del producto:', error);
+            toast.error(
+              t('FError_CambiarEstado'),
+              { duration: 3000, position: 'top-center' }
+            );
+            // Revertir toggle en caso de error
+            setActivo(!nuevoEstado);
+          }
+        }}
+      />
+    }
+    label={activo ? t('Activo') : t('Inactivo')}
+  />
+</Grid>
+
             <Grid item xs={12}>
               <Controller
                 name="nombre"
