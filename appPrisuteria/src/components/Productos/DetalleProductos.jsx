@@ -488,14 +488,14 @@ precioBase;
        {data.criterios && data.criterios.length > 0 && (
   <Box sx={{ mt: 3, mb: 3 }}>
     <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-      {t('Personalizar Producto')}
+      {t('Personalizar_Producto')}
     </Typography>
 
     {/* Indicador de progreso */}
     {data.criterios.length > 1 && (
       <Box sx={{ mb: 2 }}>
         <Typography variant="body2" color="text.secondary">
-          {Object.keys(opcionesSeleccionadas).length} de {data.criterios.length} criterios seleccionados
+          {Object.keys(opcionesSeleccionadas).length} {t('de')} {data.criterios.length} {t('criterios_seleccionados')}
         </Typography>
         <Box sx={{ 
           width: '100%', 
@@ -517,7 +517,7 @@ precioBase;
 
     {Object.keys(opcionesSeleccionadas).length === 0 && (
       <Typography variant="body2" sx={{ color: '#999', fontStyle: 'italic', mt: 1 }}>
-        Seleccione las opciones para personalizar su producto
+        {t('Mensaje_Selecciones')}
       </Typography>
     )}
 
@@ -559,7 +559,7 @@ precioBase;
             disabled={calculandoPrecio}
           >
             <option value="" style={{ color: '#666', fontStyle: 'italic' }}>
-              {t('seleccione_opcion', 'Seleccione una opción...')}
+              {t('Seleccione_ona_opcion')}
             </option>
             {criterio.opciones && Array.isArray(criterio.opciones) && criterio.opciones.map((opcion) => (
               <option key={opcion.id} value={opcion.id} style={{ color: '#000' }}>
@@ -578,7 +578,7 @@ precioBase;
           {/* Indicador visual de éxito */}
           {estaSeleccionado && !tieneError && (
             <Typography variant="caption" sx={{ color: '##d83b6a ', display: 'block', mt: 0.5 }}>
-              Seleccionado: {opcionesSeleccionadas[criterio.id].nombre}
+               {t('seleccionado')} {opcionesSeleccionadas[criterio.id].nombre}
             </Typography>
           )}
         </Box>
@@ -602,7 +602,7 @@ precioBase;
 
     {/* Precio total destacado con conversión */}
     <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d83b6a', mt: 2 }}>
-      {t('precio_total', 'Precio Total')}: {formatPrice(precioTotal)}
+      {t('Precio_Total')} {formatPrice(precioTotal)}
     </Typography>
     {calculandoPrecio && (
       <Typography variant="body2" sx={{ color: '#d83b6a', mt: 1 }}>
@@ -631,10 +631,13 @@ precioBase;
       }
     }}
   >
-    {calculandoPrecio ? 'Calculando...' : 
-     !todosLosCriteriosCompletos() ? 
-     `Seleccione ${data.criterios?.length - Object.keys(opcionesSeleccionadas).length} criterio(s) más` :
-     t('agregarAlCarrito')}
+{calculandoPrecio ? (
+  t("calculando")
+) : !todosLosCriteriosCompletos() ? (
+  t("faltanCriterios", { count: data.criterios?.length - Object.keys(opcionesSeleccionadas).length })
+) : (
+  t("agregarAlCarrito")
+)}
   </Button>
 )}
         </Grid>
