@@ -200,6 +200,8 @@
   "Update_price" : " Actualizando precio..." ,
     "view_promotion": "Ver detalle de promoción",
     "select_type_first": "Seleccione tipo primero",
+   "Activo" : "Activo" ,
+  "Inactivo" : "Inactivo" ,
     "steps": {
       "select": "1. Seleccionar Promoción",
       "modify": "2. Modificar Datos de la Promoción"

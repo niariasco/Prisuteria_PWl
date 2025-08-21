@@ -196,6 +196,8 @@
   "seleccionado": "Selected : ",
   "Warning" : "Please note: You must complete all customization criteria before adding to cart." ,
   "Update_price" : "Updating price..." ,
+  "Activo" : "Active" ,
+  "Inactivo" : "Inactive" ,
     "select_type_first": "Select type first",
     "steps": {
       "select": "1. Select Promotion",
