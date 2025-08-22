@@ -32,6 +32,45 @@ class ProductoModel
                          GROUP BY producto_id
                      ) i2 ON i1.imagenId = i2.min_imagenId
                  ) i ON p.productosId = i.producto_id
+                 ORDER BY p.nombre DESC;";
+
+            $vResultado = $this->enlace->ExecuteSQL($vSQL);
+            //Incluir imagenes
+            if (!empty($vResultado) && is_array($vResultado)) {
+                for ($i = 0; $i < count($vResultado); $i++) {
+                    $vResultado[$i] = $this->get($vResultado[$i]->productosId);
+
+                    $vResultado[$i]->imagen = $imagenM->getImageProducto(($vResultado[$i]->productosId));
+                }
+            }
+
+            //Retornar la respuesta
+
+            return $vResultado;
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+
+   public function allActivo()
+    {
+        try {
+            $imagenM = new ImageModel();
+            //Consulta SQL
+            // $vSQL = "SELECT * FROM productos order by nombre desc;";
+            //Consulta SQL con JOIN para obtener las imágenes directamente
+            $vSQL = "SELECT p.*, i.url_imagen AS imagen
+                 FROM productos p
+                 LEFT JOIN (
+                     SELECT i1.*
+                     FROM imagenes i1
+                     INNER JOIN (
+                         SELECT producto_id, MIN(imagenId) AS min_imagenId
+                         FROM imagenes
+                         GROUP BY producto_id
+                     ) i2 ON i1.imagenId = i2.min_imagenId
+                 ) i ON p.productosId = i.producto_id
                  WHERE p.activo = 1
                  ORDER BY p.nombre DESC;";
 
@@ -52,6 +91,9 @@ class ProductoModel
             handleException($e);
         }
     }
+
+
+
     /**
      * Obtener una producto
      * @param $id de la producto
@@ -267,6 +309,7 @@ ORDER BY c.nombreSCategoria, p.nombre;";
 FROM productos p
 JOIN categorias c ON p.categoria_id = c.categoriaId
 WHERE p.categoria_id = $categoriaId
+AND  p.activo = 1
 ORDER BY c.nombreSCategoria, p.nombre;";
 
             //Ejecutar la consulta
@@ -303,6 +346,7 @@ FROM productos p
 JOIN productoetiqueta pe ON p.productosId = pe.producto_id
 JOIN etiquetas e ON pe.etiqueta_id = e.etiquetaId
 WHERE e.etiquetaId = $etiquetaId  
+AND  p.activo = 1
 ORDER BY p.nombre;";
             //Ejecutar la consulta
             $vResultado = $this->enlace->ExecuteSQL($vSQL);

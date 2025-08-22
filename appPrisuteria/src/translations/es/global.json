@@ -16,7 +16,7 @@
     "actions": {
       "create": "Crear",
       "update": "Actualizar",
-      "delete": "Eliminar"
+      "delete": "Cambiar el precio de los criterios"
     },
     "mobile": {
       "shopping": "Compras",
@@ -204,6 +204,9 @@
     "select_type_first": "Seleccione tipo primero",
    "Activo" : "Activo" ,
   "Inactivo" : "Inactivo" ,
+    "FiltrarC" : "Filtrar por categoría:" ,
+    "FiltrarE" : "Filtrar por etiqueta:" ,
+     "Todas" : "Todas" ,
     "steps": {
       "select": "1. Seleccionar Promoción",
       "modify": "2. Modificar Datos de la Promoción"

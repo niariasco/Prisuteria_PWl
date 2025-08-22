@@ -18,6 +18,20 @@ class producto
             handleException($e);
         }
     }
+        public function allActivo()
+    {
+        try {
+            $response = new Response();
+            //Instancia modelo
+            $productoM = new ProductoModel;
+            //Método del modelo
+            $result = $productoM->allActivo();
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
     //GET Obtener 
    /* public function get($id)
     {

@@ -16,7 +16,7 @@
     "actions": {
       "create": "Create",
       "update": "Update",
-      "delete": "Delete"
+      "delete": "Change the price of the criterion"
     },
     "mobile": {
       "shopping": "Shopping",
@@ -200,6 +200,12 @@
   "Update_price" : "Updating price..." ,
   "Activo" : "Active" ,
   "Inactivo" : "Inactive" ,
+     "Todas" : "All" ,
+
+"FiltrarC" : "Filter by category" ,
+"FiltrarE" : "Filter by tag" ,
+
+
     "select_type_first": "Select type first",
     "steps": {
       "select": "1. Select Promotion",

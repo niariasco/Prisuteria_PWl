@@ -26,6 +26,11 @@ cambiarEstado({ productosId, activo }) {
     return axios.get(API_URL);
   }
 
+getAllActivo() {
+  return axios.get(`${API_URL}/allActivo`)
+    .then(response => response.data)
+}
+
   // Obtener un producto específico por ID
   get(id) {
     return axios.get(`${API_URL}/${id}`)
@@ -214,11 +219,23 @@ cambiarEstado({ productosId, activo }) {
   }
 
     // Obtener productos por categoría
+    //http://localhost:81/prisuteriapwl/producto/productosXCategoria/1
+
 getCategoria(categoriaId) {
   return axios.get(`${API_URL}/productosXCategoria/${categoriaId}`)
     .then(response => response.data)
     .catch(error => {
       console.error(`Error obteniendo productos de categoría ${categoriaId}:`, error);
+      throw error;
+    });
+}
+
+//http://localhost:81/prisuteriapwl/producto/productosXEtiqueta/1
+productosXEtiqueta(etiquetaId) {
+  return axios.get(`${API_URL}/productosXEtiqueta/${etiquetaId}`)
+    .then(response => response.data)
+    .catch(error => {
+      console.error(`Error obteniendo productos de categoría ${etiquetaId}:`, error);
       throw error;
     });
 }
