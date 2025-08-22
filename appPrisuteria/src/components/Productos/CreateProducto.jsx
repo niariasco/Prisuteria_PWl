@@ -25,34 +25,54 @@ export function CreateProducto({ productoId = null, onSuccess }) {
   const { control, handleSubmit, reset } = useForm();
   const [categorias, setCategorias] = useState([]);
   const [etiquetas, setEtiquetas] = useState([]);
-  const [imagenesNuevas, setImagenesNuevas] = useState([]); // imágenes de inputs básicos
+  const [imagenesNuevas, setImagenesNuevas] = useState([]);
   const [imagenesExistentes, setImagenesExistentes] = useState([]);
   const [imagenesAEliminar, setImagenesAEliminar] = useState([]);
-  const [imagenesExtra, setImagenesExtra] = useState([]); // bloques dinámicos
+  const [imagenesExtra, setImagenesExtra] = useState([]);
   const [productoCreadoId, setProductoCreadoId] = useState(null);
-  const [file, setFile] = useState(null); // imagen principal
+  const [file, setFile] = useState(null);
   const [fileURL, setFileURL] = useState(null);
-const [error, setError] = useState(null);
-  const { t } = useTranslation(); //traduccion 
-error;
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
+
   useEffect(() => {
-    CategoriaService.getAllCategorias().then(res => setCategorias(res.data));
-    EtiquetaService.getAllEtiquetas().then(res => setEtiquetas(res.data));
+    const loadData = async () => {
+      try {
+        const [categoriasRes, etiquetasRes] = await Promise.all([
+          CategoriaService.getAllCategorias(),
+          EtiquetaService.getAllEtiquetas()
+        ]);
+        
+        setCategorias(categoriasRes.data || []);
+        setEtiquetas(etiquetasRes.data || []);
+      } catch (error) {
+        console.error('Error cargando datos:', error);
+        toast.error('Error al cargar categorías y etiquetas');
+      }
+    };
+
+    loadData();
   }, []);
 
   useEffect(() => {
     if (productoId) {
-      ProductoService.getProductoById(productoId).then(res => {
-        const p = res.data;
-        reset({
-          nombre: p.nombre,
-          descripcion: p.descripcion,
-          precio: p.precio,
-          categoria_id: p.categoriaId,
-          etiquetas: p.etiquetas.map(e => e.etiquetaId),
+      ProductoService.getProductoById(productoId)
+        .then(res => {
+          const p = res.data;
+          reset({
+            nombre: p.nombre || '',
+            descripcion: p.descripcion || '',
+            precio: p.precio || '',
+            categoria_id: p.categoriaId || '', // Asegurar que tenga un valor válido
+            etiquetas: p.etiquetas?.map(e => e.etiquetaId) || [],
+          });
+          setImagenesExistentes(p.imagenes || []);
+        })
+        .catch(error => {
+          console.error('Error cargando producto:', error);
+          toast.error('Error al cargar el producto');
         });
-        setImagenesExistentes(p.imagenes || []);
-      });
     }
   }, [productoId, reset]);
 
@@ -91,107 +111,152 @@ error;
     setImagenesAEliminar(prev => [...prev, url]);
   };
 
-  const onSubmit = (data) => {
-     setError(null); 
-    const formData = new FormData();
-    formData.append('nombre', data.nombre);
-    formData.append('descripcion', data.descripcion);
-    formData.append('precio', data.precio);
-    formData.append('categoria_id', data.categoria_id);
+  const onSubmit = async (data) => {
+    if (loading) return;
+    
+    setLoading(true);
+    setError(null);
 
-    data.etiquetas.forEach(id => formData.append('etiquetas[]', id));
+    try {
+      const formData = new FormData();
+      formData.append('nombre', data.nombre);
+      formData.append('descripcion', data.descripcion);
+      formData.append('precio', data.precio);
+      formData.append('categoria_id', data.categoria_id);
 
-    // imágenes nuevas (inputs regulares)
-    imagenesNuevas.forEach(file => formData.append('imagenes_nuevas[]', file));
+      // Validar que se seleccionó una categoría
+      if (!data.categoria_id) {
+        toast.error('Por favor selecciona una categoría');
+        setLoading(false);
+        return;
+      }
 
-    // imágenes dinámicas (NO se suben aquí todavía)
-    imagenesExtra.forEach(img => {
-      if (img.file) formData.append('imagenes_nuevas[]', img.file);
-    });
+      // Agregar etiquetas
+      if (data.etiquetas && data.etiquetas.length > 0) {
+        data.etiquetas.forEach(id => formData.append('etiquetas[]', id));
+      }
 
-    // imágenes para eliminar
-    imagenesAEliminar.forEach(url => formData.append('imagenes_eliminar[]', url));
+      // Imágenes nuevas
+      imagenesNuevas.forEach(file => formData.append('imagenes_nuevas[]', file));
 
-    if (productoId) formData.append('producto_id', productoId);
+      // Imágenes dinámicas
+      imagenesExtra.forEach(img => {
+        if (img.file) formData.append('imagenes_nuevas[]', img.file);
+      });
 
-    const submitAction = productoId
-      //? ProductoService.updateProducto(formData) 
-     // : 
-     ProductoService.createProducto(formData);
+      // Imágenes para eliminar
+      imagenesAEliminar.forEach(url => formData.append('imagenes_eliminar[]', url));
 
-    submitAction
-      .then((res) => {
-        if (res.status === 200) {
-          const idProducto = productoId || res.data?.id;
+      if (productoId) formData.append('producto_id', productoId);
 
-          // Subir imagen principal
-          if (idProducto && file) {
+      // Determinar la acción a realizar
+      let submitAction;
+      if (productoId) {
+        submitAction = ProductoService.updateProducto(formData);
+      } else {
+        submitAction = ProductoService.createProducto(formData);
+      }
+
+      // Verificar que submitAction no sea null
+      if (!submitAction) {
+        throw new Error('Error: El servicio no está disponible');
+      }
+
+      const res = await submitAction;
+
+      if (res && (res.status === 200 || res.status === 201)) {
+        const idProducto = productoId || res.data?.id || res.data?.productosId;
+
+        // Subir imagen principal
+        if (idProducto && file) {
+          try {
             const imgForm = new FormData();
             imgForm.append('file', file);
             imgForm.append('producto_id', idProducto);
 
-            ImageService.createImage(imgForm)
-              .then((response) => {
-                if (response.error) {
-                  setError(response.error);
-                } else if (response.data) {
-                  toast.success(response.data, { duration: 4000, position: 'top-center' });
-                }
-              })
-              .catch(err => console.error('Error al subir imagen principal:', err));
+            const response = await ImageService.createImage(imgForm);
+            if (response.error) {
+              console.error('Error al subir imagen principal:', response.error);
+            } else if (response.data) {
+              toast.success('Imagen principal subida correctamente');
+            }
+          } catch (imgError) {
+            console.error('Error al subir imagen principal:', imgError);
           }
+        }
 
-          // Subir cada imagen extra como independiente
-          if (idProducto && imagenesExtra.length > 0) {
-            imagenesExtra.forEach(img => {
-              if (img.file) {
+        // Subir imágenes extras
+        if (idProducto && imagenesExtra.length > 0) {
+          for (const img of imagenesExtra) {
+            if (img.file) {
+              try {
                 const imgForm = new FormData();
                 imgForm.append('file', img.file);
                 imgForm.append('producto_id', idProducto);
 
-                ImageService.createImage(imgForm)
-                  .then((response) => {
-                    if (response.error) {
-                      setError(response.error);
-                    } else if (response.data) {
-                      toast.success(response.data, { duration: 4000, position: 'top-center' });
-                    }
-                  })
-                  .catch(err => console.error('Error al subir imagen extra:', err));
+                const response = await ImageService.createImage(imgForm);
+                if (response.error) {
+                  console.error('Error al subir imagen extra:', response.error);
+                } else if (response.data) {
+                  toast.success('Imagen adicional subida correctamente');
+                }
+              } catch (imgError) {
+                console.error('Error al subir imagen extra:', imgError);
               }
-            });
+            }
           }
-
-          // Resetear si es creación
-          if (!productoId && res.data.productosId) {
-            setProductoCreadoId(res.data.productosId);
-            reset();
-            setImagenesNuevas([]);
-            setImagenesExtra([]);
-            setImagenesAEliminar([]);
-            setImagenesExistentes([]);
-            setFile(null);
-            setFileURL(null);
-          }
-
-          toast.success(t('FSuccess_ProductoMant'), {
-            duration: 4000,
-            position: 'top-center',
-          });
-
-          if (onSuccess) onSuccess();
         }
-      })
-      .catch(err => {
-        console.error('Error al guardar producto:', err);
-        setError(t('FError_ProductoMant'));
-      });
+
+        // Resetear formulario si es creación
+        if (!productoId && (res.data?.productosId || res.data?.id)) {
+          setProductoCreadoId(res.data?.productosId || res.data?.id);
+          reset({
+            nombre: '',
+            descripcion: '',
+            precio: '',
+            categoria_id: '',
+            etiquetas: []
+          });
+          setImagenesNuevas([]);
+          setImagenesExtra([]);
+          setImagenesAEliminar([]);
+          setImagenesExistentes([]);
+          setFile(null);
+          setFileURL(null);
+        }
+
+        toast.success(
+          productoId ? 'Producto actualizado exitosamente' : t('FSuccess_ProductoMant'),
+          { duration: 4000, position: 'top-center' }
+        );
+
+        if (onSuccess) onSuccess();
+      } else {
+        throw new Error('Error en la respuesta del servidor');
+      }
+    } catch (err) {
+      console.error('Error al guardar producto:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Error al guardar el producto';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
+
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Typography variant="h4" sx={{ mb: 4 }}>
         {productoId ? 'Editar Producto' : t('FCreate_ProductoMant')}
       </Typography>
+
+      {error && (
+        <Box sx={{ mb: 3, p: 2, backgroundColor: '#ffebee', borderRadius: 2 }}>
+          <Typography variant="body1" color="error">
+            {error}
+          </Typography>
+        </Box>
+      )}
 
       {productoCreadoId && (
         <Box sx={{ mb: 3, p: 2, backgroundColor: '#c287d7ff', borderRadius: 2 }}>
@@ -216,8 +281,16 @@ error;
               name="nombre"
               control={control}
               defaultValue=""
-              render={({ field }) => (
-                <TextField label= {t('FNombre_ProductoMant')}fullWidth required {...field} />
+              rules={{ required: 'El nombre es requerido' }}
+              render={({ field, fieldState: { error } }) => (
+                <TextField 
+                  label={t('FNombre_ProductoMant')}
+                  fullWidth 
+                  required 
+                  error={!!error}
+                  helperText={error?.message}
+                  {...field} 
+                />
               )}
             />
           </Grid>
@@ -227,13 +300,16 @@ error;
               name="descripcion"
               control={control}
               defaultValue=""
-              render={({ field }) => (
+              rules={{ required: 'La descripción es requerida' }}
+              render={({ field, fieldState: { error } }) => (
                 <TextField
                   label={t('FDescripcion_ProductoMant')}
                   fullWidth
                   multiline
                   rows={4}
                   required
+                  error={!!error}
+                  helperText={error?.message}
                   {...field}
                 />
               )}
@@ -245,20 +321,35 @@ error;
               name="precio"
               control={control}
               defaultValue=""
-              render={({ field }) => (
-                <TextField label={t('FPrecio_ProductoMant')} fullWidth type="number" required {...field} />
+              rules={{ 
+                required: 'El precio es requerido',
+                min: { value: 0, message: 'El precio debe ser mayor a 0' }
+              }}
+              render={({ field, fieldState: { error } }) => (
+                <TextField 
+                  label={t('FPrecio_ProductoMant')} 
+                  fullWidth 
+                  type="number" 
+                  required
+                  error={!!error}
+                  helperText={error?.message}
+                  inputProps={{ min: 0, step: 0.01 }}
+                  {...field} 
+                />
               )}
             />
           </Grid>
 
-         <Grid item xs={12}>
+          <Grid item xs={12}>
             <Controller
               name="categoria_id"
               control={control}
-              defaultValue={[]}
+              defaultValue=""
+              rules={{ required: 'La categoría es requerida' }}
               render={({ field }) => <SelectCategoria field={field} data={categorias} />}
             />
           </Grid>
+
           <Grid item xs={12}>
             <Controller
               name="etiquetas"
@@ -270,8 +361,12 @@ error;
 
           {/* Imagen principal */}
           <Grid item xs={12}>
-            <Typography variant="h6">{t('FAgregarImagen_ProductoMant')} </Typography>
-            <input type="file" onChange={handleChangeImage} />
+            <Typography variant="h6">{t('FAgregarImagen_ProductoMant')}</Typography>
+            <input 
+              type="file" 
+              accept="image/*"
+              onChange={handleChangeImage} 
+            />
             {fileURL && (
               <Box sx={{ position: 'relative', mt: 1, display: 'inline-block' }}>
                 <img src={fileURL} width={300} alt="preview" style={{ borderRadius: 8 }} />
@@ -321,7 +416,11 @@ error;
             <Typography variant="h6">{t('FOtrasImagenes_ProductoMant')}</Typography>
             {imagenesExtra.map((img, index) => (
               <Box key={index} sx={{ position: 'relative', mb: 2 }}>
-                <input type="file" onChange={e => handleAddImage(e, index)} />
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={e => handleAddImage(e, index)} 
+                />
                 {img.url && (
                   <img src={img.url} width={300} alt={`preview-${index}`} style={{ borderRadius: 8 }} />
                 )}
@@ -346,18 +445,19 @@ error;
             </IconButton>
           </Grid>
 
-                  <Grid item xs={12}>
-              <Button
-                type="submit"
-                variant="contained"
-                sx={{
-                  backgroundColor: '#d83b6a',
-                  ':hover': { backgroundColor: '#b03052' },
-                }}
-              >
-              {t('FActualizar_ProductoMant')}
-              </Button>
-            </Grid>
+          <Grid item xs={12}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading}
+              sx={{
+                backgroundColor: '#d83b6a',
+                ':hover': { backgroundColor: '#b03052' },
+              }}
+            >
+              {loading ? 'Guardando...' : (productoId ? 'Actualizar Producto' : t('FCreate_ProductoMant'))}
+            </Button>
+          </Grid>
         </Grid>
       </form>
     </Container>
