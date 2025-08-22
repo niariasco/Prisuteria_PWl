@@ -9,6 +9,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import { useTranslation } from 'react-i18next';
+import toast from "react-hot-toast";
 
 export function FormResena({ productoId, onNuevaResena }) {
   const { decodeToken } = useContext(UserContext);
@@ -25,7 +26,7 @@ export function FormResena({ productoId, onNuevaResena }) {
 //traduccion
 
     if (comentario.trim() === '' || valoracion === 0) {
-      setError(t('FUser_Review'));
+      setError(t('MessageError'));
       return;
     }
 
@@ -36,6 +37,23 @@ export function FormResena({ productoId, onNuevaResena }) {
     }
 
     setLoading(true);
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 2000)); 
+      toast.success(t("Resenaenviada"), {
+        duration: 3000,
+        position: "top-center",
+      });
+    } catch (error) {
+      console.error("Error al enviar reseña:", error);
+      toast.error(t("FError_Review"), {
+        duration: 3000,
+        position: "top-center",
+      });
+    } finally {
+      setLoading(false);
+    }
+
 
     try {
       const resenaData = {
@@ -119,15 +137,17 @@ export function FormResena({ productoId, onNuevaResena }) {
         />
       </Box>
 
-      <Button
+       <Button
         type="submit"
         variant="contained"
         color="primary"
         disabled={loading}
         sx={{ mt: 2 }}
       >
-        {loading ? t('FSaving_Review') : t('FSend_Review')}
+        {loading ? t("FSaving_Review") : t("FSend_Review")}
       </Button>
+
+      
     </Box>
   );
 }

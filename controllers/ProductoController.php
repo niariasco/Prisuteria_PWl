@@ -75,6 +75,22 @@ class producto
             handleException($e);
         }
     }
+
+        public function productosXEtiqueta($etiqueta)
+    {
+        try {
+            $response = new Response();
+            //Instancia del modelo
+            $producto = new ProductoModel();
+            //Acción del modelo a ejecutar
+            $result = $producto->productosXEtiqueta($etiqueta);
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
     public function productosXpromo($param)
     {
         try {

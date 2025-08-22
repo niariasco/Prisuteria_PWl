@@ -1,39 +1,63 @@
-/*import React, { useEffect } from 'react';*/
-import { useEffect } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ProductoService from '../../services/ProductoService';
 import { ListaCartasProductos } from './ListaCartasProductos';
+import CategoriaService from '../../services/CategoriaService';
+import { SelectCategoria } from './Forms/SelectCategoria';
 
 export function ListaProductos() {
-  //Resultado de consumo del API, respuesta
-  const [data, setData] = useState(null);
-  //Error del API
+  const [data, setData] = useState([]);
   const [error, setError] = useState('');
-  //Booleano para establecer sí se ha recibido respuesta
   const [loaded, setLoaded] = useState(false);
+
+  const [categorias, setCategorias] = useState([]);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
+
+  // Cargar categorías al inicio
+  useEffect(() => {
+    CategoriaService.getAllCategorias()
+      .then((res) => setCategorias(res.data))
+      .catch((err) => console.error('Error cargando categorías', err));
+  }, []);
+
+  // Cargar productos al inicio y al cambiar la categoría
 useEffect(() => {
-    ProductoService.getAllProductos()
-    .then((response) => {
-      console.log(response);
-      setData(response.data);
-      setError(response.error);
-      setError(response.error || ''); 
-      setLoaded(true);       
-    })                                      
-    .catch((error) => {
-      if (error instanceof SyntaxError) {
-        setError(error);
-        setLoaded(false);
+  const fetchProductos = async () => {
+    try {
+      let response;
+      if (categoriaSeleccionada) {
+        response = await ProductoService.getCategoria(categoriaSeleccionada);
+      } else {
+        response = await ProductoService.getAllProductos();
       }
-    });
-}, []);
+setData(Array.isArray(response) ? response : []);
+      setError('');
+      setLoaded(true);
+    } catch (err) {
+      setError(err);
+      setLoaded(false);
+    }
+  };
+  fetchProductos();
+}, [categoriaSeleccionada]);
 
+  if (!loaded) return <p>Cargando...</p>;
+  if (error) return <p>Error: {error}</p>;
 
+  return (
+    <>
+      {/* Dropdown de categorías */}
+      <SelectCategoria
+        field={{
+          value: categoriaSeleccionada,
+          onChange: (e) => setCategoriaSeleccionada(e.target.value),
+        }}
+        data={categorias}
+      />
+      
 
-
-
-if(!loaded) return <p>Cargando..</p>
-if(error) return <p>Error: {error.message}</p>
-return <>{data && <ListaCartasProductos data={data} isShopping={true}  />}</> 
-
+      {/* Lista de productos */}
+      <ListaCartasProductos data={data} isShopping={true} />
+    </>
+  );
 }
+

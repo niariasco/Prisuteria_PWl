@@ -474,9 +474,7 @@ precioBase;
             {data.promedio_valoracion > 0 ? (
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Rating value={parseFloat(data.promedio_valoracion)} precision={0.1} readOnly size="small" />
-                <Typography variant="body2" sx={{ ml: 1 }}>
-                  ({parseFloat(data.promedio_valoracion).toFixed(1)})
-                </Typography>
+            
               </Box>
             ) : (
               <Typography variant="body2" color="text.secondary">
@@ -709,3 +707,11 @@ precioBase;
     </Container>
   );
 }
+
+/***
+ *  <Typography variant="body2" sx={{ ml: 1 }}>
+                  ({parseFloat(data.promedio_valoracion).toFixed(1)})
+                </Typography>
+ * 
+ * 
+ */

@@ -1,5 +1,5 @@
 import axios from 'axios';
-
+//http://localhost:81/prisuteriapwl/categorias/
 const BASE_URL = import.meta.env.VITE_BASE_URL + 'categorias';
 
 class CategoriaService {

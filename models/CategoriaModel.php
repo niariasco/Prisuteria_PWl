@@ -20,7 +20,7 @@ class CategoriaModel {
     // Obtener una categoría por su ID
     public function get($id) {
         try {
-            $vSql = "SELECT * FROM categorias WHERE id = $id";
+            $vSql = "SELECT * FROM categorias WHERE categoriaId = $id";
             $vResultado = $this->enlace->ExecuteSQL($vSql);
             return $vResultado[0];
         } catch (Exception $e) {

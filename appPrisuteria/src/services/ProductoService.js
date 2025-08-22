@@ -205,13 +205,24 @@ cambiarEstado({ productosId, activo }) {
 
   // Obtener productos por categoría
   getByCategoria(categoriaId) {
-    return axios.get(`${API_URL}/categoria/${categoriaId}`)
+    return axios.get(`${API_URL}/categorias/${categoriaId}`)
       .then(response => response.data)
       .catch(error => {
         console.error(`Error obteniendo productos de categoría ${categoriaId}:`, error);
         throw error;
       });
   }
+
+    // Obtener productos por categoría
+getCategoria(categoriaId) {
+  return axios.get(`${API_URL}/productosXCategoria/${categoriaId}`)
+    .then(response => response.data)
+    .catch(error => {
+      console.error(`Error obteniendo productos de categoría ${categoriaId}:`, error);
+      throw error;
+    });
+}
+
 
   // Obtener productos con promociones
   getProductosConPromocion() {

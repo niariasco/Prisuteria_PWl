@@ -14,12 +14,12 @@ class categorias
         handleException($e);
     }
     }
-    public function get($param)
+    public function get($id)
     {
         try {
             $response = new Response();
             $categoria = new CategoriaModel();
-            $result = $categoria->get($param);
+            $result = $categoria->get($id);
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {

@@ -227,16 +227,19 @@ WHERE r.producto_id = $id";
         }
     }
 
-
+/*
     public function productosXCategoria($categoriaId)
     {
         try {
             $imagenM = new ImageModel();
             //Consulta SQL
-            $vSQL = "    SELECT p.*, c.nombre AS nombre_categoria
-                FROM productos p
-             JOIN categorias c ON p.categoria_id =$categoriaId
-                ORDER BY c.nombre, p.nombre";
+            $vSQL ="SELECT     p.*, 
+    c.nombreSCategoria AS nombre_categoria
+FROM productos p
+JOIN categorias c ON p.categoria_id = c.categoriaId
+WHERE p.categoria_id = $categoriaId
+ORDER BY c.nombreSCategoria, p.nombre;";
+
             //Ejecutar la consulta
             $vResultado = $this->enlace->ExecuteSQL($vSQL);
 
@@ -253,6 +256,63 @@ WHERE r.producto_id = $id";
             handleException($e);
         }
     }
+*/
+   public function productosXCategoria($categoriaId)
+    {
+        try {
+            $imagenM = new ImageModel();
+            //Consulta SQL
+            $vSQL ="SELECT     p.*, 
+    c.nombreSCategoria AS nombre_categoria
+FROM productos p
+JOIN categorias c ON p.categoria_id = c.categoriaId
+WHERE p.categoria_id = $categoriaId
+ORDER BY c.nombreSCategoria, p.nombre;";
+
+            //Ejecutar la consulta
+            $vResultado = $this->enlace->ExecuteSQL($vSQL);
+
+            //Incluir imagenes
+            $vResultado = $this->enlace->ExecuteSQL($vSQL);
+            //Incluir imagenes
+            if (!empty($vResultado) && is_array($vResultado)) {
+                for ($i = 0; $i < count($vResultado); $i++) {
+                    $vResultado[$i] = $this->get($vResultado[$i]->productosId);
+
+                    $vResultado[$i]->imagen = $imagenM->getImageProducto(($vResultado[$i]->productosId));
+                }
+            }
+
+            //Retornar la respuesta
+
+            return $vResultado;
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+      public function productosXEtiqueta($etiquetaId)
+    {
+        try {
+            //Consulta SQL
+            $vSQL = "SELECT 
+    p.productosId,
+    p.nombre AS nombre_producto,
+    e.etiquetaId,
+    e.nombrEtiquetas AS nombre_etiqueta
+FROM productos p
+JOIN productoetiqueta pe ON p.productosId = pe.producto_id
+JOIN etiquetas e ON pe.etiqueta_id = e.etiquetaId
+WHERE e.etiquetaId = $etiquetaId  
+ORDER BY p.nombre;";
+            //Ejecutar la consulta
+            $vResultado = $this->enlace->ExecuteSQL($vSQL);
+
+            return $vResultado;
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
 
     /**
      * Obtener las productos por categoria
