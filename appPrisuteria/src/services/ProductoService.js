@@ -57,7 +57,7 @@ getAllActivo() {
       throw error;
     });
   }
-
+/*
   createProducto(producto) {
     return axios.post(API_URL, producto, {
       headers: {
@@ -65,7 +65,14 @@ getAllActivo() {
       },
     });
   }
-
+  */
+  createProducto(producto) {
+    return axios.post(BASE_URL, producto, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
   // Actualizar producto
   update(id, productoData) {
     return axios.put(`${API_URL}/${id}`, productoData, {
