@@ -58,7 +58,6 @@ getAllActivo() {
     });
   }
 
-  // Crear producto (alias para compatibilidad)
   createProducto(producto) {
     return axios.post(API_URL, producto, {
       headers: {
@@ -235,11 +234,10 @@ productosXEtiqueta(etiquetaId) {
   return axios.get(`${API_URL}/productosXEtiqueta/${etiquetaId}`)
     .then(response => response.data)
     .catch(error => {
-      console.error(`Error obteniendo productos de categoría ${etiquetaId}:`, error);
+      console.error(`Error obteniendo productos de  ${etiquetaId}:`, error);
       throw error;
     });
-}
-
+  }
 
   // Obtener productos con promociones
   getProductosConPromocion() {

@@ -32,9 +32,9 @@ export function CreateProducto({ productoId = null, onSuccess }) {
   const [productoCreadoId, setProductoCreadoId] = useState(null);
   const [file, setFile] = useState(null); // imagen principal
   const [fileURL, setFileURL] = useState(null);
-  const [setError] = useState(null);
+const [error, setError] = useState(null);
   const { t } = useTranslation(); //traduccion 
-
+error;
   useEffect(() => {
     CategoriaService.getAllCategorias().then(res => setCategorias(res.data));
     EtiquetaService.getAllEtiquetas().then(res => setEtiquetas(res.data));
@@ -92,6 +92,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
   };
 
   const onSubmit = (data) => {
+     setError(null); 
     const formData = new FormData();
     formData.append('nombre', data.nombre);
     formData.append('descripcion', data.descripcion);
@@ -345,18 +346,18 @@ export function CreateProducto({ productoId = null, onSuccess }) {
             </IconButton>
           </Grid>
 
-          <Grid item xs={12}>
-            <Button
-              type="submit"
-              variant="contained"
-              sx={{
-                backgroundColor: '#d83b6a',
-                ':hover': { backgroundColor: '#b03052' },
-              }}
-            >
-              {productoId ? 'Actualizar Producto' :   t('FCreate_ProductoMant')}
-            </Button>
-          </Grid>
+                  <Grid item xs={12}>
+              <Button
+                type="submit"
+                variant="contained"
+                sx={{
+                  backgroundColor: '#d83b6a',
+                  ':hover': { backgroundColor: '#b03052' },
+                }}
+              >
+              {t('FActualizar_ProductoMant')}
+              </Button>
+            </Grid>
         </Grid>
       </form>
     </Container>

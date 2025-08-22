@@ -336,6 +336,8 @@ ORDER BY c.nombreSCategoria, p.nombre;";
       public function productosXEtiqueta($etiquetaId)
     {
         try {
+                        $imagenM = new ImageModel();
+
             //Consulta SQL
             $vSQL = "SELECT 
     p.productosId,
@@ -348,8 +350,21 @@ JOIN etiquetas e ON pe.etiqueta_id = e.etiquetaId
 WHERE e.etiquetaId = $etiquetaId  
 AND  p.activo = 1
 ORDER BY p.nombre;";
-            //Ejecutar la consulta
+             //Ejecutar la consulta
             $vResultado = $this->enlace->ExecuteSQL($vSQL);
+
+            //Incluir imagenes
+            $vResultado = $this->enlace->ExecuteSQL($vSQL);
+            //Incluir imagenes
+            if (!empty($vResultado) && is_array($vResultado)) {
+                for ($i = 0; $i < count($vResultado); $i++) {
+                    $vResultado[$i] = $this->get($vResultado[$i]->productosId);
+
+                    $vResultado[$i]->imagen = $imagenM->getImageProducto(($vResultado[$i]->productosId));
+                }
+            }
+
+            //Retornar la respuesta
 
             return $vResultado;
         } catch (Exception $e) {
@@ -357,6 +372,40 @@ ORDER BY p.nombre;";
         }
     }
 
+/*
+    public function productosXCategoriaYEtiqueta($categoriaId, $etiquetaId)
+{
+    try {
+        $imagenM = new ImageModel();
+
+        // Consulta SQL: filtrar por categoría y etiqueta, solo productos activos
+        $vSQL = "SELECT DISTINCT p.productosId
+                 FROM productos p
+                 JOIN productoetiqueta pe ON p.productosId = pe.producto_id
+                 JOIN etiquetas e ON pe.etiqueta_id = e.etiquetaId
+                 WHERE p.categoria_id = $categoriaId
+                   AND e.etiquetaId = $etiquetaId
+                   AND p.activo = 1
+                 ORDER BY p.nombre;";
+
+        $vResultado = $this->enlace->ExecuteSQL($vSQL);
+
+        // Incluir información completa de cada producto usando la función get()
+        if (!empty($vResultado) && is_array($vResultado)) {
+            for ($i = 0; $i < count($vResultado); $i++) {
+                $vResultado[$i] = $this->get($vResultado[$i]->productosId);
+
+                // Incluir imagen principal del producto
+                $vResultado[$i]->imagen = $imagenM->getImageProducto($vResultado[$i]->productosId);
+            }
+        }
+
+        return $vResultado;
+    } catch (Exception $e) {
+        handleException($e);
+    }
+}
+*/
 
     /**
      * Obtener las productos por categoria
