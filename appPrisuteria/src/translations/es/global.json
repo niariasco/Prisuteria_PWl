@@ -73,6 +73,50 @@
       "pending": "Pendiente"
     }
   },
+  "cart": {
+    "title": "TU BOLSA",
+    "empty": {
+      "title": "Tu bolsa de compras está vacía",
+      "description": "Agrega algunos productos increíbles y regresa para finalizar tu compra",
+      "explore_button": "Explorar productos",
+      "no_valid_products": "No hay productos válidos en tu bolsa de compras."
+    },
+    "customizations": {
+      "view_details": "Ver personalizaciones",
+      "customized_label": "Personalizado",
+      "option": "Opción",
+      "custom_price": "precio personalizado"
+    },
+    "promotion": {
+      "discount_suffix": "OFF",
+      "special_offer": "Oferta Especial"
+    },
+    "actions": {
+      "remove": "Eliminar",
+      "continue_shopping": "SEGUIR COMPRANDO",
+      "place_order": "REALIZAR PEDIDO"
+    },
+    "savings": {
+      "customization": "Personalización",
+      "you_save": "Ahorras"
+    },
+    "summary": {
+      "title": "RESUMEN DE COMPRA",
+      "original_subtotal": "Subtotal original",
+      "discounts_customizations": "Descuentos/Personalizaciones",
+      "product_total": "Total productos",
+      "shipping": "Gastos de envío",
+      "free": "GRATIS",
+      "total": "Total",
+      "total_savings": "¡Has ahorrado {{amount}} en total!",
+      "customization_cost": "Costo de personalizaciones: {{amount}}"
+    },
+    "benefits": {
+      "return_policy": "30 DÍAS PARA DEVOLVER GRATIS TUS COMPRAS",
+      "free_shipping": "ENVÍO GRATIS",
+      "secure_payment": "PAGO SEGURO"
+    }
+  },
   "home": {
     "title": "Somos Prisuteria Accesorios",
     "description": "Prisutería Accesorios es una PYME dedicada a la creación y venta de bisutería artesanal, Joyeria y accesorios, ofreciendo diseños únicos y personalizados. Nos especializamos en accesorios hechos a mano con materiales de alta calidad, ideales para realzar tu estilo y expresar tu personalidad. Cada pieza está elaborada con amor y atención al detalle, brindando elegancia y originalidad en cada accesorio.",

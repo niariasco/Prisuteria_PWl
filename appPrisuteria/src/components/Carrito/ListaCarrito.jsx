@@ -31,7 +31,7 @@ import productTranslations from '../../translations/productTranslations.json';
 export function ListaCarrito() {
   const { cart, removeItem, addItem, updateQuantity } = useCart();
   const BASE_URL = import.meta.env.VITE_BASE_URL + 'uploads';
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Estado para manejar las cantidades localmente
   const [quantities, setQuantities] = useState({});
@@ -159,7 +159,7 @@ export function ListaCarrito() {
           }}
         >
           <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#F06292' }}>
-            Ver personalizaciones ({Object.keys(opcionesPersonalizacion).length})
+            {t('cart.customizations.view_details')} ({Object.keys(opcionesPersonalizacion).length})
           </Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ pt: 2 }}>
@@ -178,7 +178,7 @@ export function ListaCarrito() {
                   border: '1px solid #e0e0e0'
                 }}>
                   <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                    {opcion.criterioNombre || `Opción ${criterioId}`}:
+                    {opcion.criterioNombre || t('cart.customizations.option', 'Opción') + ` ${criterioId}`}:
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="body2">
@@ -305,7 +305,7 @@ export function ListaCarrito() {
     return item.nombre_promocion || 
            item.nombre_promocion_producto || 
            item.nombre_promocion_categoria || 
-           'Oferta Especial';
+           t('cart.promotion.special_offer', 'Oferta Especial');
   };
 
   if (!cart || cart.length === 0) {
@@ -319,10 +319,10 @@ export function ListaCarrito() {
         p: 4 
       }}>
         <Typography variant="h4" gutterBottom color="text.secondary">
-          Tu bolsa de compras está vacía
+          {t('cart.empty.title', 'Tu bolsa de compras está vacía')}
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
-          Agrega algunos productos increíbles y regresa para finalizar tu compra
+          {t('cart.empty.description', 'Agrega algunos productos increíbles y regresa para finalizar tu compra')}
         </Typography>
         <Button 
           variant="contained" 
@@ -338,7 +338,7 @@ export function ListaCarrito() {
             }
           }}
         >
-          Explorar productos
+          {t('cart.empty.explore_button', 'Explorar productos')}
         </Button>
       </Box>
     );
@@ -349,7 +349,7 @@ export function ListaCarrito() {
   if (validItems.length === 0) {
     return (
       <Typography variant="h6" align="center" sx={{ mt: 4 }}>
-        No hay productos válidos en tu bolsa de compras.
+        {t('cart.empty.no_valid_products', 'No hay productos válidos en tu bolsa de compras.')}
       </Typography>
     );
   }
@@ -388,7 +388,7 @@ export function ListaCarrito() {
         {/* Lista de productos - Lado izquierdo */}
         <Grid item xs={12} md={7}>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-            TU BOLSA ({validItems.length})
+            {t('cart.title', 'TU BOLSA')} ({validItems.length})
           </Typography>
           
           <Box sx={{ mb: 3 }}>
@@ -431,7 +431,7 @@ export function ListaCarrito() {
                           </Typography>
                           {esPersonalizado && (
                             <Chip 
-                              label="Personalizado" 
+                              label={t('cart.customizations.customized_label', 'Personalizado')} 
                               size="small"
                               sx={{
                                 backgroundColor: '#E3F2FD',
@@ -446,7 +446,7 @@ export function ListaCarrito() {
                         {!esPersonalizado && tienePromo && promocion > 0 && (
                           <Box sx={{ mb: 1 }}>
                             <Chip 
-                              label={`${promocion}% OFF`} 
+                              label={`${promocion}% ${t('cart.promotion.discount_suffix', 'OFF')}`} 
                               sx={{
                                 backgroundColor: '#F06292',
                                 color: 'white',
@@ -466,7 +466,7 @@ export function ListaCarrito() {
                             {currency} {Math.round(precioFinal).toLocaleString()}
                             {esPersonalizado && (
                               <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
-                                (precio personalizado)
+                                ({t('cart.customizations.custom_price', 'precio personalizado')})
                               </Typography>
                             )}
                           </Typography>
@@ -556,7 +556,7 @@ export function ListaCarrito() {
                           }}
                           size="small"
                         >
-                          Eliminar
+                          {t('cart.actions.remove', 'Eliminar')}
                         </Button>
                       </Grid>
 
@@ -568,8 +568,8 @@ export function ListaCarrito() {
                         {((esPersonalizado && precioOriginal !== precioFinal) || (!esPersonalizado && tienePromo)) && (
                           <Typography variant="body2" sx={{ color: 'success.main' }}>
                             {esPersonalizado ? 
-                              `Personalización: +${currency} ${Math.round((precioFinal - precioOriginal) * cantidad).toLocaleString()}` :
-                              `Ahorras: ${currency} ${Math.round((precioOriginal - precioFinal) * cantidad).toLocaleString()}`
+                              `${t('cart.savings.customization', 'Personalización')}: +${currency} ${Math.round((precioFinal - precioOriginal) * cantidad).toLocaleString()}` :
+                              `${t('cart.savings.you_save', 'Ahorras')}: ${currency} ${Math.round((precioOriginal - precioFinal) * cantidad).toLocaleString()}`
                             }
                           </Typography>
                         )}
@@ -598,7 +598,7 @@ export function ListaCarrito() {
               }
             }}
           >
-            SEGUIR COMPRANDO
+            {t('cart.actions.continue_shopping', 'SEGUIR COMPRANDO')}
           </Button>
         </Grid>
 
@@ -606,7 +606,7 @@ export function ListaCarrito() {
         <Grid item xs={12} md={5}>
           <Paper sx={{ p: 3, position: 'sticky', top: 20 }}>
             <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-              RESUMEN DE COMPRA
+              {t('cart.summary.title', 'RESUMEN DE COMPRA')}
             </Typography>
 
             {/* Resumen de precios */}
@@ -614,14 +614,14 @@ export function ListaCarrito() {
               {totalAhorros > 0 && (
                 <>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography>Subtotal original</Typography>
+                    <Typography>{t('cart.summary.original_subtotal', 'Subtotal original')}</Typography>
                     <Typography sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
                       {currency} {Math.round(subtotalOriginal).toLocaleString()}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                     <Typography sx={{ color: 'success.main', fontWeight: 'bold' }}>
-                      Descuentos/Personalizaciones
+                      {t('cart.summary.discounts_customizations', 'Descuentos/Personalizaciones')}
                     </Typography>
                     <Typography sx={{ color: 'success.main', fontWeight: 'bold' }}>
                       {totalAhorros > 0 ? '-' : '+'}{currency} {Math.round(Math.abs(totalAhorros)).toLocaleString()}
@@ -631,16 +631,16 @@ export function ListaCarrito() {
               )}
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Typography>Total productos</Typography>
+                <Typography>{t('cart.summary.product_total', 'Total productos')}</Typography>
                 <Typography sx={{ fontWeight: 'bold' }}>
                   {currency} {Math.round(subtotal).toLocaleString()}
                 </Typography>
               </Box>
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Typography>Gastos de envío</Typography>
+                <Typography>{t('cart.summary.shipping', 'Gastos de envío')}</Typography>
                 <Typography sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                  GRATIS
+                  {t('cart.summary.free', 'GRATIS')}
                 </Typography>
               </Box>
 
@@ -648,7 +648,7 @@ export function ListaCarrito() {
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                 <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                  Total
+                  {t('cart.summary.total', 'Total')}
                 </Typography>
                 <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                   {currency} {Math.round(total).toLocaleString()}
@@ -665,8 +665,8 @@ export function ListaCarrito() {
                 }}>
                   <Typography variant="body2" sx={{ fontWeight: 'bold', color: totalAhorros > 0 ? 'success.dark' : 'info.dark' }}>
                     {totalAhorros > 0 
-                      ? `¡Has ahorrado ${currency} ${Math.round(totalAhorros).toLocaleString()} en total!`
-                      : `Costo de personalizaciones: ${currency} ${Math.round(Math.abs(totalAhorros)).toLocaleString()}`
+                      ? t('cart.summary.total_savings', '¡Has ahorrado {{amount}} en total!', { amount: `${currency} ${Math.round(totalAhorros).toLocaleString()}` })
+                      : t('cart.summary.customization_cost', 'Costo de personalizaciones: {{amount}}', { amount: `${currency} ${Math.round(Math.abs(totalAhorros)).toLocaleString()}` })
                     }
                   </Typography>
                 </Box>
@@ -695,7 +695,7 @@ export function ListaCarrito() {
                 }
               }}
             >
-              REALIZAR PEDIDO
+              {t('cart.actions.place_order', 'REALIZAR PEDIDO')}
             </Button>
 
             {/* Beneficios */}
@@ -703,21 +703,21 @@ export function ListaCarrito() {
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Refresh sx={{ mr: 2, color: '#F06292' }} />
                 <Typography variant="body2" color="text.secondary">
-                  30 DÍAS PARA DEVOLVER GRATIS TUS COMPRAS
+                  {t('cart.benefits.return_policy', '30 DÍAS PARA DEVOLVER GRATIS TUS COMPRAS')}
                 </Typography>
               </Box>
 
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <LocalShipping sx={{ mr: 2, color: '#F06292' }} />
                 <Typography variant="body2" color="text.secondary">
-                  ENVÍO GRATIS 
+                  {t('cart.benefits.free_shipping', 'ENVÍO GRATIS')}
                 </Typography>
               </Box>
 
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Security sx={{ mr: 2, color: '#F06292' }} />
                 <Typography variant="body2" color="text.secondary">
-                  PAGO SEGURO
+                  {t('cart.benefits.secure_payment', 'PAGO SEGURO')}
                 </Typography>
               </Box>
             </Box>

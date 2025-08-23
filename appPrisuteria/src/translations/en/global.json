@@ -72,6 +72,49 @@
       "applied": "Applied",
       "pending": "Pending"
     }
+  },"cart": {
+    "title": "YOUR BAG",
+    "empty": {
+      "title": "Your shopping bag is empty",
+      "description": "Add some amazing products and return to complete your purchase",
+      "explore_button": "Explore products",
+      "no_valid_products": "There are no valid products in your shopping bag."
+    },
+    "customizations": {
+      "view_details": "View customizations",
+      "customized_label": "Customized",
+      "option": "Option",
+      "custom_price": "custom price"
+    },
+    "promotion": {
+      "discount_suffix": "OFF",
+      "special_offer": "Special Offer"
+    },
+    "actions": {
+      "remove": "Remove",
+      "continue_shopping": "CONTINUE SHOPPING",
+      "place_order": "PLACE ORDER"
+    },
+    "savings": {
+      "customization": "Customization",
+      "you_save": "You save"
+    },
+    "summary": {
+      "title": "ORDER SUMMARY",
+      "original_subtotal": "Original subtotal",
+      "discounts_customizations": "Discounts/Customizations",
+      "product_total": "Product total",
+      "shipping": "Shipping costs",
+      "free": "FREE",
+      "total": "Total",
+      "total_savings": "You saved {{amount}} in total!",
+      "customization_cost": "Customization cost: {{amount}}"
+    },
+    "benefits": {
+      "return_policy": "30 DAYS FREE RETURNS",
+      "free_shipping": "FREE SHIPPING",
+      "secure_payment": "SECURE PAYMENT"
+    }
   },
   "home": {
     "title": "We are Prisuteria Accesorios",
