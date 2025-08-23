@@ -52,6 +52,26 @@
     "loading": "Loading...",
     "error": "Error: {{message}}",
     "not_available": "N/A"
+  },"promotions_page": {
+    "title": "Prisutería Accesorios Promotions",
+    "subtitle": "Discover our best deals and special promotions",
+    "promotions_list_title": "Prisuteria Promotions List",
+    "products_with_promotions": "Products with promotions",
+    "status": "Status",
+    "applied_to": "Applied to",
+    "category": "Category",
+    "product": "Product",
+    "discount": "Discount",
+    "savings": "Savings",
+    "not_available": "N/A",
+    "loading": "Loading...",
+    "error_loading_promotions": "Error loading promotions",
+    "error_loading_products": "Error loading products with promotions.",
+    "states": {
+      "active": "Active",
+      "applied": "Applied",
+      "pending": "Pending"
+    }
   },
   "home": {
     "title": "We are Prisuteria Accesorios",

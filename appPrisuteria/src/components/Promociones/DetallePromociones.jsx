@@ -23,39 +23,37 @@ export function DetallePromociones({ addItem }) {
   const [error, setError] = useState('');
   const [loaded, setLoaded] = useState(false);
 
-  // Función para traducir categorías usando la estructura anidada
+  // Función para mostrar el nombre de la promoción sin traducir
+  const getPromotionName = (promotionName) => {
+    // Retorna el nombre original sin traducir
+    return promotionName || t('promotion_detail.messages.not_available', 'N/A');
+  };
+
+  // Función para traducir categorías (actualizada para usar la configuración procesada)
   const translateCategory = (categoryName) => {
     if (!categoryName) return t('promotion_detail.messages.not_available', 'N/A');
     
-    const categoryData = t(`categories.${categoryName}`, { returnObjects: true });
-    if (typeof categoryData === 'object' && categoryData[i18n.language]) {
-      return categoryData[i18n.language];
-    }
-    return categoryName; // Fallback al nombre original
+    // Con la nueva configuración, las categorías ya están procesadas como strings simples
+    const translation = t(`categories.${categoryName}`, { defaultValue: null });
+    return translation !== null ? translation : categoryName;
   };
 
-  // Función para traducir productos usando la estructura anidada
+  // Función para traducir productos (actualizada para usar la configuración procesada)
   const translateProduct = (productName) => {
     if (!productName) return t('promotion_detail.messages.not_available', 'N/A');
     
-    const productData = t(`products.${productName}`, { returnObjects: true });
-    if (typeof productData === 'object' && productData[i18n.language]) {
-      return productData[i18n.language];
-    }
-    return productName; // Fallback al nombre original
+    // Con la nueva configuración, los productos ya están procesados como strings simples
+    const translation = t(`products.${productName}`, { defaultValue: null });
+    return translation !== null ? translation : productName;
   };
 
-  // Función para traducir estados usando el mapeo complejo
+  // Función para traducir estados (actualizada para usar la configuración procesada)
   const translateStatus = (status) => {
     if (!status) return t('promotion_detail.messages.not_available', 'N/A');
     
-    // Primero buscar el mapeo del estado
-    const statusMapping = t(`status_mappings.${status}`, status);
-    
-    // Luego buscar la traducción correspondiente
-    const translatedStatus = t(`status_translations.${statusMapping}`, status);
-    
-    return translatedStatus;
+    // Con la nueva configuración, los estados ya están procesados como strings simples
+    const translation = t(`promotion_status.${status}`, { defaultValue: null });
+    return translation !== null ? translation : status;
   };
 
   // Función para traducir tipos
@@ -157,7 +155,7 @@ export function DetallePromociones({ addItem }) {
             </Typography>
 
             <Typography variant="h6" sx={{ mb: 1 }}>
-              <strong>{t('promotion_detail.fields.name', 'Nombre')}:</strong> {data.nombre}
+              <strong>{t('promotion_detail.fields.name', 'Nombre')}:</strong> {getPromotionName(data.nombre)}
             </Typography>
 
             <Typography variant="body1" sx={{ mb: 1 }}>

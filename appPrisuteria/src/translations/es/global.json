@@ -52,6 +52,26 @@
     "loading": "Cargando...",
     "error": "Error: {{message}}",
     "not_available": "N/A"
+  }, "promotions_page": {
+    "title": "Promociones Prisutería Accesorios",
+    "subtitle": "Descubre nuestras mejores ofertas y promociones especiales",
+    "promotions_list_title": "Listado Promociones Prisuteria",
+    "products_with_promotions": "Productos con promociones",
+    "status": "Estado",
+    "applied_to": "Aplicado en",
+    "category": "Categoría",
+    "product": "Producto",
+    "discount": "Descuento",
+    "savings": "Ahorro",
+    "not_available": "N/A",
+    "loading": "Cargando...",
+    "error_loading_promotions": "Error al cargar promociones",
+    "error_loading_products": "Error al cargar productos con promociones.",
+    "states": {
+      "active": "Vigente",
+      "applied": "Aplicado",
+      "pending": "Pendiente"
+    }
   },
   "home": {
     "title": "Somos Prisuteria Accesorios",

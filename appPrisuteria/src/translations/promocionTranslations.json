@@ -120,7 +120,14 @@
       "en": "Summer Promo",
       "es": "Promo Verano"
     }
-  },
+  },"Dia de la persona joven": {
+      "en": "Youth Day",
+      "es": "Día de la persona joven"
+    },
+    "Día de la persona joven": {
+      "en": "Youth Day",
+      "es": "Día de la persona joven"
+    },
   "promotion_status": {
     "Pendiente": {
       "en": "Pending",
