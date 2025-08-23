@@ -116,6 +116,92 @@
       "free_shipping": "ENVÍO GRATIS",
       "secure_payment": "PAGO SEGURO"
     }
+  },"registrar_pedido": {
+    "title": "REGISTRAR PEDIDO",
+    "empty_cart": {
+      "message": "No hay productos en el carrito para registrar un pedido.",
+      "button": "Ir a Productos"
+    },
+    "login_required": {
+      "message": "Debes iniciar sesión para registrar un pedido.",
+      "button": "Iniciar Sesión"
+    },
+    "general_info": {
+      "title": "INFORMACIÓN GENERAL",
+      "date": "Fecha",
+      "status": "Estado",
+      "client": "Cliente",
+      "client_placeholder": "Cliente (Usuario actual)",
+      "client_info": "Información del Cliente",
+      "shipping_address": "Dirección de Envío",
+      "shipping_placeholder": "Ingrese la dirección de envío detallada"
+    },
+    "client_details": {
+      "name": "Nombre",
+      "cedula": "Cédula",
+      "email": "Email",
+      "phone": "Teléfono",
+      "category": "Categoría",
+      "previous_orders": "Pedidos Anteriores"
+    },
+    "order_detail": {
+      "title": "DETALLE DEL PEDIDO",
+      "products_count": "productos",
+      "customized": "Personalizado",
+      "customizations": "Información del Producto Personalizado",
+      "base_product": "Producto Base",
+      "base_cost": "Costo Base",
+      "customized_total": "Total Personalizado",
+      "view_customizations": "Ver personalizaciones",
+      "quantity": "Cantidad",
+      "unit_price": "Precio Unitario",
+      "subtotal_no_tax": "Subtotal (sin IVA)",
+      "tax_label": "IVA (13%)",
+      "total_with_tax": "Total con IVA",
+      "validate_stock": "Validar Disponibilidad",
+      "validating": "Validando Inventario..."
+    },
+    "customization_info": {
+      "base_product": "Producto Base:",
+      "base_cost": "Costo Base:",
+      "customized_total": "Total Personalizado:"
+    },
+    "summary": {
+      "title": "RESUMEN DEL PEDIDO",
+      "subtotal_no_tax": "Subtotal (sin impuestos)",
+      "tax": "IVA (13%)",
+      "total_with_tax": "Total con impuestos",
+      "shipping": "Envío",
+      "free": "GRATIS",
+      "final_total": "TOTAL FINAL",
+      "taxes_included": "Impuestos incluidos"
+    },
+    "buttons": {
+      "proceed_payment": "PROCEDER AL PAGO",
+      "back_to_cart": "VOLVER AL CARRITO",
+      "continue_payment": "Continuar al Pago",
+      "cancel": "Cancelar"
+    },
+    "validation": {
+      "complete_fields": "Por favor complete todos los campos requeridos",
+      "positive_quantities": "Todas las cantidades deben ser números enteros positivos",
+      "quantity_required": "Cantidad requerida",
+      "inventory_error": "Error al validar el inventario. Por favor intente nuevamente."
+    },
+    "stock_errors": {
+      "title": "Problemas de inventario detectados:",
+      "requested": "Solicitado",
+      "available": "Disponible",
+      "dialog_title": "Confirmar Pedido con Problemas de Inventario",
+      "dialog_message": "Se detectaron problemas de inventario para algunos productos. ¿Desea continuar con el pedido?",
+      "could_not_verify": "No se pudo verificar el stock"
+    },
+    "status": {
+      "pending": "Pendiente"
+    },
+    "loading": "Cargando...",
+    "error_loading_user": "Error al cargar los datos del usuario",
+    "user_not_found": "No se encontraron detalles para este usuario"
   },
   "home": {
     "title": "Somos Prisuteria Accesorios",

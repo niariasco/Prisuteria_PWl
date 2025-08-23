@@ -46,9 +46,7 @@ import { UserContext } from '../../context/UserContext';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import UsuarioDetalleService from '../../services/UsuariosDetalleService.js';
-// CAMBIO: Usar ProductoService (sin "s") en lugar de ProductosService
 import ProductoService from '../../services/ProductoService.js'; // Para verificar stock
-import productTranslations from '../../translations/productTranslations.json';
 
 export function RegistrarPedido() {
   const { cart, getCountItems, clearCart, removeItem, updateQuantity } = useCart();
@@ -61,7 +59,7 @@ export function RegistrarPedido() {
   const [fechaActual] = useState(new Date());
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [direccionEnvio, setDireccionEnvio] = useState('');
-  const [estadoPedido] = useState('Pendiente');
+  const [estadoPedido] = useState(t('registrar_pedido.status.pending', 'Pendiente'));
   const [loading, setLoading] = useState(false);
   const [clientesDisponibles, setClientesDisponibles] = useState([]);
   const [loadingClientes, setLoadingClientes] = useState(false);
@@ -109,16 +107,9 @@ export function RegistrarPedido() {
     return numPrice;
   };
 
-  // Función para obtener el nombre traducido
+  // Función para obtener el nombre del producto (sin traducción)
   const getProductName = (producto) => {
-    if (producto.translations && producto.translations[i18n.language]) {
-      return producto.translations[i18n.language];
-    }
-    const productName = producto.nombre;
-    if (productTranslations.products[productName] && productTranslations.products[productName][i18n.language]) {
-      return productTranslations.products[productName][i18n.language];
-    }
-    return producto.nombre;
+    return producto.nombre || '';
   };
 
   // Función para obtener la cantidad actual de un producto
@@ -179,7 +170,7 @@ export function RegistrarPedido() {
           }}
         >
           <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#F06292' }}>
-            Ver personalizaciones ({Object.keys(opcionesPersonalizacion).length})
+            {t('registrar_pedido.order_detail.view_customizations', 'Ver personalizaciones')} ({Object.keys(opcionesPersonalizacion).length})
           </Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ pt: 2 }}>
@@ -198,7 +189,7 @@ export function RegistrarPedido() {
                   border: '1px solid #e0e0e0'
                 }}>
                   <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                    {opcion.criterioNombre || `Opción ${criterioId}`}:
+                    {opcion.criterioNombre || `${t('cart.customizations.option', 'Opción')} ${criterioId}`}:
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="body2">
@@ -318,7 +309,7 @@ export function RegistrarPedido() {
     return precio * (IVA_PERCENTAGE / 100);
   };
 
-  // Función para validar stock - CAMBIO: Usar ProductoService en lugar de ProductosService
+  // Función para validar stock
   const validarStock = async () => {
     setValidandoStock(true);
     setErroresStock([]);
@@ -334,7 +325,6 @@ export function RegistrarPedido() {
           
           if (cantidadSolicitada > 0) {
             try {
-              // CAMBIO: Usar getProductoById del ProductoService existente
               const response = await ProductoService.getProductoById(item.id);
               const productoActual = response.data || response;
               
@@ -352,7 +342,7 @@ export function RegistrarPedido() {
               errores.push({
                 producto: getProductName(item),
                 cantidadSolicitada: getCantidadActual(item.id),
-                error: 'No se pudo verificar el stock'
+                error: t('registrar_pedido.stock_errors.could_not_verify', 'No se pudo verificar el stock')
               });
             }
           }
@@ -393,8 +383,8 @@ export function RegistrarPedido() {
             id: detalleUsuario.usuarioDetalleId,
             nombre: detalleUsuario.nombre_completo,
             email: detalleUsuario.correo,
-            telefono: detalleUsuario.telefono || 'No especificado',
-            cedula: detalleUsuario.cedula || 'No especificada',
+            telefono: detalleUsuario.telefono || t('order_detail.not_available', 'No especificado'),
+            cedula: detalleUsuario.cedula || t('order_detail.not_available', 'No especificada'),
             direccion: detalleUsuario.direccion_envio || ''
           };
 
@@ -405,12 +395,12 @@ export function RegistrarPedido() {
           
           console.log('Datos del usuario cargados:', detalleUsuario);
         } else {
-          setErrorUsuarioDetalle('No se encontraron detalles para este usuario');
+          setErrorUsuarioDetalle(t('registrar_pedido.user_not_found', 'No se encontraron detalles para este usuario'));
         }
       }
     } catch (error) {
       console.error('Error al cargar los detalles del usuario:', error);
-      setErrorUsuarioDetalle('Error al cargar los datos del usuario');
+      setErrorUsuarioDetalle(t('registrar_pedido.error_loading_user', 'Error al cargar los datos del usuario'));
     } finally {
       setLoadingUsuarioDetalle(false);
     }
@@ -431,7 +421,7 @@ export function RegistrarPedido() {
       pedidosAnteriores: Math.floor(Math.random() * 20),
       totalCompras: (Math.random() * 500000).toFixed(2),
       categoriaCliente: 'Premium',
-      metodoPagoPreferido: 'Tarjeta de Crédito'
+      metodoPagoPreferido: i18n.language === 'es' ? 'Tarjeta de Crédito' : 'Credit Card'
     };
     
     setDetalleCliente(detalleCompleto);
@@ -458,14 +448,14 @@ export function RegistrarPedido() {
     return (
       <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
         <Alert severity="warning" sx={{ mb: 3 }}>
-          No hay productos en el carrito para registrar un pedido.
+          {t('registrar_pedido.empty_cart.message', 'No hay productos en el carrito para registrar un pedido.')}
         </Alert>
         <Button
           variant="contained"
           onClick={() => navigate('/producto')}
           sx={{ backgroundColor: '#F06292' }}
         >
-          Ir a Productos
+          {t('registrar_pedido.empty_cart.button', 'Ir a Productos')}
         </Button>
       </Box>
     );
@@ -475,14 +465,14 @@ export function RegistrarPedido() {
     return (
       <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
         <Alert severity="error" sx={{ mb: 3 }}>
-          Debes iniciar sesión para registrar un pedido.
+          {t('registrar_pedido.login_required.message', 'Debes iniciar sesión para registrar un pedido.')}
         </Alert>
         <Button
           variant="contained"
           onClick={() => navigate('/user/login')}
           sx={{ backgroundColor: '#F06292' }}
         >
-          Iniciar Sesión
+          {t('registrar_pedido.login_required.button', 'Iniciar Sesión')}
         </Button>
       </Box>
     );
@@ -508,65 +498,61 @@ export function RegistrarPedido() {
   const shipping = 0;
   const total = totalConImpuestos + shipping;
 
-  // FUNCIONES MODIFICADAS PARA REDIRIGIR AL PAGO
+  const proceedToPayment = () => {
+    console.log('Procediendo al pago...'); // Debug
+    
+    // Preparar los datos del pedido para pasarlos a la página de pago
+    const pedidoData = {
+      cliente: clienteSeleccionado,
+      usuarioDetalle: usuarioDetalleActual,
+      fecha: fechaActual,
+      direccionEnvio,
+      estado: estadoPedido,
+      productos: validItems.map(item => ({
+        ...item,
+        cantidad: getCantidadActual(item.id),
+        precioUnitario: getPrecioUnitario(item),
+        subtotal: getPrecioUnitario(item) * getCantidadActual(item.id),
+        iva: calcularIVA(getPrecioUnitario(item) * getCantidadActual(item.id)),
+        totalConIva: getPrecioUnitario(item) * getCantidadActual(item.id) + calcularIVA(getPrecioUnitario(item) * getCantidadActual(item.id)),
+        esPersonalizado: tienePersonalizaciones(item),
+        opcionesPersonalizacion: item.opcionesPersonalizacion || null
+      })),
+      subtotalSinImpuestos,
+      ivaTotal,
+      totalConImpuestos,
+      envio: shipping,
+      total,
+      moneda: currency
+    };
 
-// Reemplazar la función proceedToPayment en RegistrarPedido.js
+    console.log('Datos del pedido a enviar:', pedidoData); // Debug
 
-const proceedToPayment = () => {
-  console.log('Procediendo al pago...'); // Debug
-  
-  // Preparar los datos del pedido para pasarlos a la página de pago
-  const pedidoData = {
-    cliente: clienteSeleccionado,
-    usuarioDetalle: usuarioDetalleActual,
-    fecha: fechaActual,
-    direccionEnvio,
-    estado: estadoPedido,
-    productos: validItems.map(item => ({
-      ...item,
-      cantidad: getCantidadActual(item.id),
-      precioUnitario: getPrecioUnitario(item),
-      subtotal: getPrecioUnitario(item) * getCantidadActual(item.id),
-      iva: calcularIVA(getPrecioUnitario(item) * getCantidadActual(item.id)),
-      totalConIva: getPrecioUnitario(item) * getCantidadActual(item.id) + calcularIVA(getPrecioUnitario(item) * getCantidadActual(item.id)),
-      esPersonalizado: tienePersonalizaciones(item),
-      opcionesPersonalizacion: item.opcionesPersonalizacion || null
-    })),
-    subtotalSinImpuestos,
-    ivaTotal,
-    totalConImpuestos,
-    envio: shipping,
-    total,
-    moneda: currency
+    try {
+      // OPCIÓN 1: Usar navigate con state (recomendado)
+      console.log('Navegando a /pago-pedido con state'); // Debug
+      navigate('/pago-pedido', { 
+        state: { 
+          pedidoData: pedidoData 
+        }
+      });
+
+      // OPCIÓN 2: También guardar en localStorage como respaldo
+      localStorage.setItem('pedidoEnProceso', JSON.stringify(pedidoData));
+      
+    } catch (error) {
+      console.error('Error al navegar:', error);
+      alert(t('registrar_pedido.validation.inventory_error', 'Error al procesar el pedido. Por favor intente nuevamente.'));
+    }
   };
 
-  console.log('Datos del pedido a enviar:', pedidoData); // Debug
-
-  try {
-    // OPCIÓN 1: Usar navigate con state (recomendado)
-    console.log('Navegando a /pago-pedido con state'); // Debug
-    navigate('/pago-pedido', { 
-      state: { 
-        pedidoData: pedidoData 
-      }
-    });
-
-    // OPCIÓN 2: También guardar en localStorage como respaldo
-    localStorage.setItem('pedidoEnProceso', JSON.stringify(pedidoData));
-    
-  } catch (error) {
-    console.error('Error al navegar:', error);
-    alert('Error al procesar el pedido. Por favor intente nuevamente.');
-  }
-};
-
-  // Función para procesar el pedido - MODIFICADA
+  // Función para procesar el pedido
   const procesarPedido = async () => {
     console.log('Iniciando procesamiento del pedido...'); // Debug
     
     // Validaciones básicas
     if (!clienteSeleccionado || !direccionEnvio.trim()) {
-      alert('Por favor complete todos los campos requeridos');
+      alert(t('registrar_pedido.validation.complete_fields', 'Por favor complete todos los campos requeridos'));
       return;
     }
 
@@ -580,7 +566,7 @@ const proceedToPayment = () => {
     });
 
     if (hayErroresCantidad) {
-      alert('Todas las cantidades deben ser números enteros positivos');
+      alert(t('registrar_pedido.validation.positive_quantities', 'Todas las cantidades deben ser números enteros positivos'));
       return;
     }
 
@@ -600,11 +586,11 @@ const proceedToPayment = () => {
       proceedToPayment();
     } catch (error) {
       console.error('Error en validación de stock:', error);
-      alert('Error al validar el inventario. Por favor intente nuevamente.');
+      alert(t('registrar_pedido.validation.inventory_error', 'Error al validar el inventario. Por favor intente nuevamente.'));
     }
   };
 
-  // Función para proceder con el pedido a pesar de errores de stock - MODIFICADA
+  // Función para proceder con el pedido a pesar de errores de stock
   const proceedWithOrder = () => {
     console.log('Procediendo con el pedido a pesar de errores de stock'); // Debug
     setDialogConfirmacion(false);
@@ -617,7 +603,7 @@ const proceedToPayment = () => {
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
         <Receipt sx={{ fontSize: 40, color: '#F06292', mr: 2 }} />
         <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#2C3E50' }}>
-          REGISTRAR PEDIDO
+          {t('registrar_pedido.title', 'REGISTRAR PEDIDO')}
         </Typography>
       </Box>
 
@@ -633,11 +619,11 @@ const proceedToPayment = () => {
         <Alert severity="warning" sx={{ mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             <Warning sx={{ mr: 1 }} />
-            Problemas de inventario detectados:
+            {t('registrar_pedido.stock_errors.title', 'Problemas de inventario detectados:')}
           </Typography>
           {erroresStock.map((error, index) => (
             <Typography key={index} variant="body2">
-              • {error.producto}: Solicitado {error.cantidadSolicitada}, Disponible: {error.stockDisponible || error.error}
+              • {error.producto}: {t('registrar_pedido.stock_errors.requested', 'Solicitado')} {error.cantidadSolicitada}, {t('registrar_pedido.stock_errors.available', 'Disponible')}: {error.stockDisponible || error.error}
             </Typography>
           ))}
         </Alert>
@@ -650,7 +636,7 @@ const proceedToPayment = () => {
           <Card sx={{ mb: 3, boxShadow: 3 }}>
             <CardContent sx={{ p: 4 }}>
               <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, color: '#F06292' }}>
-                INFORMACIÓN GENERAL
+                {t('registrar_pedido.general_info.title', 'INFORMACIÓN GENERAL')}
               </Typography>
               
               <Grid container spacing={3}>
@@ -658,12 +644,12 @@ const proceedToPayment = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <CalendarToday sx={{ color: '#F06292', mr: 1 }} />
                     <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                      Fecha:
+                      {t('registrar_pedido.general_info.date', 'Fecha')}:
                     </Typography>
                   </Box>
                   <TextField
                     fullWidth
-                    value={fechaActual.toLocaleDateString('es-ES', {
+                    value={fechaActual.toLocaleDateString(i18n.language === 'es' ? 'es-ES' : 'en-US', {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
@@ -678,7 +664,7 @@ const proceedToPayment = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <CheckCircle sx={{ color: '#F06292', mr: 1 }} />
                     <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                      Estado:
+                      {t('registrar_pedido.general_info.status', 'Estado')}:
                     </Typography>
                   </Box>
                   <Chip
@@ -699,7 +685,7 @@ const proceedToPayment = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Person sx={{ color: '#F06292', mr: 1 }} />
                     <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                      Cliente:
+                      {t('registrar_pedido.general_info.client', 'Cliente')}:
                     </Typography>
                   </Box>
                   <Autocomplete
@@ -712,7 +698,7 @@ const proceedToPayment = () => {
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Cliente (Usuario actual)"
+                        label={t('registrar_pedido.general_info.client_placeholder', 'Cliente (Usuario actual)')}
                         variant="outlined"
                         InputProps={{
                           ...params.InputProps,
@@ -733,7 +719,7 @@ const proceedToPayment = () => {
                     <Card sx={{ backgroundColor: '#f8f9fa', border: '1px solid #F06292' }}>
                       <CardContent>
                         <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: '#F06292' }}>
-                          Información del Cliente
+                          {t('registrar_pedido.general_info.client_info', 'Información del Cliente')}
                         </Typography>
                         
                         {loadingDetalle ? (
@@ -743,14 +729,14 @@ const proceedToPayment = () => {
                         ) : detalleCliente ? (
                           <Grid container spacing={2}>
                             <Grid item xs={12} md={6}>
-                              <Typography><strong>Nombre:</strong> {detalleCliente.nombre}</Typography>
-                              <Typography><strong>Cédula:</strong> {detalleCliente.cedula}</Typography>
-                              <Typography><strong>Email:</strong> {detalleCliente.email}</Typography>
+                              <Typography><strong>{t('registrar_pedido.client_details.name', 'Nombre')}:</strong> {detalleCliente.nombre}</Typography>
+                              <Typography><strong>{t('registrar_pedido.client_details.cedula', 'Cédula')}:</strong> {detalleCliente.cedula}</Typography>
+                              <Typography><strong>{t('registrar_pedido.client_details.email', 'Email')}:</strong> {detalleCliente.email}</Typography>
                             </Grid>
                             <Grid item xs={12} md={6}>
-                              <Typography><strong>Teléfono:</strong> {detalleCliente.telefono}</Typography>
-                              <Typography><strong>Categoría:</strong> {detalleCliente.categoriaCliente}</Typography>
-                              <Typography><strong>Pedidos Anteriores:</strong> {detalleCliente.pedidosAnteriores}</Typography>
+                              <Typography><strong>{t('registrar_pedido.client_details.phone', 'Teléfono')}:</strong> {detalleCliente.telefono}</Typography>
+                              <Typography><strong>{t('registrar_pedido.client_details.category', 'Categoría')}:</strong> {detalleCliente.categoriaCliente}</Typography>
+                              <Typography><strong>{t('registrar_pedido.client_details.previous_orders', 'Pedidos Anteriores')}:</strong> {detalleCliente.pedidosAnteriores}</Typography>
                             </Grid>
                           </Grid>
                         ) : null}
@@ -763,7 +749,7 @@ const proceedToPayment = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <LocationOn sx={{ color: '#F06292', mr: 1 }} />
                     <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                      Dirección de Envío:
+                      {t('registrar_pedido.general_info.shipping_address', 'Dirección de Envío')}:
                     </Typography>
                   </Box>
                   <TextField
@@ -772,7 +758,7 @@ const proceedToPayment = () => {
                     rows={3}
                     value={direccionEnvio}
                     onChange={(e) => setDireccionEnvio(e.target.value)}
-                    placeholder="Ingrese la dirección de envío detallada"
+                    placeholder={t('registrar_pedido.general_info.shipping_placeholder', 'Ingrese la dirección de envío detallada')}
                     variant="outlined"
                   />
                 </Grid>
@@ -786,7 +772,7 @@ const proceedToPayment = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                 <ShoppingCart sx={{ color: '#F06292', mr: 1 }} />
                 <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#F06292' }}>
-                  DETALLE DEL PEDIDO ({validItems.length} productos)
+                  {t('registrar_pedido.order_detail.title', 'DETALLE DEL PEDIDO')} ({validItems.length} {t('registrar_pedido.order_detail.products_count', 'productos')})
                 </Typography>
               </Box>
 
@@ -812,7 +798,7 @@ const proceedToPayment = () => {
                               </Typography>
                               {esPersonalizado && (
                                 <Chip 
-                                  label="Personalizado" 
+                                  label={t('registrar_pedido.order_detail.customized', 'Personalizado')} 
                                   size="small"
                                   sx={{
                                     backgroundColor: '#E3F2FD',
@@ -823,7 +809,7 @@ const proceedToPayment = () => {
                               )}
                               {!esPersonalizado && promocion > 0 && (
                                 <Chip 
-                                  label={`${promocion}% OFF`} 
+                                  label={`${promocion}% ${t('cart.promotion.discount_suffix', 'OFF')}`} 
                                   size="small"
                                   sx={{
                                     backgroundColor: '#F06292',
@@ -852,17 +838,17 @@ const proceedToPayment = () => {
                           {esPersonalizado && (
                             <Box sx={{ mb: 2, p: 2, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                               <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#F06292' }}>
-                                Información del Producto Personalizado:
+                                {t('registrar_pedido.order_detail.customizations', 'Información del Producto Personalizado')}:
                               </Typography>
                               <Typography variant="body2" sx={{ mb: 1 }}>
-                                <strong>Producto Base:</strong> {getProductName(item)}
+                                <strong>{t('registrar_pedido.customization_info.base_product', 'Producto Base')}:</strong> {getProductName(item)}
                               </Typography>
                               <Typography variant="body2" sx={{ mb: 1 }}>
-                                <strong>Costo Base:</strong> {currency} {Math.round(convertPrice(item.precio || 0)).toLocaleString()}
+                                <strong>{t('registrar_pedido.customization_info.base_cost', 'Costo Base')}:</strong> {currency} {Math.round(convertPrice(item.precio || 0)).toLocaleString()}
                               </Typography>
                               {renderPersonalizaciones(item.opcionesPersonalizacion)}
                               <Typography variant="body2" sx={{ mt: 2, fontWeight: 'bold', color: '#F06292' }}>
-                                <strong>Total Personalizado:</strong> {currency} {Math.round(precioUnitario).toLocaleString()}
+                                <strong>{t('registrar_pedido.customization_info.customized_total', 'Total Personalizado')}:</strong> {currency} {Math.round(precioUnitario).toLocaleString()}
                               </Typography>
                             </Box>
                           )}
@@ -871,7 +857,7 @@ const proceedToPayment = () => {
                           <Grid container spacing={2} alignItems="center">
                             <Grid item xs={12} sm={3}>
                               <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                Cantidad:
+                                {t('registrar_pedido.order_detail.quantity', 'Cantidad')}:
                               </Typography>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <IconButton 
@@ -916,7 +902,7 @@ const proceedToPayment = () => {
                                     pattern: '[0-9]*'
                                   }}
                                   error={cantidad === '' || cantidad <= 0}
-                                  helperText={cantidad === '' || cantidad <= 0 ? 'Cantidad requerida' : ''}
+                                  helperText={cantidad === '' || cantidad <= 0 ? t('registrar_pedido.validation.quantity_required', 'Cantidad requerida') : ''}
                                 />
                                 
                                 <IconButton 
@@ -935,7 +921,7 @@ const proceedToPayment = () => {
 
                             <Grid item xs={12} sm={3}>
                               <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                Precio Unitario:
+                                {t('registrar_pedido.order_detail.unit_price', 'Precio Unitario')}:
                               </Typography>
                               <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#F06292' }}>
                                 {currency} {Math.round(precioUnitario).toLocaleString()}
@@ -949,19 +935,19 @@ const proceedToPayment = () => {
 
                             <Grid item xs={12} sm={3}>
                               <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                Subtotal (sin IVA):
+                                {t('registrar_pedido.order_detail.subtotal_no_tax', 'Subtotal (sin IVA)')}:
                               </Typography>
                               <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
                                 {currency} {Math.round(subtotalItem).toLocaleString()}
                               </Typography>
                               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                IVA (13%): {currency} {Math.round(ivaItem).toLocaleString()}
+                                {t('registrar_pedido.order_detail.tax_label', 'IVA (13%)')}: {currency} {Math.round(ivaItem).toLocaleString()}
                               </Typography>
                             </Grid>
 
                             <Grid item xs={12} sm={3}>
                               <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                Total con IVA:
+                                {t('registrar_pedido.order_detail.total_with_tax', 'Total con IVA')}:
                               </Typography>
                               <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#F06292' }}>
                                 {currency} {Math.round(totalConIvaItem).toLocaleString()}
@@ -991,7 +977,7 @@ const proceedToPayment = () => {
                     }
                   }}
                 >
-                  {validandoStock ? 'Validando Inventario...' : 'Validar Disponibilidad'}
+                  {validandoStock ? t('registrar_pedido.order_detail.validating', 'Validando Inventario...') : t('registrar_pedido.order_detail.validate_stock', 'Validar Disponibilidad')}
                 </Button>
               </Box>
             </CardContent>
@@ -1003,36 +989,36 @@ const proceedToPayment = () => {
           <Card sx={{ position: 'sticky', top: 20, boxShadow: 3 }}>
             <CardContent sx={{ p: 4 }}>
               <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, color: '#F06292' }}>
-                RESUMEN DEL PEDIDO
+                {t('registrar_pedido.summary.title', 'RESUMEN DEL PEDIDO')}
               </Typography>
 
               {/* Desglose de totales */}
               <Box sx={{ mb: 3 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                  <Typography>Subtotal (sin impuestos):</Typography>
+                  <Typography>{t('registrar_pedido.summary.subtotal_no_tax', 'Subtotal (sin impuestos)')}:</Typography>
                   <Typography sx={{ fontWeight: 'bold' }}>
                     {currency} {Math.round(subtotalSinImpuestos).toLocaleString()}
                   </Typography>
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                  <Typography>IVA (13%):</Typography>
+                  <Typography>{t('registrar_pedido.summary.tax', 'IVA (13%)')}:</Typography>
                   <Typography sx={{ fontWeight: 'bold' }}>
                     {currency} {Math.round(ivaTotal).toLocaleString()}
                   </Typography>
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                  <Typography>Total con impuestos:</Typography>
+                  <Typography>{t('registrar_pedido.summary.total_with_tax', 'Total con impuestos')}:</Typography>
                   <Typography sx={{ fontWeight: 'bold', color: '#F06292' }}>
                     {currency} {Math.round(totalConImpuestos).toLocaleString()}
                   </Typography>
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                  <Typography>Envío:</Typography>
+                  <Typography>{t('registrar_pedido.summary.shipping', 'Envío')}:</Typography>
                   <Typography sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                    GRATIS
+                    {t('registrar_pedido.summary.free', 'GRATIS')}
                   </Typography>
                 </Box>
 
@@ -1040,7 +1026,7 @@ const proceedToPayment = () => {
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                   <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    TOTAL FINAL:
+                    {t('registrar_pedido.summary.final_total', 'TOTAL FINAL')}:
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#F06292' }}>
                     {currency} {Math.round(total).toLocaleString()}
@@ -1056,12 +1042,12 @@ const proceedToPayment = () => {
                   textAlign: 'center'
                 }}>
                   <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
-                    Impuestos incluidos: {currency} {Math.round(ivaTotal).toLocaleString()} (13% IVA)
+                    {t('registrar_pedido.summary.taxes_included', 'Impuestos incluidos')}: {currency} {Math.round(ivaTotal).toLocaleString()} (13% IVA)
                   </Typography>
                 </Box>
               </Box>
 
-              {/* Botón de confirmar pedido - MODIFICADO PARA IR AL PAGO */}
+              {/* Botón de confirmar pedido */}
               <Button
                 variant="contained"
                 fullWidth
@@ -1085,7 +1071,7 @@ const proceedToPayment = () => {
                 {loading ? (
                   <CircularProgress size={24} color="inherit" />
                 ) : (
-                  'PROCEDER AL PAGO'
+                  t('registrar_pedido.buttons.proceed_payment', 'PROCEDER AL PAGO')
                 )}
               </Button>
 
@@ -1104,7 +1090,7 @@ const proceedToPayment = () => {
                   }
                 }}
               >
-                VOLVER AL CARRITO
+                {t('registrar_pedido.buttons.back_to_cart', 'VOLVER AL CARRITO')}
               </Button>
             </CardContent>
           </Card>
@@ -1120,31 +1106,31 @@ const proceedToPayment = () => {
       >
         <DialogTitle sx={{ color: '#F06292', fontWeight: 'bold' }}>
           <Warning sx={{ mr: 1 }} />
-          Confirmar Pedido con Problemas de Inventario
+          {t('registrar_pedido.stock_errors.dialog_title', 'Confirmar Pedido con Problemas de Inventario')}
         </DialogTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Se detectaron problemas de inventario para algunos productos. ¿Desea continuar con el pedido?
+            {t('registrar_pedido.stock_errors.dialog_message', 'Se detectaron problemas de inventario para algunos productos. ¿Desea continuar con el pedido?')}
           </Typography>
           <Box sx={{ backgroundColor: '#fff3cd', p: 2, borderRadius: 1, border: '1px solid #ffeaa7' }}>
             {erroresStock.map((error, index) => (
               <Typography key={index} variant="body2" sx={{ mb: 1 }}>
-                • <strong>{error.producto}:</strong> Solicitado {error.cantidadSolicitada}, 
-                Disponible: {error.stockDisponible || error.error}
+                • <strong>{error.producto}:</strong> {t('registrar_pedido.stock_errors.requested', 'Solicitado')} {error.cantidadSolicitada}, 
+                {t('registrar_pedido.stock_errors.available', 'Disponible')}: {error.stockDisponible || error.error}
               </Typography>
             ))}
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogConfirmacion(false)} color="inherit">
-            Cancelar
+            {t('registrar_pedido.buttons.cancel', 'Cancelar')}
           </Button>
           <Button 
             onClick={proceedWithOrder} 
             variant="contained"
             sx={{ backgroundColor: '#F06292', '&:hover': { backgroundColor: '#E91E63' } }}
           >
-            Continuar al Pago
+            {t('registrar_pedido.buttons.continue_payment', 'Continuar al Pago')}
           </Button>
         </DialogActions>
       </Dialog>

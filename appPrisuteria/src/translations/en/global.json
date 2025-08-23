@@ -115,6 +115,92 @@
       "free_shipping": "FREE SHIPPING",
       "secure_payment": "SECURE PAYMENT"
     }
+  },"registrar_pedido": {
+    "title": "REGISTER ORDER",
+    "empty_cart": {
+      "message": "There are no products in the cart to register an order.",
+      "button": "Go to Products"
+    },
+    "login_required": {
+      "message": "You must log in to register an order.",
+      "button": "Log In"
+    },
+    "general_info": {
+      "title": "GENERAL INFORMATION",
+      "date": "Date",
+      "status": "Status",
+      "client": "Client",
+      "client_placeholder": "Client (Current user)",
+      "client_info": "Client Information",
+      "shipping_address": "Shipping Address",
+      "shipping_placeholder": "Enter detailed shipping address"
+    },
+    "client_details": {
+      "name": "Name",
+      "cedula": "ID",
+      "email": "Email",
+      "phone": "Phone",
+      "category": "Category",
+      "previous_orders": "Previous Orders"
+    },
+    "order_detail": {
+      "title": "ORDER DETAILS",
+      "products_count": "products",
+      "customized": "Customized",
+      "customizations": "Customized Product Information",
+      "base_product": "Base Product",
+      "base_cost": "Base Cost",
+      "customized_total": "Customized Total",
+      "view_customizations": "View customizations",
+      "quantity": "Quantity",
+      "unit_price": "Unit Price",
+      "subtotal_no_tax": "Subtotal (excluding tax)",
+      "tax_label": "Tax (13%)",
+      "total_with_tax": "Total with Tax",
+      "validate_stock": "Validate Availability",
+      "validating": "Validating Inventory..."
+    },
+    "customization_info": {
+      "base_product": "Base Product:",
+      "base_cost": "Base Cost:",
+      "customized_total": "Customized Total:"
+    },
+    "summary": {
+      "title": "ORDER SUMMARY",
+      "subtotal_no_tax": "Subtotal (excluding taxes)",
+      "tax": "Tax (13%)",
+      "total_with_tax": "Total with taxes",
+      "shipping": "Shipping",
+      "free": "FREE",
+      "final_total": "FINAL TOTAL",
+      "taxes_included": "Taxes included"
+    },
+    "buttons": {
+      "proceed_payment": "PROCEED TO PAYMENT",
+      "back_to_cart": "BACK TO CART",
+      "continue_payment": "Continue to Payment",
+      "cancel": "Cancel"
+    },
+    "validation": {
+      "complete_fields": "Please complete all required fields",
+      "positive_quantities": "All quantities must be positive integers",
+      "quantity_required": "Quantity required",
+      "inventory_error": "Error validating inventory. Please try again."
+    },
+    "stock_errors": {
+      "title": "Inventory problems detected:",
+      "requested": "Requested",
+      "available": "Available",
+      "dialog_title": "Confirm Order with Inventory Issues",
+      "dialog_message": "Inventory problems were detected for some products. Do you want to continue with the order?",
+      "could_not_verify": "Could not verify stock"
+    },
+    "status": {
+      "pending": "Pending"
+    },
+    "loading": "Loading...",
+    "error_loading_user": "Error loading user data",
+    "user_not_found": "No details found for this user"
   },
   "home": {
     "title": "We are Prisuteria Accesorios",
