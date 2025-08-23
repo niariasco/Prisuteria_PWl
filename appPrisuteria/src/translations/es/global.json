@@ -202,6 +202,129 @@
     "loading": "Cargando...",
     "error_loading_user": "Error al cargar los datos del usuario",
     "user_not_found": "No se encontraron detalles para este usuario"
+  },"payment": {
+    "title": "Proceso de Pago",
+    "loading_order_data": "Cargando datos del pedido...",
+    "no_order_data": "No hay datos del pedido",
+    "no_order_data_message": "No se encontraron datos del pedido. Por favor, regresa al carrito y procesa tu pedido nuevamente.",
+    "back_to_cart": "Volver al Carrito",
+    
+    "order_summary": {
+      "title": "Resumen del Pedido",
+      "client": "Cliente",
+      "email": "Email",
+      "address": "Dirección",
+      "products": "Productos",
+      "quantity": "Cantidad",
+      "customized": "Personalizado",
+      "subtotal": "Subtotal",
+      "tax": "IVA (13%)",
+      "shipping": "Envío",
+      "free": "GRATIS",
+      "total": "Total",
+      "total_to_pay": "Total a pagar"
+    },
+
+    "payment_methods": {
+      "title": "Método de Pago",
+      "credit_card": "Tarjeta de Crédito",
+      "debit_card": "Tarjeta de Débito",
+      "cash": "Efectivo",
+      "credit": "Crédito",
+      "debit": "Débito"
+    },
+
+    "card_form": {
+      "paying_with": "Pagando con tarjeta de",
+      "card_number": "Número de Tarjeta",
+      "card_placeholder": "0000 0000 0000 0000",
+      "expiry_date": "Fecha de Expiración",
+      "month": "Mes",
+      "year": "Año",
+      "cvv": "CVV",
+      "cvv_placeholder": "123",
+      "cvv_helper": "Código de seguridad de 3-4 dígitos",
+      "cardholder_name": "Nombre del Titular",
+      "cardholder_placeholder": "Como aparece en la tarjeta",
+      "months": {
+        "01": "01 - Enero",
+        "02": "02 - Febrero", 
+        "03": "03 - Marzo",
+        "04": "04 - Abril",
+        "05": "05 - Mayo",
+        "06": "06 - Junio",
+        "07": "07 - Julio",
+        "08": "08 - Agosto",
+        "09": "09 - Septiembre",
+        "10": "10 - Octubre",
+        "11": "11 - Noviembre",
+        "12": "12 - Diciembre"
+      }
+    },
+
+    "cash_form": {
+      "payment_in_cash": "Pago en efectivo",
+      "amount_label": "Monto con el que paga",
+      "minimum": "Mínimo",
+      "change": "Cambio"
+    },
+
+    "buttons": {
+      "back": "Volver",
+      "finish_payment": "Finalizar Pago",
+      "processing": "Procesando..."
+    },
+
+    "validation": {
+      "card_16_digits": "El número de tarjeta debe tener 16 dígitos.",
+      "invalid_card": "El número de tarjeta no es válido.",
+      "select_expiry": "Debe seleccionar una fecha de expiración válida.",
+      "invalid_month": "El mes de expiración debe estar entre 01 y 12.",
+      "card_expired": "La tarjeta está expirada.",
+      "invalid_cvv": "El CVV debe tener 3 o 4 dígitos numéricos.",
+      "cardholder_required": "El nombre del titular no puede estar vacío.",
+      "positive_amount": "El monto en efectivo debe ser un número positivo.",
+      "insufficient_amount": "El monto en efectivo no puede ser menor al total del pedido."
+    },
+
+    "success_modal": {
+      "title": "¡Pago Procesado Exitosamente!",
+      "subtitle": "Su orden ha sido confirmada y guardada",
+      "company_info": {
+        "name": "TuTienda.com",
+        "address": "Carrillos, Alajuela, Costa Rica",
+        "contact": "Tel: +506 2222-3333 | Email: info@tutienda.com"
+      },
+      "order_data": "Datos de la Orden",
+      "order_number": "Número de Orden",
+      "date": "Fecha",
+      "status": "Estado",
+      "confirmed": "Confirmado",
+      "client_info": "Información del Cliente",
+      "client": "Cliente",
+      "registered_client": "Cliente Registrado",
+      "payment_method": "Método de Pago",
+      "type": "Tipo",
+      "change": "Cambio",
+      "product_detail": "Detalle de Productos",
+      "product": "Producto",
+      "unit_price": "Precio Unit.",
+      "thank_you": "¡Gracias por su compra!",
+      "confirmation_message": "Se ha enviado un email de confirmación a su dirección de correo electrónico. Su pedido será procesado en las próximas 24 horas.",
+      "important_info": "Información importante:",
+      "important_notes": "• Conserve este comprobante para cualquier consulta\n• Tiempo estimado de entrega: 3-5 días hábiles\n• Para consultas contacte: +506 2222-3333\n• Puede rastrear su pedido en la sección \"Mis Órdenes\"",
+      "buttons": {
+        "print": "Imprimir",
+        "my_orders": "Mis Órdenes",
+        "view_detail": "Ver Detalle"
+      }
+    },
+
+    "errors": {
+      "no_products": "No hay productos en el pedido",
+      "create_order_failed": "Error al crear la orden",
+      "processing_payment": "Error al procesar el pago"
+    }
   },
   "home": {
     "title": "Somos Prisuteria Accesorios",

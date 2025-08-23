@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import OrderService from '../../services/OrderService';
 import {
   Box,
@@ -46,6 +47,7 @@ import {
 const PagoPedido = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   
   // Estados principales
   const [pedidoData, setPedidoData] = useState({});
@@ -132,7 +134,6 @@ const PagoPedido = () => {
     }
   };
 
-
   // Detectar tipo de tarjeta
   const getCardType = (number) => {
     const cleanNumber = number.replace(/\s/g, '');
@@ -152,20 +153,20 @@ const PagoPedido = () => {
     return years;
   };
 
-  // Meses para selector
-  const months = [
-    { value: '01', label: '01 - Enero' },
-    { value: '02', label: '02 - Febrero' },
-    { value: '03', label: '03 - Marzo' },
-    { value: '04', label: '04 - Abril' },
-    { value: '05', label: '05 - Mayo' },
-    { value: '06', label: '06 - Junio' },
-    { value: '07', label: '07 - Julio' },
-    { value: '08', label: '08 - Agosto' },
-    { value: '09', label: '09 - Septiembre' },
-    { value: '10', label: '10 - Octubre' },
-    { value: '11', label: '11 - Noviembre' },
-    { value: '12', label: '12 - Diciembre' },
+  // Meses para selector (internacionalizados)
+  const getMonths = () => [
+    { value: '01', label: t('payment.card_form.months.01') },
+    { value: '02', label: t('payment.card_form.months.02') },
+    { value: '03', label: t('payment.card_form.months.03') },
+    { value: '04', label: t('payment.card_form.months.04') },
+    { value: '05', label: t('payment.card_form.months.05') },
+    { value: '06', label: t('payment.card_form.months.06') },
+    { value: '07', label: t('payment.card_form.months.07') },
+    { value: '08', label: t('payment.card_form.months.08') },
+    { value: '09', label: t('payment.card_form.months.09') },
+    { value: '10', label: t('payment.card_form.months.10') },
+    { value: '11', label: t('payment.card_form.months.11') },
+    { value: '12', label: t('payment.card_form.months.12') },
   ];
 
   // Actualizar fecha expiración
@@ -203,9 +204,9 @@ const PagoPedido = () => {
   // Obtener tipo de método para mostrar
   const getTipoMetodo = () => {
     switch(metodoPago) {
-      case "tarjeta-credito": return "Crédito";
-      case "tarjeta-debito": return "Débito"; 
-      case "efectivo": return "Efectivo";
+      case "tarjeta-credito": return t('payment.payment_methods.credit');
+      case "tarjeta-debito": return t('payment.payment_methods.debit'); 
+      case "efectivo": return t('payment.payment_methods.cash');
       default: return "";
     }
   };
@@ -221,32 +222,32 @@ const PagoPedido = () => {
     const cleanCardNumber = numeroTarjeta.replace(/\s/g, '');
 
     if (!/^\d{16}$/.test(cleanCardNumber)) {
-      return "El número de tarjeta debe tener 16 dígitos.";
+      return t('payment.validation.card_16_digits');
     }
     if (!validarLuhn(cleanCardNumber)) {
-      return "El número de tarjeta no es válido.";
+      return t('payment.validation.invalid_card');
     }
 
     if (!/^\d{2}\/\d{2}$/.test(fechaExpiracion)) {
-      return "Debe seleccionar una fecha de expiración válida.";
+      return t('payment.validation.select_expiry');
     }
     const [mes, año] = fechaExpiracion.split("/").map((v) => parseInt(v, 10));
     if (mes < 1 || mes > 12) {
-      return "El mes de expiración debe estar entre 01 y 12.";
+      return t('payment.validation.invalid_month');
     }
     const fechaActual = new Date();
     const añoActual = parseInt(fechaActual.getFullYear().toString().slice(-2));
     const mesActual = fechaActual.getMonth() + 1;
     if (año < añoActual || (año === añoActual && mes < mesActual)) {
-      return "La tarjeta está expirada.";
+      return t('payment.validation.card_expired');
     }
 
     if (!/^\d{3,4}$/.test(cvv)) {
-      return "El CVV debe tener 3 o 4 dígitos numéricos.";
+      return t('payment.validation.invalid_cvv');
     }
 
     if (!nombreTitular.trim()) {
-      return "El nombre del titular no puede estar vacío.";
+      return t('payment.validation.cardholder_required');
     }
 
     return null;
@@ -256,133 +257,111 @@ const PagoPedido = () => {
   const validarEfectivo = () => {
     const monto = parseFloat(formData.montoEfectivo);
     if (isNaN(monto) || monto <= 0) {
-      return "El monto en efectivo debe ser un número positivo.";
+      return t('payment.validation.positive_amount');
     }
     if (monto < totalCompra) {
-      return "El monto en efectivo no puede ser menor al total del pedido.";
+      return t('payment.validation.insufficient_amount');
     }
     return null;
   };
 
+  // Manejar cambios en el formulario
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
 
-
-// Manejar cambios en el formulario
-const handleChange = (e) => {
-  const { name, value } = e.target;
-  setFormData(prev => ({ ...prev, [name]: value }));
-
-  // Actualizar cambio si es efectivo
-  if (name === "montoEfectivo") {
-    const total = parseFloat(ordenCreada?.pedido?.total || pedidoData?.total || 0);
-    const pago = parseFloat(value) || 0;
-    setCambio(pago >= total ? pago - total : 0);
-  }
-};
-
-// Preparar productos para backend (solo id y cantidad, precio será calculado por backend)
-const mapearProductos = () => {
-  return (pedidoData.productos || []).map((producto) => {
-    const id = producto.productosId || producto.id || producto.productoId;
-    const cantidad = Number(producto.cantidad) || 0;
-    const precio = Number(producto.precioUnitario ?? producto.precio ?? 0);
-    return { id, cantidad, precio };
-  }).filter(p => p.id && p.cantidad > 0 && !isNaN(p.precio));
-};
-
-const prepararDatosOrden = () => {
-  const productosBackend = mapearProductos();
-
-  const subtotal = productosBackend.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
-  const impuestos = parseFloat((subtotal * 0.13).toFixed(2)); // 13% ejemplo
-  const total = parseFloat((subtotal + impuestos).toFixed(2));
-console.log("Productos para backend:", productosBackend);
-console.log("Subtotal calculado:", subtotal, "Impuestos:", impuestos, "Total:", total);
-
-  const datosOrden = {
-    usuario_id: parseInt(usuarioId),
-    subtotal,
-    impuestos,
-    total,
-    direccion_envio: pedidoData.direccionEnvio || "No especificada",
-    estado: 'Pendiente',
-    metodo_pago: (metodoPago === "efectivo") ? "Efectivo" : "Tarjeta",
-    productos: productosBackend
+    // Actualizar cambio si es efectivo
+    if (name === "montoEfectivo") {
+      const total = parseFloat(ordenCreada?.pedido?.total || pedidoData?.total || 0);
+      const pago = parseFloat(value) || 0;
+      setCambio(pago >= total ? pago - total : 0);
+    }
   };
 
-  if (metodoPago === "efectivo") {
-    datosOrden.pago_efectivo = {
-      monto_pagado: parseFloat(formData.montoEfectivo) || total,
-      cambio: cambio || 0
+  // Preparar productos para backend (solo id y cantidad, precio será calculado por backend)
+  const mapearProductos = () => {
+    return (pedidoData.productos || []).map((producto) => {
+      const id = producto.productosId || producto.id || producto.productoId;
+      const cantidad = Number(producto.cantidad) || 0;
+      const precio = Number(producto.precioUnitario ?? producto.precio ?? 0);
+      return { id, cantidad, precio };
+    }).filter(p => p.id && p.cantidad > 0 && !isNaN(p.precio));
+  };
+
+  const prepararDatosOrden = () => {
+    const productosBackend = mapearProductos();
+
+    const subtotal = productosBackend.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
+    const impuestos = parseFloat((subtotal * 0.13).toFixed(2)); // 13% ejemplo
+    const total = parseFloat((subtotal + impuestos).toFixed(2));
+
+    const datosOrden = {
+      usuario_id: parseInt(usuarioId),
+      subtotal,
+      impuestos,
+      total,
+      direccion_envio: pedidoData.direccionEnvio || "No especificada",
+      estado: 'Pendiente',
+      metodo_pago: (metodoPago === "efectivo") ? t('payment.payment_methods.cash') : "Tarjeta",
+      productos: productosBackend
     };
-  } else if (metodoPago === "tarjeta-credito" || metodoPago === "tarjeta-debito") {
-    datosOrden.pago_tarjeta = {
-      numero_tarjeta: formData.numeroTarjeta.replace(/\s/g, ''),
-      fecha_expiracion: formData.fechaExpiracion,
-      cvv: formData.cvv,
-      nombre_titular: formData.nombreTitular
-    };
-  } else if (metodoPago === "mixto") {
-    datosOrden.pago_efectivo = {
-      monto_pagado: parseFloat(formData.montoEfectivo) || 0,
-      cambio: cambio || 0
-    };
-    datosOrden.pago_tarjeta = {
-      numero_tarjeta: formData.numeroTarjeta.replace(/\s/g, ''),
-      fecha_expiracion: formData.fechaExpiracion,
-      cvv: formData.cvv,
-      nombre_titular: formData.nombreTitular
-    };
-  }
 
-  console.log("Subtotal final:", subtotal, "Impuestos:", impuestos, "Total:", total);
-  return datosOrden;
-};
+    if (metodoPago === "efectivo") {
+      datosOrden.pago_efectivo = {
+        monto_pagado: parseFloat(formData.montoEfectivo) || total,
+        cambio: cambio || 0
+      };
+    } else if (metodoPago === "tarjeta-credito" || metodoPago === "tarjeta-debito") {
+      datosOrden.pago_tarjeta = {
+        numero_tarjeta: formData.numeroTarjeta.replace(/\s/g, ''),
+        fecha_expiracion: formData.fechaExpiracion,
+        cvv: formData.cvv,
+        nombre_titular: formData.nombreTitular
+      };
+    }
 
+    return datosOrden;
+  };
 
-// Manejar pago
-const handlePagar = async () => {
-  try {
-    setLoading(true);
+  // Manejar pago
+  const handlePagar = async () => {
+    try {
+      setLoading(true);
 
-    if (!pedidoData?.productos?.length) throw new Error("No hay productos en el pedido");
+      if (!pedidoData?.productos?.length) throw new Error(t('payment.errors.no_products'));
 
-    const datosOrden = prepararDatosOrden();
-    console.log("Datos finales a enviar:", datosOrden);
+      const datosOrden = prepararDatosOrden();
+      console.log("Datos finales a enviar:", datosOrden);
 
-    // Ahora la respuesta incluye precios calculados y subtotales
-    const response = await OrderService.crearOrden(datosOrden);
-    console.log("Orden creada:", response);
+      const response = await OrderService.crearOrden(datosOrden);
+      console.log("Orden creada:", response);
 
-    // Guardar la orden completa (pedido, productos, personalizados) desde backend
-    setOrdenCreada(response);
-    setShowFacturaDialog(true);
+      setOrdenCreada(response);
+      setShowFacturaDialog(true);
 
-    // Reiniciar formulario
-    setFormData(initialFormData);
+      // Reiniciar formulario
+      setFormData(initialFormData);
 
-    // Actualizar cambio en tiempo real
-    const total = parseFloat(response.pedido.total || 0);
-    const pago = parseFloat(formData.montoEfectivo || 0);
-    setCambio(pago >= total ? pago - total : 0);
+      // Actualizar cambio en tiempo real
+      const total = parseFloat(response.pedido.total || 0);
+      const pago = parseFloat(formData.montoEfectivo || 0);
+      setCambio(pago >= total ? pago - total : 0);
 
-  } catch (error) {
-    console.error("Error al procesar el pago:", error);
-    alert(error.response?.data?.message || error.message || "Error al crear la orden");
-  } finally {
-    setLoading(false);
-  }
-};
+    } catch (error) {
+      console.error("Error al procesar el pago:", error);
+      alert(error.response?.data?.message || error.message || t('payment.errors.processing_payment'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
-// Actualizar cambio en tiempo real
-const handleMontoEfectivoChange = (e) => {
-  const valor = parseFloat(e.target.value) || 0;
-  setFormData(prev => ({ ...prev, montoEfectivo: valor }));
-  const total = pedidoData.totalConImpuestos || pedidoData.total || 0;
-  setCambio(valor >= total ? valor - total : 0);
-};
-
-handleMontoEfectivoChange;
-
+  // Actualizar cambio en tiempo real
+  const handleMontoEfectivoChange = (e) => {
+    const valor = parseFloat(e.target.value) || 0;
+    setFormData(prev => ({ ...prev, montoEfectivo: valor }));
+    const total = pedidoData.totalConImpuestos || pedidoData.total || 0;
+    setCambio(valor >= total ? valor - total : 0);
+  };
 
   // Ver detalle de la orden (desde el modal)
   const verDetalleOrden = () => {
@@ -412,7 +391,7 @@ handleMontoEfectivoChange;
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
           <CircularProgress size={50} sx={{ color: '#d83b6a' }} />
           <Typography variant="h6" sx={{ ml: 2 }}>
-            Cargando datos del pedido...
+            {t('payment.loading_order_data')}
           </Typography>
         </Box>
       </Container>
@@ -424,10 +403,10 @@ handleMontoEfectivoChange;
     return (
       <Container maxWidth="sm" sx={{ mt: 6, textAlign: 'center' }}>
         <Typography variant="h5" color="error" gutterBottom>
-          No hay datos del pedido
+          {t('payment.no_order_data')}
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          No se encontraron datos del pedido. Por favor, regresa al carrito y procesa tu pedido nuevamente.
+          {t('payment.no_order_data_message')}
         </Typography>
         <Button
           variant="contained"
@@ -435,7 +414,7 @@ handleMontoEfectivoChange;
           onClick={() => navigate('/cart')}
           sx={{ mt: 2 }}
         >
-          Volver al Carrito
+          {t('payment.back_to_cart')}
         </Button>
       </Container>
     );
@@ -451,19 +430,19 @@ handleMontoEfectivoChange;
             <Card sx={{ mb: 3, boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}>
               <CardContent>
                 <Typography variant="h5" gutterBottom color="primary" sx={{ fontWeight: 'bold' }}>
-                  Resumen del Pedido
+                  {t('payment.order_summary.title')}
                 </Typography>
                 
                 {/* Información del cliente */}
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="h6" color="secondary">
-                    Cliente: {pedidoData.cliente?.nombre}
+                    {t('payment.order_summary.client')}: {pedidoData.cliente?.nombre}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Email: {pedidoData.cliente?.email}
+                    {t('payment.order_summary.email')}: {pedidoData.cliente?.email}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Dirección: {pedidoData.direccionEnvio}
+                    {t('payment.order_summary.address')}: {pedidoData.direccionEnvio}
                   </Typography>
                 </Box>
 
@@ -471,7 +450,7 @@ handleMontoEfectivoChange;
 
                 {/* Lista de productos */}
                 <Typography variant="h6" gutterBottom>
-                  Productos ({pedidoData.productos?.length || 0}):
+                  {t('payment.order_summary.products')} ({pedidoData.productos?.length || 0}):
                 </Typography>
                 
                 {pedidoData.productos?.map((producto, index) => (
@@ -482,11 +461,11 @@ handleMontoEfectivoChange;
                           {producto.nombre}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          Cantidad: {producto.cantidad}
+                          {t('payment.order_summary.quantity')}: {producto.cantidad}
                         </Typography>
                         {producto.esPersonalizado && (
                           <Chip 
-                            label="Personalizado" 
+                            label={t('payment.order_summary.customized')} 
                             size="small"
                             sx={{
                               backgroundColor: '#E3F2FD',
@@ -509,20 +488,20 @@ handleMontoEfectivoChange;
 
                 {/* Totales */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography>Subtotal:</Typography>
+                  <Typography>{t('payment.order_summary.subtotal')}:</Typography>
                   <Typography>{currencySymbol} {Math.round(pedidoData.subtotalSinImpuestos).toLocaleString()}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography>IVA (13%):</Typography>
+                  <Typography>{t('payment.order_summary.tax')}:</Typography>
                   <Typography>{currencySymbol} {Math.round(pedidoData.ivaTotal).toLocaleString()}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography>Envío:</Typography>
-                  <Typography color="success.main" sx={{ fontWeight: 'bold' }}>GRATIS</Typography>
+                  <Typography>{t('payment.order_summary.shipping')}:</Typography>
+                  <Typography color="success.main" sx={{ fontWeight: 'bold' }}>{t('payment.order_summary.free')}</Typography>
                 </Box>
                 <Divider sx={{ my: 1 }} />
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Total:</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{t('payment.order_summary.total')}:</Typography>
                   <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                     {currencySymbol} {Math.round(pedidoData.total).toLocaleString()}
                   </Typography>
@@ -535,24 +514,24 @@ handleMontoEfectivoChange;
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3, boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', borderRadius: 3 }}>
               <Typography variant="h5" align="center" gutterBottom color="primary" sx={{ fontWeight: 'bold' }}>
-                Proceso de Pago
+                {t('payment.title')}
               </Typography>
 
               <Typography variant="h6" align="center" gutterBottom sx={{ color: 'secondary.main', mb: 3 }}>
-                Total a pagar: <strong>{currencySymbol} {Math.round(totalCompra).toLocaleString()}</strong>
+                {t('payment.order_summary.total_to_pay')}: <strong>{currencySymbol} {Math.round(totalCompra).toLocaleString()}</strong>
               </Typography>
 
               {/* Selección del método de pago */}
               <FormControl fullWidth sx={{ mb: 3 }}>
-                <InputLabel>Método de Pago</InputLabel>
+                <InputLabel>{t('payment.payment_methods.title')}</InputLabel>
                 <Select 
                   value={metodoPago} 
                   onChange={(e) => setMetodoPago(e.target.value)}
                   disabled={loading}
                 >
-                  <MenuItem value="tarjeta-credito">Tarjeta de Crédito</MenuItem>
-                  <MenuItem value="tarjeta-debito">Tarjeta de Débito</MenuItem>
-                  <MenuItem value="efectivo">Efectivo</MenuItem>
+                  <MenuItem value="tarjeta-credito">{t('payment.payment_methods.credit_card')}</MenuItem>
+                  <MenuItem value="tarjeta-debito">{t('payment.payment_methods.debit_card')}</MenuItem>
+                  <MenuItem value="efectivo">{t('payment.payment_methods.cash')}</MenuItem>
                 </Select>
               </FormControl>
 
@@ -561,7 +540,7 @@ handleMontoEfectivoChange;
                 <Box sx={{ animation: 'fadeIn 0.3s ease-in' }}>
                   <Box sx={{ mb: 2, p: 2, backgroundColor: 'primary.light', borderRadius: 2 }}>
                     <Typography variant="body2" color="primary.contrastText" sx={{ fontWeight: 'bold' }}>
-                      Pagando con tarjeta de {getTipoMetodo().toLowerCase()}
+                      {t('payment.card_form.paying_with')} {getTipoMetodo().toLowerCase()}
                     </Typography>
                   </Box>
 
@@ -569,12 +548,12 @@ handleMontoEfectivoChange;
                   <Box sx={{ position: 'relative' }}>
                     <TextField
                       fullWidth
-                      label="Número de Tarjeta"
+                      label={t('payment.card_form.card_number')}
                       name="numeroTarjeta"
                       value={formData.numeroTarjeta}
                       onChange={handleChange}
                       margin="normal"
-                      placeholder="0000 0000 0000 0000"
+                      placeholder={t('payment.card_form.card_placeholder')}
                       disabled={loading}
                       InputProps={{
                         endAdornment: getCardType(formData.numeroTarjeta) && (
@@ -600,13 +579,13 @@ handleMontoEfectivoChange;
                   {/* Fecha de Expiración */}
                   <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
                     <FormControl fullWidth>
-                      <InputLabel>Mes</InputLabel>
+                      <InputLabel>{t('payment.card_form.month')}</InputLabel>
                       <Select
                         value={selectedMonth}
                         onChange={(e) => setSelectedMonth(e.target.value)}
                         disabled={loading}
                       >
-                        {months.map((month) => (
+                        {getMonths().map((month) => (
                           <MenuItem key={month.value} value={month.value}>
                             {month.label}
                           </MenuItem>
@@ -615,7 +594,7 @@ handleMontoEfectivoChange;
                     </FormControl>
 
                     <FormControl fullWidth>
-                      <InputLabel>Año</InputLabel>
+                      <InputLabel>{t('payment.card_form.year')}</InputLabel>
                       <Select
                         value={selectedYear}
                         onChange={(e) => setSelectedYear(e.target.value)}
@@ -633,25 +612,25 @@ handleMontoEfectivoChange;
                   {/* CVV */}
                   <TextField
                     fullWidth
-                    label="CVV"
+                    label={t('payment.card_form.cvv')}
                     name="cvv"
                     value={formData.cvv}
                     onChange={handleChange}
                     margin="normal"
-                    placeholder="123"
+                    placeholder={t('payment.card_form.cvv_placeholder')}
                     disabled={loading}
-                    helperText="Código de seguridad de 3-4 dígitos"
+                    helperText={t('payment.card_form.cvv_helper')}
                   />
 
                   {/* Nombre del Titular */}
                   <TextField
                     fullWidth
-                    label="Nombre del Titular"
+                    label={t('payment.card_form.cardholder_name')}
                     name="nombreTitular"
                     value={formData.nombreTitular}
                     onChange={handleChange}
                     margin="normal"
-                    placeholder="Como aparece en la tarjeta"
+                    placeholder={t('payment.card_form.cardholder_placeholder')}
                     disabled={loading}
                     sx={{
                       '& .MuiInputBase-input': {
@@ -667,13 +646,13 @@ handleMontoEfectivoChange;
                 <Box sx={{ animation: 'fadeIn 0.3s ease-in' }}>
                   <Box sx={{ mb: 2, p: 2, backgroundColor: 'success.light', borderRadius: 2 }}>
                     <Typography variant="body2" color="success.contrastText" sx={{ fontWeight: 'bold' }}>
-                      Pago en efectivo
+                      {t('payment.cash_form.payment_in_cash')}
                     </Typography>
                   </Box>
 
                   <TextField
                     fullWidth
-                    label="Monto con el que paga"
+                    label={t('payment.cash_form.amount_label')}
                     name="montoEfectivo"
                     type="number"
                     value={formData.montoEfectivo}
@@ -687,12 +666,12 @@ handleMontoEfectivoChange;
                         </InputAdornment>
                       ),
                     }}
-                    helperText={`Mínimo: ${currencySymbol} ${Math.round(totalCompra).toLocaleString()}`}
+                    helperText={`${t('payment.cash_form.minimum')}: ${currencySymbol} ${Math.round(totalCompra).toLocaleString()}`}
                   />
                   {cambio > 0 && (
                     <Box sx={{ mt: 2, p: 2, backgroundColor: 'success.light', borderRadius: 2, border: '2px solid', borderColor: 'success.main' }}>
                       <Typography variant="h6" color="success.dark" sx={{ fontWeight: 'bold' }}>
-                        Cambio: {currencySymbol} {cambio.toLocaleString()}
+                        {t('payment.cash_form.change')}: {currencySymbol} {cambio.toLocaleString()}
                       </Typography>
                     </Box>
                   )}
@@ -708,7 +687,7 @@ handleMontoEfectivoChange;
                   disabled={loading}
                   sx={{ flex: 1 }}
                 >
-                  Volver
+                  {t('payment.buttons.back')}
                 </Button>
                 <Button
                   variant="contained"
@@ -728,10 +707,10 @@ handleMontoEfectivoChange;
                   {loading ? (
                     <>
                       <CircularProgress size={20} sx={{ mr: 1 }} />
-                      Procesando...
+                      {t('payment.buttons.processing')}
                     </>
                   ) : (
-                    "Finalizar Pago"
+                    t('payment.buttons.finish_payment')
                   )}
                 </Button>
               </Box>
@@ -783,10 +762,10 @@ handleMontoEfectivoChange;
         }}>
           <CheckCircle sx={{ fontSize: 48, mb: 1 }} />
           <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-            ¡Pago Procesado Exitosamente!
+            {t('payment.success_modal.title')}
           </Typography>
           <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-            Su orden ha sido confirmada y guardada
+            {t('payment.success_modal.subtitle')}
           </Typography>
         </DialogTitle>
 
@@ -800,14 +779,14 @@ handleMontoEfectivoChange;
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <Business sx={{ mr: 1, color: '#1976d2' }} />
                       <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                        TuTienda.com
+                        {t('payment.success_modal.company_info.name')}
                       </Typography>
                     </Box>
                     <Typography variant="body2" color="text.secondary">
-                      Carrillos, Alajuela, Costa Rica
+                      {t('payment.success_modal.company_info.address')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Tel: +506 2222-3333 | Email: info@tutienda.com
+                      {t('payment.success_modal.company_info.contact')}
                     </Typography>
                   </Grid>
                   <Grid item>
@@ -824,13 +803,13 @@ handleMontoEfectivoChange;
                   <Box sx={{ p: 2, backgroundColor: 'white', borderRadius: 2, border: '1px solid #e0e0e0' }}>
                     <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2, color: '#1976d2' }}>
                       <Receipt sx={{ mr: 1 }} />
-                      Datos de la Orden
+                      {t('payment.success_modal.order_data')}
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>Número de Orden:</strong> #{ordenCreada.id}
+                      <strong>{t('payment.success_modal.order_number')}:</strong> #{ordenCreada.id}
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>Fecha:</strong> {new Date(ordenCreada.fecha).toLocaleDateString('es-ES', {
+                      <strong>{t('payment.success_modal.date')}:</strong> {new Date(ordenCreada.fecha).toLocaleDateString('es-ES', {
                         day: '2-digit',
                         month: '2-digit',
                         year: 'numeric',
@@ -839,9 +818,9 @@ handleMontoEfectivoChange;
                       })}
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>Estado:</strong> 
+                      <strong>{t('payment.success_modal.status')}:</strong> 
                       <Chip 
-                        label="Confirmado" 
+                        label={t('payment.success_modal.confirmed')} 
                         color="success" 
                         size="small" 
                         sx={{ ml: 1 }}
@@ -854,18 +833,18 @@ handleMontoEfectivoChange;
                   <Box sx={{ p: 2, backgroundColor: 'white', borderRadius: 2, border: '1px solid #e0e0e0' }}>
                     <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2, color: '#1976d2' }}>
                       <Person sx={{ mr: 1 }} />
-                      Información del Cliente
+                      {t('payment.success_modal.client_info')}
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>Cliente:</strong> {ordenCreada.cliente?.nombre || 'Cliente Registrado'}
+                      <strong>{t('payment.success_modal.client')}:</strong> {ordenCreada.cliente?.nombre || t('payment.success_modal.registered_client')}
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>Email:</strong> {ordenCreada.cliente?.email || 'cliente@email.com'}
+                      <strong>{t('payment.order_summary.email')}:</strong> {ordenCreada.cliente?.email || 'cliente@email.com'}
                     </Typography>
                     <Typography variant="body2" sx={{ display: 'flex', alignItems: 'flex-start' }}>
                       <LocationOn sx={{ mr: 0.5, fontSize: 16, mt: 0.2 }} />
                       <span>
-                        <strong>Dirección:</strong><br />
+                        <strong>{t('payment.order_summary.address')}:</strong><br />
                         {ordenCreada.direccionEnvio}
                       </span>
                     </Typography>
@@ -877,19 +856,19 @@ handleMontoEfectivoChange;
               <Box sx={{ p: 2, backgroundColor: 'white', borderRadius: 2, border: '1px solid #e0e0e0', mb: 3 }}>
                 <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2, color: '#1976d2' }}>
                   {ordenCreada.metodoPago === 'Efectivo' ? <AttachMoney sx={{ mr: 1 }} /> : <CreditCard sx={{ mr: 1 }} />}
-                  Método de Pago
+                  {t('payment.success_modal.payment_method')}
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>Tipo:</strong> {ordenCreada.metodoPago}
+                      <strong>{t('payment.success_modal.type')}:</strong> {ordenCreada.metodoPago}
                     </Typography>
                   </Grid>
                   {ordenCreada.cambio > 0 && (
                     <Grid item xs={12} md={6}>
                       <Box sx={{ p: 2, backgroundColor: '#e8f5e8', borderRadius: 2, border: '1px solid #4caf50' }}>
                         <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
-                          Cambio: {currencySymbol} {ordenCreada.cambio.toLocaleString()}
+                          {t('payment.success_modal.change')}: {currencySymbol} {ordenCreada.cambio.toLocaleString()}
                         </Typography>
                       </Box>
                     </Grid>
@@ -899,17 +878,17 @@ handleMontoEfectivoChange;
 
               {/* Detalle de productos */}
               <Typography variant="h6" sx={{ mb: 2, color: '#1976d2' }}>
-                Detalle de Productos
+                {t('payment.success_modal.product_detail')}
               </Typography>
               
               <TableContainer component={Paper} sx={{ mb: 3, boxShadow: 1 }}>
                 <Table>
                   <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
                     <TableRow>
-                      <TableCell><strong>Producto</strong></TableCell>
-                      <TableCell align="center"><strong>Cantidad</strong></TableCell>
-                      <TableCell align="right"><strong>Precio Unit.</strong></TableCell>
-                      <TableCell align="right"><strong>Total</strong></TableCell>
+                      <TableCell><strong>{t('payment.success_modal.product')}</strong></TableCell>
+                      <TableCell align="center"><strong>{t('payment.order_summary.quantity')}</strong></TableCell>
+                      <TableCell align="right"><strong>{t('payment.success_modal.unit_price')}</strong></TableCell>
+                      <TableCell align="right"><strong>{t('payment.order_summary.total')}</strong></TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -922,7 +901,7 @@ handleMontoEfectivoChange;
                             </Typography>
                             {producto.esPersonalizado && (
                               <Chip 
-                                label="Personalizado" 
+                                label={t('payment.order_summary.customized')} 
                                 size="small"
                                 sx={{
                                   backgroundColor: '#E3F2FD',
@@ -955,26 +934,26 @@ handleMontoEfectivoChange;
                   <Grid item xs={12} md={4}>
                     <Box sx={{ p: 2, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="body2">Subtotal:</Typography>
+                        <Typography variant="body2">{t('payment.order_summary.subtotal')}:</Typography>
                         <Typography variant="body2">
                           {currencySymbol} {Math.round(ordenCreada.subtotalSinImpuestos || 0).toLocaleString()}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="body2">IVA (13%):</Typography>
+                        <Typography variant="body2">{t('payment.order_summary.tax')}:</Typography>
                         <Typography variant="body2">
                           {currencySymbol} {Math.round(ordenCreada.ivaTotal || 0).toLocaleString()}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="body2">Envío:</Typography>
+                        <Typography variant="body2">{t('payment.order_summary.shipping')}:</Typography>
                         <Typography variant="body2" color="success.main" sx={{ fontWeight: 'bold' }}>
-                          GRATIS
+                          {t('payment.order_summary.free')}
                         </Typography>
                       </Box>
                       <Divider sx={{ my: 1 }} />
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Total:</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{t('payment.order_summary.total')}:</Typography>
                         <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
                           {currencySymbol} {Math.round(ordenCreada.total || 0).toLocaleString()}
                         </Typography>
@@ -987,24 +966,20 @@ handleMontoEfectivoChange;
               {/* Nota de agradecimiento */}
               <Box sx={{ mt: 3, p: 2, backgroundColor: '#e3f2fd', borderRadius: 2, textAlign: 'center' }}>
                 <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold', mb: 1 }}>
-                  ¡Gracias por su compra!
+                  {t('payment.success_modal.thank_you')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Se ha enviado un email de confirmación a su dirección de correo electrónico.
-                  Su pedido será procesado en las próximas 24 horas.
+                  {t('payment.success_modal.confirmation_message')}
                 </Typography>
               </Box>
 
               {/* Información adicional */}
               <Box sx={{ mt: 2, p: 2, backgroundColor: '#fff3e0', borderRadius: 2, border: '1px dashed #ff9800' }}>
                 <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#f57c00', mb: 1 }}>
-                  Información importante:
+                  {t('payment.success_modal.important_info')}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
-                  • Conserve este comprobante para cualquier consulta<br />
-                  • Tiempo estimado de entrega: 3-5 días hábiles<br />
-                  • Para consultas contacte: +506 2222-3333<br />
-                  • Puede rastrear su pedido en la sección "Mis Órdenes"
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem', whiteSpace: 'pre-line' }}>
+                  {t('payment.success_modal.important_notes')}
                 </Typography>
               </Box>
             </Paper>
@@ -1020,7 +995,7 @@ handleMontoEfectivoChange;
               onClick={handleImprimir}
               size="small"
             >
-              Imprimir
+              {t('payment.success_modal.buttons.print')}
             </Button>
           </Box>
           
@@ -1030,7 +1005,7 @@ handleMontoEfectivoChange;
               onClick={irAOrdenes}
               sx={{ minWidth: 120 }}
             >
-              Mis Órdenes
+              {t('payment.success_modal.buttons.my_orders')}
             </Button>
             <Button 
               variant="contained" 
@@ -1043,7 +1018,7 @@ handleMontoEfectivoChange;
                 }
               }}
             >
-              Ver Detalle
+              {t('payment.success_modal.buttons.view_detail')}
             </Button>
           </Box>
         </DialogActions>
