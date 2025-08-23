@@ -45,7 +45,23 @@ class etiquetas
         $result = $resenaModel->create($data);
 
         $response->toJSON($result);
+ }
+
+  public function update()
+    {
+        try {
+            $request = new Request();
+            $response = new Response();
+            //Obtener json enviado
+            $inputJSON = $request->getJSON();
+            //Instancia del modelo
+            $producto = new EstiquetasModel();
+            //Acción del modelo a ejecutar
+            $result = $producto->update($inputJSON);
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
     }
-
-
 }

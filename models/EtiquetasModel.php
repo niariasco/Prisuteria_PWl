@@ -52,29 +52,24 @@ class EstiquetasModel
 			die ( $e->getMessage () );
 		}
     }
-    public function create($objeto) {
-              try {
-            //Consulta sql
-            //Identificador autoincrementable
-            $sql = "Insert into etiquetas (etiquetaId, nombrEtiquetas)".
-                    " Values ('$objeto->nombre',
-                    '$objeto->nombrEtiquetas')";
-
-            //Ejecutar la consulta
-            //Obtener ultimo insert
-            $etiquetaId=$this->enlace->executeSQL_DML_last($sql);
-            //Crear elementos a insertar en etiquetas
-            foreach ($objeto->etiquetas as $value) {
-                $sql="Insert into productoetiqueta(producto_id,etiqueta_id)".
-                    " Values($etiquetaId,$value)";
-                $vResultadoGen=$this->enlace->executeSQL_DML($sql);
-            }
-            return $this->get($etiquetaId);
-        } catch (Exception $e) {
-            handleException($e);
-        }
+public function create($objeto) {
+    try {
+        $sql = "INSERT INTO etiquetas (nombrEtiquetas) VALUES ('$objeto->nombrEtiquetas')";
+        $etiquetaId = $this->enlace->executeSQL_DML_last($sql);
+        return $this->get($etiquetaId);
+    } catch (Exception $e) {
+        handleException($e);
     }
+}
 
-
-
+    public function update($objeto) {
+    try {
+        $sql = "UPDATE etiquetas SET nombrEtiquetas = '$objeto->nombrEtiquetas' 
+                WHERE etiquetaId = $objeto->etiquetaId";
+        $this->enlace->executeSQL_DML($sql);
+        return $this->get($objeto->etiquetaId);
+    } catch (Exception $e) {
+        handleException($e);
+    }
+}
 }

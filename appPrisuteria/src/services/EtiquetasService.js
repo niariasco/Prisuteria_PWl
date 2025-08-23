@@ -9,7 +9,17 @@ class EtiquetasService {
   getAllEtiquetas() {
     return axios.get(BASE_URL);
   }
+    getId(id){
+    return axios.get(BASE_URL+'/'+id);
+  }
 
+  create(etiqueta) {
+    return axios.post(BASE_URL, etiqueta); // Axios envía JSON automáticamente
+  }
+
+  update(etiqueta) {
+    return axios.put(`${BASE_URL}/${etiqueta.etiquetaId}`, etiqueta);
+  }
 
 }
 export default new EtiquetasService();

@@ -13,7 +13,7 @@ import { useForm, Controller } from 'react-hook-form';
 import ProductoService from '../../services/ProductoService';
 import ImageService from '../../services/ImageService';
 import CategoriaService from '../../services/CategoriaService';
-import EtiquetaService from '../../services/EtiquetasService';
+import EtiquetasService from '../../services/EtiquetasService';
 import { SelectCategoria } from './Forms/SelectCategoria';
 import { SelectEtiquetas } from './Forms/SelectEtiquetas';
 import PropTypes from 'prop-types';
@@ -21,6 +21,8 @@ import { toast } from 'react-hot-toast';
 import AddIcon from '@mui/icons-material/Add';
 import { useTranslation } from 'react-i18next';
 import { Switch, FormControlLabel } from '@mui/material';
+import { Modal } from '@mui/material';
+import { FormEtiquetas } from './Forms/FormEtiquetas';
 
 export function UpdateProducto() {
   const { control, handleSubmit, reset } = useForm();
@@ -38,6 +40,25 @@ export function UpdateProducto() {
 
   const [imagenesExistentes, setImagenesExistentes] = useState([]);
   const [imagenesAEliminar, setImagenesAEliminar] = useState([]);
+FormEtiquetas;
+//etiquetas
+  const [openEtiquetaModal, setOpenEtiquetaModal] = useState(false);
+  const [etiquetaSeleccionada, setEtiquetaSeleccionada] = useState(null);
+  // Función para abrir modal para crear
+  const handleCrearEtiqueta = () => {
+    setEtiquetaSeleccionada(null);
+    setOpenEtiquetaModal(true);
+  };
+ // Callback cuando se crea o actualiza la etiqueta
+  const recargarEtiquetas = () => {
+    EtiquetasService.getAllEtiquetas().then(res => setEtiquetas(res.data));
+  };
+  // Función para abrir modal para editar
+  const handleEditarEtiqueta = (etiqueta) => {
+    setEtiquetaSeleccionada(etiqueta);
+    setOpenEtiquetaModal(true);
+  };
+
 
   // IMAGENES ADICIONALES (dinámicas)
   const [imagenesExtra, setImagenesExtra] = useState([]);
@@ -49,7 +70,7 @@ export function UpdateProducto() {
   // Cargar categorías, etiquetas y lista de productos
   useEffect(() => {
     CategoriaService.getAllCategorias().then(res => setCategorias(res.data));
-    EtiquetaService.getAllEtiquetas().then(res => setEtiquetas(res.data));
+    EtiquetasService.getAllEtiquetas().then(res => setEtiquetas(res.data));
     ProductoService.getAllProductos().then(res => setProductos(res.data));
   }, []);
 
@@ -361,7 +382,54 @@ export function UpdateProducto() {
                 )}
               />
             </Grid>
+      <Box sx={{ mb: 2 }}>
+        <Button variant="contained" color="primary" onClick={handleCrearEtiqueta}>
+          Crear Etiqueta
+        </Button>
+      </Box>
 
+      {/* LISTADO DE ETIQUETAS CON BOTÓN EDITAR */}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+        {etiquetas.map((etq) => (
+          <Button
+            key={etq.etiquetaId}
+            variant="outlined"
+            onClick={() => handleEditarEtiqueta(etq)}
+          >
+            {etq.nombrEtiquetas}
+          </Button>
+        ))}
+      </Box>
+
+      {/* MODAL FORMULARIO DE ETIQUETA */}
+      <Modal
+        open={openEtiquetaModal}
+        onClose={() => setOpenEtiquetaModal(false)}
+        aria-labelledby="modal-etiqueta"
+        aria-describedby="formulario-crear-editar-etiqueta"
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 2,
+            width: 400
+          }}
+        >
+          <FormEtiquetas
+            etiqueta={etiquetaSeleccionada}
+            onClose={() => setOpenEtiquetaModal(false)}
+            onSuccess={recargarEtiquetas}
+          />
+        </Box>
+      </Modal>
+
+   
             {/* Imagen principal 
             
             

@@ -108,20 +108,16 @@ loaded;
         </div>
       )}
 
-      {/* Combo de etiquetas */}
-      {filtroPor === 'etiqueta' && (
+{/* Combo de etiquetas */}
+{filtroPor === 'etiqueta' && (
   <div style={{ marginBottom: "1rem" }}>
     <label htmlFor="etiquetas">{t('FiltrarE')} </label>
     <select
       id="etiquetas"
-      multiple
-      value={etiquetaSeleccionada} // será un array
-      onChange={(e) => {
-        const selectedOptions = Array.from(e.target.selectedOptions).map(o => o.value);
-        setEtiquetaSeleccionada(selectedOptions);
-      }}
-      size={5} // muestra varias opciones al mismo tiempo
+      value={etiquetaSeleccionada}
+      onChange={(e) => setEtiquetaSeleccionada(e.target.value)}
     >
+      <option value="">{t('Todas')}</option>
       {etiquetas.map((tag) => (
         <option key={tag.etiquetaId} value={tag.etiquetaId}>
           {tag.nombrEtiquetas}
@@ -130,6 +126,7 @@ loaded;
     </select>
   </div>
 )}
+
 
       {/* Mostrar productos */}
       <ListaCartasProductos data={data} isShopping={true} />
