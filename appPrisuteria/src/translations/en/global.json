@@ -26,6 +26,33 @@
       "home": "Shop our Products"
     }
   },
+  "orders": {
+    "order_number": "Order Number",
+    "date": "Date",
+    "status": "Status",
+    "detail": "Details"
+  },"order_detail": {
+    "invoice_title": "Invoice - Order #{{orderNumber}}",
+    "date": "Date",
+    "customer": "Customer",
+    "address": "Address", 
+    "products": "Products",
+    "customized_products": "Customized Products",
+    "summary": "Summary",
+    "product_name": "Product",
+    "quantity": "Quantity",
+    "unit_price": "Unit Price", 
+    "subtotal": "Subtotal",
+    "base": "Base",
+    "customized_total": "Customized Total",
+    "taxes": "Taxes",
+    "total": "Total",
+    "payment_method": "Payment Method",
+    "back": "← Back",
+    "loading": "Loading...",
+    "error": "Error: {{message}}",
+    "not_available": "N/A"
+  },
   "home": {
     "title": "We are Prisuteria Accesorios",
     "description": "Prisutería Accesorios is a SME dedicated to the creation and sale of handmade jewelry, jewelry and accessories, offering unique and personalized designs. We specialize in handmade accessories with high-quality materials, ideal to enhance your style and express your personality. Each piece is crafted with love and attention to detail, providing elegance and originality in every accessory.",
@@ -130,14 +157,14 @@
     "view_promotion": "View promotion",
     "select_type_first": "Select type first"
   },
- "etiquetas": {
- "exclusivo": "Exclusive",
-  "limitado": "Limited",
-  "nuevo": "New",
-  "oferta": "Sale",
-  "popular": "Popular",
-  "recomendado": "Recommended",
-  "verano": "Summer"
+  "etiquetas": {
+    "exclusivo": "Exclusive",
+    "limitado": "Limited",
+    "nuevo": "New",
+    "oferta": "Sale",
+    "popular": "Popular",
+    "recomendado": "Recommended",
+    "verano": "Summer"
   },
   "agregarAlCarrito": "Add to cart",
   "msjEnvio": "Pickup available in Retiro, Heredia",
@@ -145,84 +172,80 @@
   "valoracion": "Average rating",
   "NoValoracion": "No ratings",
   "Review": "Review(s)",
-  "NoImages" : "No images available",
-  "FProduct_Reviews" : "Product's Reviews",
-  "FWrite_Review" : "Write a review",
-  "FUser_Review" : "User",
-  "MessageError" : "You must rate the product",
-  "FDate_Review" : "Date",
-  "FYour_Review" : "Your review",
-  "FRate_Review" : "Rate",
-  "FSend_Review" : "Send Review",
-  "Resenaenviada" : "Review was sent",
-  "FNoreview" : "There aren't reviews for this product. Be the fisrt to write one!",
-   "Return" : " ← Return",
-"FErroNoDescripcion_Review" : "Please write a comment and select a rating.",
- "FErrorUsuariio_Review" : "Error: User not authenticated correctly.",
- "FError_Review" : "Error saving review",
- "FSaving_Review" : "Saving....",
-  "FCreate_ProductoMant" : "Create Product",
- "FNombre_ProductoMant" : "Name",
- "FDescripcion_ProductoMant" : "Descripcion",
- "FPrecio_ProductoMant" : "Price",
- "Fcategory_ProductoMant" : "Category",
- "FEtiquetas_ProductoMant" : "Tags",
- "FAgregarImagen_ProductoMant" : "Add Image",
- "FOtrasImagenes_ProductoMant" : "Other images",
- "FActivesImagenes_ProductoMant" : "Active Images",
-  "FSuccess_ProductoMant" : "Product saved successfully",
- "FError_ProductoMant" : "Error saving Product:",
- "FVer_ProductoMant" : "View Product",
-"FErrorCargar_ProductoMant" : "Unable to load Product",
-"Cargando" : "Loading...",
-"FEdit_ProductoMant" : "Edit Product",
-"FSeleccionar_ProductoMant" : "Select a Product",
-"FActualizar_ProductoMant" : "Update Product",
-"FSuccess_CambiarEstado" : "Product's status has changed",
-"Personalizar_Producto" : "Customize Product",
-"Cantidad_crietioSeleccionados" : "0 of 3 criteria selected" ,
-"Mensaje_Selecciones" : "Select the options to customize your product" ,
-"Material:" : "Material:" ,
-"Tamaño:" : "Size:" ,
-"Color_Dijes" : "Charms Color:" ,
-"Precio_Total" :"Total Price: ",
-"Calculando" :"Calculating...",
-"Seleccione" :"Select",
-"criterio(s)" :"more criteria",
-"de": "of",
-"criterios_seleccionados": "selected criteria",
-"Seleccione_ona_opcion": "Select an option",
- "calculando": "Calculating...",
+  "NoImages": "No images available",
+  "FProduct_Reviews": "Product's Reviews",
+  "FWrite_Review": "Write a review",
+  "FUser_Review": "User",
+  "MessageError": "You must rate the product",
+  "FDate_Review": "Date",
+  "FYour_Review": "Your review",
+  "FRate_Review": "Rate",
+  "FSend_Review": "Send Review",
+  "Resenaenviada": "Review was sent",
+  "FNoreview": "There aren't reviews for this product. Be the first to write one!",
+  "Return": " ← Return",
+  "FErroNoDescripcion_Review": "Please write a comment and select a rating.",
+  "FErrorUsuariio_Review": "Error: User not authenticated correctly.",
+  "FError_Review": "Error saving review",
+  "FSaving_Review": "Saving....",
+  "FCreate_ProductoMant": "Create Product",
+  "FNombre_ProductoMant": "Name",
+  "FDescripcion_ProductoMant": "Description",
+  "FPrecio_ProductoMant": "Price",
+  "Fcategory_ProductoMant": "Category",
+  "FEtiquetas_ProductoMant": "Tags",
+  "FAgregarImagen_ProductoMant": "Add Image",
+  "FOtrasImagenes_ProductoMant": "Other images",
+  "FActivesImagenes_ProductoMant": "Active Images",
+  "FSuccess_ProductoMant": "Product saved successfully",
+  "FError_ProductoMant": "Error saving Product:",
+  "FVer_ProductoMant": "View Product",
+  "FErrorCargar_ProductoMant": "Unable to load Product",
+  "Cargando": "Loading...",
+  "FEdit_ProductoMant": "Edit Product",
+  "FSeleccionar_ProductoMant": "Select a Product",
+  "FActualizar_ProductoMant": "Update Product",
+  "FSuccess_CambiarEstado": "Product's status has changed",
+  "Personalizar_Producto": "Customize Product",
+  "Cantidad_crietioSeleccionados": "0 of 3 criteria selected",
+  "Mensaje_Selecciones": "Select the options to customize your product",
+  "Material:": "Material:",
+  "Tamaño:": "Size:",
+  "Color_Dijes": "Charms Color:",
+  "Precio_Total": "Total Price: ",
+  "Calculando": "Calculating...",
+  "Seleccione": "Select",
+  "criterio(s)": "more criteria",
+  "de": "of",
+  "criterios_seleccionados": "selected criteria",
+  "Seleccione_ona_opcion": "Select an option",
+  "calculando": "Calculating...",
   "faltanCriterios": "{{count}} criterion missing",
   "faltanCriterios_plural": "{{count}} criteria missing",
   "seleccionado": "Selected : ",
-  "Warning" : "Please note: You must complete all customization criteria before adding to cart." ,
-  "Update_price" : "Updating price..." ,
-  "Activo" : "Active" ,
-  "Inactivo" : "Inactive" ,
-     "Todas" : "All" ,
-
-"FiltrarC" : "Filter by category" ,
-"FiltrarE" : "Filter by tag" ,
-
-
-    "select_type_first": "Select type first",
-    "steps": {
-      "select": "1. Select Promotion",
-      "modify": "2. Modify Promotion Data"
-    },
-    "status": {
-      "active": "Active",
-      "pending": "Pending", 
-      "applied": "Applied",
-      "inactive": "Inactive",
-      "expired": "Expired"
-    },
-    "warnings": {
-      "not_editable": "⚠ This promotion cannot be modified because it has 'Applied' status. Only promotions with 'Pending' or 'Active' status can be modified.",
-      "state_restriction": "This promotion cannot be modified because it has status \"{status}\". Only promotions with 'Pending' or 'Active' status can be modified."
-    },
-  
+  "Warning": "Please note: You must complete all customization criteria before adding to cart.",
+  "Update_price": "Updating price...",
+  "Activo": "Active",
+  "Inactivo": "Inactive",
+  "Todas": "All",
+  "FiltrarC": "Filter by category",
+  "FiltrarE": "Filter by tag",
+  "select_type_first": "Select type first",
+  "steps": {
+    "select": "1. Select Promotion",
+    "modify": "2. Modify Promotion Data"
+  },
+  "status": {
+    "active": "Active",
+    "pending": "Pending",
+    "applied": "Applied",
+    "inactive": "Inactive",
+    "expired": "Expired"
+  },
+  "warnings": {
+    "not_editable": "⚠ This promotion cannot be modified because it has 'Applied' status. Only promotions with 'Pending' or 'Active' status can be modified.",
+    "state_restriction": "This promotion cannot be modified because it has status \"{status}\". Only promotions with 'Pending' or 'Active' status can be modified."
+  },
   "promotion_detail": {
     "page_title": "Prisuteria Accesorios Promotions",
     "detail_title": "Promotion Details",
@@ -243,21 +266,17 @@
       "back": "← Back"
     },
     "footer": {
-    "company_name": "PRISUTERÍA ACCESSORIES",
-    "schedule": "Monday to Saturday: 9:00am - 6:00pm", 
-    "links_title": "LINKS",
-    "links": {
-      "home": "Home",
-      "about": "About Us",
-      "products": "Products", 
-      "contact": "Contact"
-    },
-    "copyright": "© 2025 UTN Project. All rights reserved.",
-    "developers": "Nicole Arias & Priscilla Sanchez"
-  }
-  
+      "company_name": "PRISUTERÍA ACCESSORIES",
+      "schedule": "Monday to Saturday: 9:00am - 6:00pm",
+      "links_title": "LINKS",
+      "links": {
+        "home": "Home",
+        "about": "About Us",
+        "products": "Products",
+        "contact": "Contact"
+      },
+      "copyright": "© 2025 UTN Project. All rights reserved.",
+      "developers": "Nicole Arias & Priscilla Sanchez"
+    }
   }
 }
-
-
-

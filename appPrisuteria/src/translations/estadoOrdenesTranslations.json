@@ -1,0 +1,44 @@
+{
+  "order_states": {
+    "es": {
+      "Pendiente": "Pendiente",
+      "Pending": "Pendiente",
+      "En Proceso": "En Proceso", 
+      "In Process": "En Proceso",
+      "Completado": "Completado",
+      "Completed": "Completado",
+      "Cancelado": "Cancelado",
+      "Cancelled": "Cancelado",
+      "Entregado": "Entregado",
+      "Delivered": "Entregado",
+      "En Tránsito": "En Tránsito",
+      "In Transit": "En Tránsito",
+      "Confirmado": "Confirmado",
+      "Confirmed": "Confirmado",
+      "Pagado": "Pagado",
+      "Paid": "Pagado",
+      "Preparando": "Preparando",
+      "Preparing": "Preparando"
+    },
+    "en": {
+      "Pendiente": "Pending",
+      "Pending": "Pending",
+      "En Proceso": "In Process",
+      "In Process": "In Process", 
+      "Completado": "Completed",
+      "Completed": "Completed", 
+      "Cancelado": "Cancelled",
+      "Cancelled": "Cancelled",
+      "Entregado": "Delivered",
+      "Delivered": "Delivered",
+      "En Tránsito": "In Transit",
+      "In Transit": "In Transit",
+      "Confirmado": "Confirmed",
+      "Confirmed": "Confirmed",
+      "Pagado": "Paid",
+      "Paid": "Paid",
+      "Preparando": "Preparing",
+      "Preparing": "Preparing"
+    }
+  }
+}
