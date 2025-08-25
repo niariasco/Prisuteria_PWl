@@ -15,6 +15,7 @@ export function FormEtiquetas({ etiqueta, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+     e.stopPropagation();
     if (!nombre.trim()) {
       toast.error('El nombre de la etiqueta es obligatorio');
       return;
@@ -22,14 +23,12 @@ export function FormEtiquetas({ etiqueta, onClose, onSuccess }) {
 
     try {
       if (etiqueta && etiqueta.etiquetaId) {
-        // 🔹 Update
         await EtiquetasService.update({
           etiquetaId: etiqueta.etiquetaId,
           nombrEtiquetas: nombre,
         });
         toast.success('Etiqueta actualizada correctamente');
       } else {
-        // 🔹 Create
         await EtiquetasService.create({ nombrEtiquetas: nombre });
         toast.success('Etiqueta creada correctamente');
       }
@@ -42,25 +41,34 @@ export function FormEtiquetas({ etiqueta, onClose, onSuccess }) {
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ p: 2 }}>
-      <TextField
-        label="Nombre de la Etiqueta"
-        value={nombre}
-        onChange={(e) => setNombre(e.target.value)}
-        fullWidth
-        required
-        sx={{ mb: 2 }}
-      />
-      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <Button type="submit" variant="contained" color="primary">
-          {etiqueta && etiqueta.etiquetaId ? 'Actualizar Etiqueta' : 'Crear Etiqueta'}
-        </Button>
-        <Button variant="outlined" color="secondary" onClick={onClose}>
-          Cancelar
-        </Button>
-      </Box>
+ <Box component="div" sx={{ p: 2 }} onClick={(e) => e.stopPropagation()}>
+    <TextField
+      label="Nombre de la Etiqueta"
+      value={nombre}
+      onChange={(e) => setNombre(e.target.value)}
+      fullWidth
+      required
+      sx={{ mb: 2 }}
+      onKeyDown={(e) => {
+        // Evita que Enter dispare un submit global
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          handleSubmit();
+        }
+      }}
+    />
+    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+      {/* 👇 botón explícito, no submit */}
+      <Button type="button" variant="contained" color="primary" onClick={handleSubmit}>
+        {etiqueta?.etiquetaId ? 'Actualizar Etiqueta' : 'Crear Etiqueta'}
+      </Button>
+      <Button variant="outlined" color="secondary" onClick={onClose}>
+        Cancelar
+      </Button>
     </Box>
-  );
+  </Box>
+);
 }
 
 // PropTypes

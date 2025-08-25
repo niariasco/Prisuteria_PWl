@@ -54,6 +54,7 @@ FormEtiquetas;
   const recargarEtiquetas = () => {
     EtiquetasService.getAllEtiquetas().then(res => setEtiquetas(res.data));
   };
+
   // Función para abrir modal para editar
   const handleEditarEtiqueta = (etiqueta) => {
     setEtiquetaSeleccionada(etiqueta);
@@ -252,7 +253,7 @@ FormEtiquetas;
         {t('FEdit_ProductoMant')}
       </Typography>
       {/* MENSAJE DE PRODUCTO ACTUALIZADO */}
-      {productoActualizadoId && !openEtiquetaModal && (
+      {productoActualizadoId &&  (
   <Box sx={{ mb: 3, p: 2, backgroundColor: '#c287d7ff', borderRadius: 2 }}>
     <Typography variant="h6" color="#d219a4ff">
        {t('FSuccess_ProductoMant')}
