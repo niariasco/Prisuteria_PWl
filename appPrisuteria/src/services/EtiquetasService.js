@@ -14,12 +14,22 @@ class EtiquetasService {
   }
 
   create(etiqueta) {
-    return axios.post(BASE_URL, etiqueta); // Axios envía JSON automáticamente
+    return axios.post(BASE_URL, etiqueta, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
 
+  // Actualizar producto (alias para compatibilidad)
   update(etiqueta) {
-    return axios.put(`${BASE_URL}/${etiqueta.etiquetaId}`, etiqueta);
+    return axios.put(BASE_URL, etiqueta, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
+
 
 }
 export default new EtiquetasService();

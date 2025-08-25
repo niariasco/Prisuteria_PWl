@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { TextField, Autocomplete, Button } from '@mui/material';
-import { toast } from 'react-hot-toast';
-import EtiquetasService from '../../../services/EtiquetasService';
+import { TextField, Autocomplete } from '@mui/material';
+//import { toast } from 'react-hot-toast';
+//import EtiquetasService from '../../../services/EtiquetasService';
 
-export function SelectEtiquetas({ field, data, setData }) {
+export function SelectEtiquetas({ field, data,  }) { //setData
   const [options, setOptions] = useState(data || []);
   const [inputValue, setInputValue] = useState('');
 
@@ -13,7 +13,34 @@ export function SelectEtiquetas({ field, data, setData }) {
     setOptions(data);
   }, [data]);
 
-  // Crear nueva etiqueta
+  
+
+  return (
+    <div>
+      <Autocomplete
+        multiple
+        options={options}
+        getOptionLabel={(option) => option.nombrEtiquetas}
+        value={options.filter(opt => (field.value || []).includes(opt.etiquetaId))}
+        onChange={(e, newValue) => field.onChange(newValue.map(v => v.etiquetaId))}
+        inputValue={inputValue}
+        onInputChange={(e, newInputValue) => setInputValue(newInputValue)}
+        renderInput={(params) => <TextField {...params} label="Etiquetas" />}
+        isOptionEqualToValue={(option, value) => option.etiquetaId === value.etiquetaId}
+      />
+      
+    </div>
+  );
+}
+
+SelectEtiquetas.propTypes = {
+  field: PropTypes.object.isRequired,
+  data: PropTypes.array.isRequired,
+  setData: PropTypes.func,
+};
+
+/*
+/ Crear nueva etiqueta
   const handleCreate = async () => {
     const nombre = inputValue.trim();
     if (!nombre) return;
@@ -44,35 +71,4 @@ export function SelectEtiquetas({ field, data, setData }) {
       toast.error('Error creando etiqueta');
     }
   };
-
-  return (
-    <div>
-      <Autocomplete
-        multiple
-        options={options}
-        getOptionLabel={(option) => option.nombrEtiquetas}
-        value={options.filter(opt => (field.value || []).includes(opt.etiquetaId))}
-        onChange={(e, newValue) => field.onChange(newValue.map(v => v.etiquetaId))}
-        inputValue={inputValue}
-        onInputChange={(e, newInputValue) => setInputValue(newInputValue)}
-        renderInput={(params) => <TextField {...params} label="Etiquetas" />}
-        isOptionEqualToValue={(option, value) => option.etiquetaId === value.etiquetaId}
-      />
-      <Button
-        variant="outlined"
-        size="small"
-        onClick={handleCreate}
-        sx={{ mt: 1 }}
-        disabled={!inputValue.trim()}
-      >
-        Crear etiqueta / Actualizar Etiqueta
-      </Button>
-    </div>
-  );
-}
-
-SelectEtiquetas.propTypes = {
-  field: PropTypes.object.isRequired,
-  data: PropTypes.array.isRequired,
-  setData: PropTypes.func,
-};
+*/

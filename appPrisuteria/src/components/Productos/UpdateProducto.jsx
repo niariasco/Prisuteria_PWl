@@ -35,6 +35,7 @@ export function UpdateProducto() {
   const [promedioValoracion, setPromedioValoracion] = useState(null);
   const [totalResenas, setTotalResenas] = useState(0);
   const [productoActualizadoId, setProductoActualizadoId] = useState(null);
+  //const [etiquetaGuardada, setEtiquetaGuardada] = useState(false);
   const { t } = useTranslation(); //traduccion 
   const [activo, setActivo] = useState(true);
 
@@ -251,21 +252,22 @@ FormEtiquetas;
         {t('FEdit_ProductoMant')}
       </Typography>
       {/* MENSAJE DE PRODUCTO ACTUALIZADO */}
-      {productoActualizadoId && (
-        <Box sx={{ mb: 3, p: 2, backgroundColor: '#c287d7ff', borderRadius: 2 }}>
-          <Typography variant="h6" color="#d219a4ff">
-             {t('FSuccess_ProductoMant')}
-          </Typography>
-          <Typography sx={{ mt: 1 }}>
-            <a
-              href={`/producto/${productoActualizadoId}`}
-              style={{ color: '#d219a4ff', textDecoration: 'underline' }}
-            >
-               {t('FVer_ProductoMant')}
-            </a>
-          </Typography>
-        </Box>
-      )}
+      {productoActualizadoId && !openEtiquetaModal && (
+  <Box sx={{ mb: 3, p: 2, backgroundColor: '#c287d7ff', borderRadius: 2 }}>
+    <Typography variant="h6" color="#d219a4ff">
+       {t('FSuccess_ProductoMant')}
+    </Typography>
+    <Typography sx={{ mt: 1 }}>
+      <a
+        href={`/producto/${productoActualizadoId}`}
+        style={{ color: '#d219a4ff', textDecoration: 'underline' }}
+      >
+         {t('FVer_ProductoMant')}
+      </a>
+    </Typography>
+  </Box>
+)}
+
       {/* Select inicial para escoger el producto */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6">  {t('FSeleccionar_ProductoMant')}</Typography>

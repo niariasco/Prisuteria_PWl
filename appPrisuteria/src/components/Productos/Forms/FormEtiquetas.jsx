@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TextField, Button, Box } from '@mui/material';
 import PropTypes from 'prop-types';
-import EtiquetaService from '../../../services/EtiquetasService';
+import EtiquetasService from '../../../services/EtiquetasService';
 import { toast } from 'react-hot-toast';
 
 export function FormEtiquetas({ etiqueta, onClose, onSuccess }) {
@@ -22,19 +22,19 @@ export function FormEtiquetas({ etiqueta, onClose, onSuccess }) {
 
     try {
       if (etiqueta && etiqueta.etiquetaId) {
-        // Update
-        await EtiquetaService.updateProducto({
+        // 🔹 Update
+        await EtiquetasService.update({
           etiquetaId: etiqueta.etiquetaId,
           nombrEtiquetas: nombre,
         });
         toast.success('Etiqueta actualizada correctamente');
       } else {
-        // Create
-        await EtiquetaService.createResena({ nombrEtiquetas: nombre });
+        // 🔹 Create
+        await EtiquetasService.create({ nombrEtiquetas: nombre });
         toast.success('Etiqueta creada correctamente');
       }
-      onSuccess(); // callback para recargar listado de etiquetas
-      onClose();   // cerrar formulario
+      onSuccess(); // refresca la lista
+      onClose();   // cierra modal o formulario
     } catch (error) {
       console.error('Error al guardar etiqueta:', error);
       toast.error('Error al guardar etiqueta');
