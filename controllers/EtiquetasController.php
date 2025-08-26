@@ -1,6 +1,5 @@
 <?php
-//localhost:81/apiproducto/producto
-//localhost:81/apiprisuteria/producto
+//localhost:81/prisuteriapwl/etiquetas
 class etiquetas
 {
     //GET listar

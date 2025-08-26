@@ -129,7 +129,7 @@ FormEtiquetas;
       })
       .catch(err => {
         console.error('Error al cargar producto:', err);
-        setError( t('FErrorCargar_ProductoMant'));
+        setError(t('FErrorCargar_ProductoMant'));
         setLoading(false);
       });
   }, [productoSeleccionado, etiquetas, reset]);

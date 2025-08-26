@@ -20,6 +20,9 @@ import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
 import AddIcon from '@mui/icons-material/Add';
 import { useTranslation } from 'react-i18next';
+import { Modal } from '@mui/material';
+import { FormEtiquetas } from './Forms/FormEtiquetas';
+import EtiquetasService from '../../services/EtiquetasService';
 
 export function CreateProducto({ productoId = null, onSuccess }) {
   const { control, handleSubmit, reset } = useForm();
@@ -76,6 +79,25 @@ export function CreateProducto({ productoId = null, onSuccess }) {
     }
   }, [productoId, reset]);
 
+    //etiquetas
+    const [openEtiquetaModal, setOpenEtiquetaModal] = useState(false);
+    const [etiquetaSeleccionada, setEtiquetaSeleccionada] = useState(null);
+    // Función para abrir modal para crear
+    const handleCrearEtiqueta = () => {
+      setEtiquetaSeleccionada(null);
+      setOpenEtiquetaModal(true);
+    };
+
+  //etiquetas
+    const handleEditarEtiqueta = (etiqueta) => {
+    setEtiquetaSeleccionada(etiqueta);
+    setOpenEtiquetaModal(true);
+  };
+   // Callback cuando se crea o actualiza la etiqueta
+    const recargarEtiquetas = () => {
+      EtiquetasService.getAllEtiquetas().then(res => setEtiquetas(res.data));
+    };
+
   // Imagen principal
   const handleChangeImage = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -84,6 +106,7 @@ export function CreateProducto({ productoId = null, onSuccess }) {
       setFileURL(URL.createObjectURL(selectedFile));
     }
   };
+
 
   // Imagenes dinámicas
   const handleAddImage = (e, index) => {
@@ -350,14 +373,64 @@ export function CreateProducto({ productoId = null, onSuccess }) {
             />
           </Grid>
 
-          <Grid item xs={12}>
-            <Controller
-              name="etiquetas"
-              control={control}
-              defaultValue={[]}
-              render={({ field }) => <SelectEtiquetas field={field} data={etiquetas} />}
-            />
-          </Grid>
+                <Grid item xs={12}>
+              <Controller
+                name="etiquetas"
+                control={control}
+                defaultValue={[]}
+                render={({ field }) => (
+                  <SelectEtiquetas field={field} data={etiquetas} />
+                )}
+              />
+            </Grid>
+      <Box sx={{ mb: 2 }}>
+        <Button variant="contained" color="primary" onClick={handleCrearEtiqueta}>
+          Crear Etiqueta
+        </Button>
+      </Box>
+      
+
+      {/* LISTADO DE ETIQUETAS CON BOTÓN EDITAR */}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+        {etiquetas.map((etq) => (
+          <Button
+            key={etq.etiquetaId}
+            variant="outlined"
+            onClick={() => handleEditarEtiqueta(etq)}
+          >
+            {etq.nombrEtiquetas}
+          </Button>
+        ))}
+      </Box>
+
+      {/* MODAL FORMULARIO DE ETIQUETA */}
+      <Modal
+        open={openEtiquetaModal}
+        onClose={() => setOpenEtiquetaModal(false)}
+        aria-labelledby="modal-etiqueta"
+        aria-describedby="formulario-crear-editar-etiqueta"
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 2,
+            width: 400
+          }}
+        >
+          <FormEtiquetas
+            etiqueta={etiquetaSeleccionada}
+            onClose={() => setOpenEtiquetaModal(false)}
+            onSuccess={recargarEtiquetas}
+          />
+        </Box>
+      </Modal>
+
 
           {/* Imagen principal */}
           <Grid item xs={12}>
