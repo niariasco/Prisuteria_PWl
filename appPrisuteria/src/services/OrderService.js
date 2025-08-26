@@ -16,18 +16,53 @@ class OrderService {
    // Crear nueva orden
 async crearOrden(datosOrden) {
   try {
+    console.log('Enviando datos al backend:', datosOrden);
+    
     const response = await axios.post(`${BASE_URL}`, datosOrden, {
       headers: { 'Content-Type': 'application/json' }
     });
 
-    // Retorna el ID de la orden creado
-    const ordenId = response.data?.orden_id || response.data?.id;
-    if (!ordenId) throw new Error('No se recibió ID de orden del backend.');
+    console.log('Respuesta del backend:', response.data);
 
+    // Extraer el ID de la orden de la respuesta del backend
+    // El backend devuelve: {success: true, message: "...", data: {orden_id: X, ordenesId: X, id: X}}
+    const responseData = response.data;
+    
+    if (!responseData.success) {
+      throw new Error(responseData.message || 'Error al crear la orden en el backend');
+    }
+
+    // Intentar obtener el ID de diferentes formas que el backend podría devolverlo
+    const ordenId = responseData.data?.orden_id || 
+                    responseData.data?.ordenesId || 
+                    responseData.data?.id || 
+                    responseData.orden_id || 
+                    responseData.ordenesId || 
+                    responseData.id;
+
+    if (!ordenId) {
+      console.error('Estructura de respuesta inesperada:', responseData);
+      throw new Error('No se recibió ID de orden del backend. Estructura de respuesta: ' + JSON.stringify(responseData));
+    }
+
+    // Devolver el ID de la orden
     return ordenId;
   } catch (error) {
     console.error('Error al crear la orden:', error);
-    throw error;
+    if (error.response) {
+      console.error('Respuesta del servidor:', error.response.data);
+      console.error('Estado HTTP:', error.response.status);
+      console.error('Headers:', error.response.headers);
+      
+      // Proporcionar un mensaje de error más detallado
+      const serverMessage = error.response.data?.message || error.response.data?.error || 'Error del servidor';
+      throw new Error(`Error del servidor (${error.response.status}): ${serverMessage}`);
+    } else if (error.request) {
+      console.error('No se recibió respuesta del servidor:', error.request);
+      throw new Error('No se pudo conectar con el servidor. Verifique su conexión de red.');
+    } else {
+      throw error;
+    }
   }
 }
 

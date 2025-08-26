@@ -164,8 +164,8 @@ public function create($data) {
             }
         }
 
-        // Retornar la orden completa usando get($id)
-        return $this->get($orden_id);
+        // Retornar solo el ID de la orden (no el objeto completo)
+        return $orden_id;
 
     } catch (Exception $e) {
         handleException($e);

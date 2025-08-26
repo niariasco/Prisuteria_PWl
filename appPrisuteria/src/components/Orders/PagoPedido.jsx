@@ -118,20 +118,20 @@ const PagoPedido = () => {
 
   // Formatear número de tarjeta
   const formatCardNumber = (value) => {
+    // Remover espacios y caracteres no numéricos
     const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = matches && matches[0] || '';
+    
+    // Limitar a máximo 16 dígitos
+    const limitedValue = v.substring(0, 16);
+    
+    // Dividir en grupos de 4 dígitos
     const parts = [];
-
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
+    for (let i = 0; i < limitedValue.length; i += 4) {
+      parts.push(limitedValue.substring(i, i + 4));
     }
-
-    if (parts.length) {
-      return parts.join(' ');
-    } else {
-      return v;
-    }
+    
+    // Unir con espacios
+    return parts.join(' ');
   };
 
   // Detectar tipo de tarjeta
@@ -216,59 +216,18 @@ const PagoPedido = () => {
     return pedidoData.moneda === 'USD' ? '$' : '₡';
   };
 
-  // Validación de tarjeta
-  const validarTarjeta = () => {
-    const { numeroTarjeta, fechaExpiracion, cvv, nombreTitular } = formData;
-    const cleanCardNumber = numeroTarjeta.replace(/\s/g, '');
-
-    if (!/^\d{16}$/.test(cleanCardNumber)) {
-      return t('payment.validation.card_16_digits');
-    }
-    if (!validarLuhn(cleanCardNumber)) {
-      return t('payment.validation.invalid_card');
-    }
-
-    if (!/^\d{2}\/\d{2}$/.test(fechaExpiracion)) {
-      return t('payment.validation.select_expiry');
-    }
-    const [mes, año] = fechaExpiracion.split("/").map((v) => parseInt(v, 10));
-    if (mes < 1 || mes > 12) {
-      return t('payment.validation.invalid_month');
-    }
-    const fechaActual = new Date();
-    const añoActual = parseInt(fechaActual.getFullYear().toString().slice(-2));
-    const mesActual = fechaActual.getMonth() + 1;
-    if (año < añoActual || (año === añoActual && mes < mesActual)) {
-      return t('payment.validation.card_expired');
-    }
-
-    if (!/^\d{3,4}$/.test(cvv)) {
-      return t('payment.validation.invalid_cvv');
-    }
-
-    if (!nombreTitular.trim()) {
-      return t('payment.validation.cardholder_required');
-    }
-
-    return null;
-  };
-
-  // Validación de efectivo
-  const validarEfectivo = () => {
-    const monto = parseFloat(formData.montoEfectivo);
-    if (isNaN(monto) || monto <= 0) {
-      return t('payment.validation.positive_amount');
-    }
-    if (monto < totalCompra) {
-      return t('payment.validation.insufficient_amount');
-    }
-    return null;
-  };
 
   // Manejar cambios en el formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Formatear número de tarjeta
+    if (name === "numeroTarjeta") {
+      const formattedValue = formatCardNumber(value);
+      setFormData(prev => ({ ...prev, [name]: formattedValue }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
 
     // Actualizar cambio si es efectivo
     if (name === "montoEfectivo") {
@@ -331,37 +290,79 @@ const PagoPedido = () => {
       if (!pedidoData?.productos?.length) throw new Error(t('payment.errors.no_products'));
 
       const datosOrden = prepararDatosOrden();
-      console.log("Datos finales a enviar:", datosOrden);
+      console.log("Datos finales a enviar al backend:", datosOrden);
 
-      const response = await OrderService.crearOrden(datosOrden);
-      console.log("Orden creada:", response);
+      // Crear la orden en el backend
+      const ordenId = await OrderService.crearOrden(datosOrden);
+      console.log("Orden creada exitosamente con ID:", ordenId);
 
-      setOrdenCreada(response);
-      setShowFacturaDialog(true);
+      // Obtener los detalles completos de la orden recién creada
+      try {
+        const ordenCompleta = await OrderService.getById(ordenId);
+        console.log("Detalles completos de la orden:", ordenCompleta.data);
+        
+        setOrdenCreada(ordenCompleta.data);
+        setShowFacturaDialog(true);
 
-      // Reiniciar formulario
-      setFormData(initialFormData);
+        // Reiniciar formulario
+        setFormData(initialFormData);
 
-      // Actualizar cambio en tiempo real
-      const total = parseFloat(response.pedido.total || 0);
-      const pago = parseFloat(formData.montoEfectivo || 0);
-      setCambio(pago >= total ? pago - total : 0);
+        // Actualizar cambio en tiempo real
+        const total = parseFloat(ordenCompleta.data.pedido?.total || pedidoData.total || 0);
+        const pago = parseFloat(formData.montoEfectivo || 0);
+        setCambio(pago >= total ? pago - total : 0);
+
+        // Limpiar datos temporales del pedido
+        localStorage.removeItem('pedidoEnProceso');
+
+      } catch (error) {
+        console.error("Error al obtener detalles de la orden:", error);
+        // Aún así mostrar el diálogo de éxito con la información básica
+        setOrdenCreada({
+          id: ordenId,
+          pedido: {
+            total: pedidoData.total,
+            subtotalSinImpuestos: pedidoData.subtotalSinImpuestos,
+            ivaTotal: pedidoData.ivaTotal,
+            metodo_pago: datosOrden.metodo_pago,
+            direccion_envio: datosOrden.direccion_envio
+          },
+          productos: pedidoData.productos
+        });
+        setShowFacturaDialog(true);
+        setFormData(initialFormData);
+      }
 
     } catch (error) {
       console.error("Error al procesar el pago:", error);
-      alert(error.response?.data?.message || error.message || t('payment.errors.processing_payment'));
+      
+      // Mostrar mensaje de error detallado
+      let errorMessage = t('payment.errors.processing_payment');
+      
+      if (error.message.includes('Error del servidor')) {
+        errorMessage = error.message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Mostrar alerta con el error
+      setMensaje(errorMessage);
+      setAlertType("error");
+      setOpenSnackbar(true);
+      
+      // También mostrar en consola para debugging
+      console.error("Detalles del error:", {
+        message: error.message,
+        response: error.response,
+        request: error.request
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Actualizar cambio en tiempo real
-  const handleMontoEfectivoChange = (e) => {
-    const valor = parseFloat(e.target.value) || 0;
-    setFormData(prev => ({ ...prev, montoEfectivo: valor }));
-    const total = pedidoData.totalConImpuestos || pedidoData.total || 0;
-    setCambio(valor >= total ? valor - total : 0);
-  };
 
   // Ver detalle de la orden (desde el modal)
   const verDetalleOrden = () => {
@@ -553,7 +554,7 @@ const PagoPedido = () => {
                       value={formData.numeroTarjeta}
                       onChange={handleChange}
                       margin="normal"
-                      placeholder={t('payment.card_form.card_placeholder')}
+                      placeholder="1234 5678 9012 3456"
                       disabled={loading}
                       InputProps={{
                         endAdornment: getCardType(formData.numeroTarjeta) && (
