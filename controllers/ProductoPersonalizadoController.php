@@ -92,5 +92,38 @@ class ProductoP
         }
     }
 
-    
+        public function updatePrecio($objeto) {
+               try {
+            $request = new Request();
+            $response = new Response();
+            //Obtener json enviado
+            $inputJSON = $request->getJSON();
+            //Instancia del modelo
+            $objeto = new ProductoPersonalizadoModel();
+            //Acción del modelo a ejecutar
+            $result = $objeto->updatePrecio($inputJSON);
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+
+public function getlistado($id) {
+     try {
+            $response = new Response();
+            $model = new ProductoPersonalizadoModel();
+            $producto = $model->getlistado($id);
+
+            if (!$producto) {
+                throw new Exception("Producto personalizado no encontrado");
+            }
+
+            $response->toJSON($producto);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+}
+
 }
