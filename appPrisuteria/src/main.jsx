@@ -38,6 +38,7 @@ import { UpdatePromocion } from "./components/Promociones/UpdatePromocion";
 import { ListaCarrito } from "./components/Carrito/ListaCarrito";
 import { RegistrarPedido } from "./components/Orders/RegistrarPedido";
 import PagoPedido from "./components/Orders/PagoPedido";
+import { PPUpdate } from "./components/Productos/PPUpdate";
 
 const rutas = createBrowserRouter([
   {
@@ -65,6 +66,7 @@ const rutas = createBrowserRouter([
       // Rutas de admin sin Auth (acceso libre )
       { path: '/productos/crear', element: <CreateProducto /> },
       { path: '/productos/actualizar', element: <UpdateProducto /> },
+      { path: '/productos/criterios', element: <PPUpdate /> },
       { path: '/promociones/crear', element: <CreatePromocion /> },
      { path: '/promociones/actualizar', element: <UpdatePromocion /> },
       { path: '/admin/resenas', element: <ListaResenas /> },

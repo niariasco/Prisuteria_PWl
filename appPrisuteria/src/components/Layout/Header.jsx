@@ -317,7 +317,7 @@ function Header() {
                       <MenuItem component={Link} to="/productos/actualizar" onClick={handleSubmenuClose}>
                         {t('header.actions.update', 'Actualizar')}
                       </MenuItem>
-                      <MenuItem component={Link} to="/productos/eliminar" onClick={handleSubmenuClose}>
+                      <MenuItem component={Link} to="/productos/criterios" onClick={handleSubmenuClose}>
                         {t('header.actions.delete', 'Actualizar Costo Producto Personalizado')}
                       </MenuItem>
                     </Menu>

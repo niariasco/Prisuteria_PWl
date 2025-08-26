@@ -125,5 +125,15 @@ public function getlistado($id) {
             handleException($e);
         }
 }
-
+ public function getlistados()
+    {
+        try {
+            $response = new Response();
+            $model = new ProductoPersonalizadoModel();
+            $result = $model->getlistados();
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 }

@@ -163,7 +163,8 @@ public function getAll()
         return true;
     }
 
-    public function updatePrecio($objeto) {
+
+public function updatePrecio($objeto) {
     try {
         $sql = "UPDATE opciones 
                 SET precio_adicional = $objeto->precio_adicional 
@@ -174,6 +175,8 @@ public function getAll()
         handleException($e);
     }
 }
+
+
 public function getlistado($id) {
     try {
         $sql = "SELECT id, criterio_id, nombre, precio_adicional 
@@ -184,5 +187,13 @@ public function getlistado($id) {
         handleException($e);
     }
 }
-
+public function getlistados() {
+    try {
+        $sql = "SELECT id, criterio_id, nombre, precio_adicional 
+                FROM opciones ";
+        return $this->enlace->executeSQL($sql);
+    } catch (Exception $e) {
+        handleException($e);
+    }
+}
 }
