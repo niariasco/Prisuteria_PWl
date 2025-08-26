@@ -26,7 +26,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Snackbar
 } from '@mui/material';
 import {
   Receipt,
@@ -81,6 +82,13 @@ export function RegistrarPedido() {
   // Estados para cantidades locales (para actualizaciones en tiempo real)
   const [cantidadesLocales, setCantidadesLocales] = useState({});
 
+  // Estados para notificaciones
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+
   // Constantes de moneda y conversión
   const getCurrency = () => {
     return i18n.language === 'es' ? 'CRC' : 'USD';
@@ -121,6 +129,23 @@ export function RegistrarPedido() {
     return cartItem ? cartItem.quantity || 1 : 1;
   };
 
+  // Función para mostrar notificaciones
+  const showNotification = (message, severity = 'success') => {
+    setSnackbar({
+      open: true,
+      message,
+      severity
+    });
+  };
+
+  // Función para cerrar notificaciones
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
   // Función para actualizar cantidad local y del carrito
   const actualizarCantidad = (itemId, nuevaCantidad) => {
     // Validar que sea número positivo
@@ -131,16 +156,32 @@ export function RegistrarPedido() {
       [itemId]: cantidad
     }));
 
-    // Si la cantidad es 0, eliminar del carrito
+    // Si la cantidad es 0, eliminar del carrito y notificar
     if (cantidad === 0) {
       const item = cart.find(item => item.id === itemId);
       if (item) {
         removeItem(item);
+        showNotification(
+          t('registrar_pedido.notifications.product_removed', 
+            `Producto "${getProductName(item)}" eliminado del pedido`
+          ),
+          'warning'
+        );
       }
     } else {
       // Actualizar en el carrito
       if (updateQuantity) {
         updateQuantity(itemId, cantidad);
+        // Notificar cambio de cantidad si es diferente al valor anterior
+        const cartItem = cart.find(item => item.id === itemId);
+        if (cartItem && cartItem.quantity !== cantidad) {
+          showNotification(
+            t('registrar_pedido.notifications.quantity_updated',
+              `Cantidad actualizada para "${getProductName(cartItem)}": ${cantidad}`
+            ),
+            'info'
+          );
+        }
       }
     }
   };
@@ -821,12 +862,19 @@ export function RegistrarPedido() {
                             </Box>
                             <IconButton 
                               onClick={() => {
+                                const productName = getProductName(item);
                                 removeItem(item);
                                 setCantidadesLocales(prev => {
                                   const newState = {...prev};
                                   delete newState[item.id];
                                   return newState;
                                 });
+                                showNotification(
+                                  t('registrar_pedido.notifications.product_removed', 
+                                    `Producto "${productName}" eliminado del pedido`
+                                  ),
+                                  'warning'
+                                );
                               }}
                               sx={{ color: '#F06292' }}
                             >
@@ -1134,6 +1182,23 @@ export function RegistrarPedido() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar para notificaciones */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
       
     </Box>
   );

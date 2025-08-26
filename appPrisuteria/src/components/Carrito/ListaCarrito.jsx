@@ -12,7 +12,9 @@ import {
   Paper,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import { 
   Add, 
@@ -21,7 +23,8 @@ import {
   LocalShipping, 
   Security, 
   Refresh,
-  ExpandMore
+  ExpandMore,
+  CheckCircle
 } from '@mui/icons-material';
 import { useCart } from '../../hooks/useCart';
 import { Link } from 'react-router-dom';
@@ -35,6 +38,13 @@ export function ListaCarrito() {
 
   // Estado para manejar las cantidades localmente
   const [quantities, setQuantities] = useState({});
+  
+  // Estado para manejar la alerta de eliminación
+  const [alertInfo, setAlertInfo] = useState({
+    show: false,
+    productName: '',
+    type: 'manual' // 'manual' o 'quantity'
+  });
 
   // FUNCIONES DE CONVERSIÓN DE MONEDA
   const getCurrency = () => {
@@ -89,7 +99,7 @@ export function ListaCarrito() {
     addItem(item);
   };
 
-  // Función para manejar el decremento de cantidad
+  // Función para manejar el decremento de cantidad - MODIFICADA
   const handleDecreaseQuantity = (item) => {
     const currentQty = getQuantity(item.id);
     
@@ -104,6 +114,55 @@ export function ListaCarrito() {
       if (updateQuantity) {
         updateQuantity(item.id, newQuantity);
       }
+    } else {
+      // Si la cantidad es 1 y se decrementa, eliminar el producto
+      handleRemoveItem(item, 'quantity');
+    }
+  };
+
+  // Función modificada para manejar la eliminación de productos con alerta
+  const handleRemoveItem = (item, removalType = 'manual') => {
+    const productName = getProductName(item);
+    
+    // Mostrar alerta
+    setAlertInfo({
+      show: true,
+      productName: productName,
+      type: removalType
+    });
+    
+    // Limpiar la cantidad local
+    setQuantidades(prev => {
+      const newQuantities = { ...prev };
+      delete newQuantities[item.id];
+      return newQuantities;
+    });
+    
+    // Eliminar del carrito
+    removeItem(item);
+  };
+
+  // Función para cerrar la alerta
+  const handleCloseAlert = () => {
+    setAlertInfo({
+      show: false,
+      productName: '',
+      type: 'manual'
+    });
+  };
+
+  // Función para obtener el mensaje de la alerta
+  const getAlertMessage = () => {
+    if (alertInfo.type === 'quantity') {
+      return t('cart.alerts.product_removed_quantity', 
+        'Se eliminó "{{productName}}" del carrito al reducir la cantidad a cero', 
+        { productName: alertInfo.productName }
+      );
+    } else {
+      return t('cart.alerts.product_removed_manual', 
+        'Se eliminó "{{productName}}" del carrito', 
+        { productName: alertInfo.productName }
+      );
     }
   };
 
@@ -384,6 +443,30 @@ export function ListaCarrito() {
 
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3 }}>
+      {/* Snackbar para mostrar alerta de eliminación */}
+      <Snackbar
+        open={alertInfo.show}
+        autoHideDuration={4000}
+        onClose={handleCloseAlert}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseAlert} 
+          severity="info" 
+          sx={{ 
+            width: '100%',
+            backgroundColor: '#E3F2FD',
+            color: '#1565C0',
+            '& .MuiAlert-icon': {
+              color: '#1565C0'
+            }
+          }}
+          icon={<CheckCircle />}
+        >
+          {getAlertMessage()}
+        </Alert>
+      </Snackbar>
+
       <Grid container spacing={4}>
         {/* Lista de productos - Lado izquierdo */}
         <Grid item xs={12} md={7}>
@@ -499,16 +582,11 @@ export function ListaCarrito() {
                           <IconButton 
                             size="small"
                             onClick={() => handleDecreaseQuantity(item)}
-                            disabled={cantidad <= 1}
                             sx={{ 
                               backgroundColor: '#F8BBD0',
                               color: '#fff',
                               '&:hover': {
                                 backgroundColor: '#F06292',
-                              },
-                              '&:disabled': {
-                                backgroundColor: '#e0e0e0',
-                                color: '#9e9e9e'
                               },
                               width: 32,
                               height: 32
@@ -546,7 +624,7 @@ export function ListaCarrito() {
 
                         <Button 
                           startIcon={<Delete />}
-                          onClick={() => removeItem(item)}
+                          onClick={() => handleRemoveItem(item, 'manual')}
                           sx={{ 
                             mt: 2, 
                             color: '#F06292',
