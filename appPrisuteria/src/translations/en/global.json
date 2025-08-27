@@ -207,11 +207,15 @@
   "Activo" : "Active" ,
   "Inactivo" : "Inactive" ,
      "Todas" : "All" ,
-
 "FiltrarC" : "Filter by category" ,
 "FiltrarE" : "Filter by tag" ,
-
-
+"Criterios y Precios" : "Criteria and Prices",
+"Edit_1" : "Edit",
+"criterio" : "Criteria",
+"save" : "Save",
+"cancel" : "Cancel",
+"adPrice" : "Additional Price",
+"Precio actualizado correctamente" : "Precio actualizado correctamente",
     "select_type_first": "Select type first",
     "steps": {
       "select": "1. Select Promotion",

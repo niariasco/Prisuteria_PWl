@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { TextField, Button, Box, Typography } from "@mui/material";
 import ProductosPService from "../../services/ProductosPService";
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 export function PPUpdate() {
   const [opciones, setOpciones] = useState([]);
   const [editando, setEditando] = useState(null);
   const [nuevoPrecio, setNuevoPrecio] = useState("");
+  const { t } = useTranslation();
 
 
   const cargarOpciones = async () => {
@@ -33,7 +35,7 @@ const handleGuardar = async (opcion) => {
       id: opcion.id,
       precio_adicional: parseFloat(nuevoPrecio),
     });
-    toast.success("Precio actualizado correctamente");
+    toast.success(t('Precio actualizado correctamente'));
     cargarOpciones(); // refrescar lista
     setEditando(null); 
   } catch (error) {
@@ -47,7 +49,7 @@ const handleGuardar = async (opcion) => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom>
-        Criterios y Precios
+        {t('Criterios y Precios')}
       </Typography>
 
       {opciones.map((opciones) => (
@@ -64,14 +66,16 @@ const handleGuardar = async (opcion) => {
           }}
         >
           <Typography sx={{ flex: 1 }}>
-            {opciones.nombre} (criterio: {opciones.criterio_id})
+            {opciones.nombre} 
+             
+            ({t('criterio')}: {opciones.criterio_id})
           </Typography>
 
           {editando === opciones.id ? (
             <>
               <TextField
                 type="number"
-                label="Precio adicional"
+                label={t('adPrice')}
                 size="small"
                 value={nuevoPrecio}
                 onChange={(e) => setNuevoPrecio(e.target.value)}
@@ -82,7 +86,7 @@ const handleGuardar = async (opcion) => {
   color="success"
   onClick={() => handleGuardar(opciones)}
 >
-  Guardar
+          {t('save')}
 </Button>
 
               <Button
@@ -90,7 +94,7 @@ const handleGuardar = async (opcion) => {
                 color="error"
                 onClick={() => setEditando(null)}
               >
-                Cancelar
+              {t('cancel')}
               </Button>
             </>
           ) : (
@@ -103,7 +107,7 @@ const handleGuardar = async (opcion) => {
                 size="small"
                 onClick={() => handleEditar(opciones)}
               >
-                Editar
+                {t('Edit_1')}
               </Button>
             </>
           )}
