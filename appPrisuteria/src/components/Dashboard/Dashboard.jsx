@@ -21,6 +21,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import { useTranslation } from 'react-i18next';
 
 const COLORS = ["#d219a4ff", "#c287d7ff", "rgba(97, 0, 29, 1)", "#b30fefff", "#b40fa6ff"];
 
@@ -30,6 +31,7 @@ export function Dashboard() {
   const [pedidosEstado, setPedidosEstado] = useState([]);
   const [topProductos, setTopProductos] = useState([]);
   const [ultimasResenas, setUltimasResenas] = useState([]);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,7 +77,7 @@ export function Dashboard() {
       {/* Ventas por Día */}
       <Grid item xs={12} md={6}>
         <Card>
-          <CardHeader title={<Typography variant="h6">Ventas por Día</Typography>} />
+          <CardHeader title={<Typography variant="h6">{t('VxD')}</Typography>} />
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={ventasDia}>
@@ -94,7 +96,7 @@ export function Dashboard() {
       {/* Ventas por Mes */}
       <Grid item xs={12} md={6}>
         <Card>
-          <CardHeader title={<Typography variant="h6">Ventas por Mes</Typography>} />
+          <CardHeader title={<Typography variant="h6">{t('VxM')}</Typography>} />
           <CardContent>
             <ResponsiveContainer width="90%" height={500}>
               <BarChart data={ventasMes}>
@@ -113,7 +115,7 @@ export function Dashboard() {
       {/* Pedidos por Estado */}
       <Grid item xs={12} md={6}>
         <Card>
-          <CardHeader title={<Typography variant="h6">Pedidos por Estado</Typography>} />
+          <CardHeader title={<Typography variant="h6">{t('PxE')}</Typography>} />
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
@@ -141,7 +143,7 @@ export function Dashboard() {
       {/* Top 3 Productos */}
       <Grid item xs={12} md={6}>
         <Card>
-          <CardHeader title={<Typography variant="h6">Top 3 Productos</Typography>} />
+          <CardHeader title={<Typography variant="h6">{t('T3')}</Typography>} />
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart layout="vertical" data={topProductos}>
@@ -160,13 +162,14 @@ export function Dashboard() {
     {/* Últimas 3 Reseñas */}
 <Grid item xs={12}>
   <Card>
-    <CardHeader title={<Typography variant="h6">Últimas 3 Reseñas</Typography>} />
+    <CardHeader title={<Typography variant="h6">{t('LR')}</Typography>} />
     <CardContent>
       <List>
         {ultimasResenas.map((resena, index) => (
           <ListItem key={index} divider>
             <ListItemText
-              primary={`Usuario ${resena.usuarioNombre} - ${new Date(resena.fecha).toLocaleDateString()}`}
+          
+              primary={`${t('FUser_Review')}: ${resena.usuarioNombre} - ${new Date(resena.fecha).toLocaleDateString()}`}
               secondary={resena.comentario.length > 100 
                 ? resena.comentario.substring(0, 100) + "..." 
                 : resena.comentario
