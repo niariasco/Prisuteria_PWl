@@ -39,6 +39,7 @@ import { ListaCarrito } from "./components/Carrito/ListaCarrito";
 import { RegistrarPedido } from "./components/Orders/RegistrarPedido";
 import PagoPedido from "./components/Orders/PagoPedido";
 import { PPUpdate } from "./components/Productos/PPUpdate";
+import { Dashboard } from "./components/Dashboard/Dashboard";
 
 const rutas = createBrowserRouter([
   {
@@ -64,6 +65,7 @@ const rutas = createBrowserRouter([
       */
 
       // Rutas de admin sin Auth (acceso libre )
+      { path: '/dashboard', element: <Dashboard /> },
       { path: '/productos/crear', element: <CreateProducto /> },
       { path: '/productos/actualizar', element: <UpdateProducto /> },
       { path: '/productos/criterios', element: <PPUpdate /> },

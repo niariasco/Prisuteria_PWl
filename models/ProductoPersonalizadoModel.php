@@ -166,15 +166,21 @@ public function getAll()
 
 public function updatePrecio($objeto) {
     try {
+        $precio = (float) $objeto->precio_adicional;
+        $id = (int) $objeto->id;
+
         $sql = "UPDATE opciones 
-                SET precio_adicional = $objeto->precio_adicional 
-                WHERE id = $objeto->id";
+                SET precio_adicional = $precio 
+                WHERE id = $id";
+
         $this->enlace->executeSQL_DML($sql);
-        return $this->get($objeto->id);
+
+        return $this->getlistado($id);
     } catch (Exception $e) {
         handleException($e);
     }
 }
+
 
 
 public function getlistado($id) {
