@@ -91,23 +91,21 @@ class ProductoP
             handleException($e);
         }
     }
+public function updatePrecio() {
+    try {
+        $request = new Request();
+        $response = new Response();
+        $inputJSON = $request->getJSON();
 
-        public function updatePrecio($objeto) {
-               try {
-            $request = new Request();
-            $response = new Response();
-            //Obtener json enviado
-            $inputJSON = $request->getJSON();
-            //Instancia del modelo
-            $objeto = new ProductoPersonalizadoModel();
-            //Acción del modelo a ejecutar
-            $result = $objeto->updatePrecio($inputJSON);
-            //Dar respuesta
-            $response->toJSON($result);
-        } catch (Exception $e) {
-            handleException($e);
-        }
+        $model = new ProductoPersonalizadoModel();
+        $result = $model->updatePrecio($inputJSON);
+
+        $response->toJSON($result);
+    } catch (Exception $e) {
+        handleException($e);
     }
+}
+
 
 
 public function getlistado($id) {
