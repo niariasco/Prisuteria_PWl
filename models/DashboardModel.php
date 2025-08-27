@@ -90,10 +90,11 @@ class DashboardModel
     {
         try {
             $vSQL = "
-              SELECT r.usuario_id, r.comentario, r.fecha
-                FROM resenas r
-                ORDER BY r.fecha DESC
-                LIMIT 3
+               SELECT r.usuario_id, u.nombre_usuario AS usuarioNombre, r.comentario, r.fecha
+FROM resenas r
+INNER JOIN usuarios u ON r.usuario_id = u.usuarioId
+ORDER BY r.fecha DESC
+LIMIT 3
             ";
             return $this->enlace->ExecuteSQL($vSQL);
         } catch (Exception $e) {

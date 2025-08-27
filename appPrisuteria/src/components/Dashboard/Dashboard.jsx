@@ -1,3 +1,5 @@
+import DashboardService from "../../services/DashboardService";
+import { List, ListItem, ListItemText } from "@mui/material";
 import { useEffect, useState } from "react";
 import {
   Card,
@@ -6,7 +8,21 @@ import {
   Typography,
   Grid,
 } from "@mui/material";
-import DashboardService from "../../services/DashboardService";
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
+
+const COLORS = ["#d219a4ff", "#c287d7ff", "rgba(97, 0, 29, 1)", "#b30fefff", "#b40fa6ff"];
 
 export function Dashboard() {
   const [ventasDia, setVentasDia] = useState([]);
@@ -16,110 +32,152 @@ export function Dashboard() {
   const [ultimasResenas, setUltimasResenas] = useState([]);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [vd, vm, pe, tp, ur] = await Promise.all([
+          DashboardService.getVentasPorDia(),
+          DashboardService.getVentasPorMes(),
+          DashboardService.getPedidosPorEstado(),
+          DashboardService.getTopProductos(),
+          DashboardService.getUltimasResenas(),
+        ]);
+
+        setVentasDia(vd.data);
+        setVentasMes(vm.data);
+
+        // Pedidos por Estado: convertir total a número
+        const pedidosData = pe.data.map(item => ({
+          ...item,
+          total: Number(item.total),
+        }));
+        setPedidosEstado(pedidosData);
+
+        setTopProductos(tp.data);
+
+        // Últimas Reseñas: agregar label y longitud
+        const resenasData = ur.data.map((item, index) => ({
+          ...item,
+          label: `Reseña ${index + 1}`,
+          comentarioLength: item.comentario.length,
+        }));
+        setUltimasResenas(resenasData);
+
+      } catch (error) {
+        console.error("Error cargando dashboard:", error);
+      }
+    };
+
     fetchData();
   }, []);
 
-  const fetchData = async () => {
-    try {
-      const [vd, vm, pe, tp, ur] = await Promise.all([
-        DashboardService.getVentasPorDia(),
-        DashboardService.getVentasPorMes(),
-        DashboardService.getPedidosPorEstado(),
-        DashboardService.getTopProductos(),
-        DashboardService.getUltimasResenas(),
-      ]);
-
-      setVentasDia(vd.data);
-      setVentasMes(vm.data);
-      setPedidosEstado(pe.data);
-      setTopProductos(tp.data);
-      setUltimasResenas(ur.data);
-    } catch (error) {
-      console.error("Error cargando dashboard:", error);
-    }
-  };
-
   return (
     <Grid container spacing={3} sx={{ p: 3 }}>
-      {/* Ventas por día */}
+      {/* Ventas por Día */}
       <Grid item xs={12} md={6}>
         <Card>
-          <CardHeader
-            title={<Typography variant="h6">Ventas por Día</Typography>}
-          />
+          <CardHeader title={<Typography variant="h6">Ventas por Día</Typography>} />
           <CardContent>
-            {ventasDia.map((v) => (
-              <Typography key={v.dia}>
-                {v.dia}: {v.totalVentas} ventas
-              </Typography>
-            ))}
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={ventasDia}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="dia" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="totalVentas" fill="#b40fa6ff" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </Grid>
 
-      {/* Ventas por mes */}
+      {/* Ventas por Mes */}
       <Grid item xs={12} md={6}>
         <Card>
-          <CardHeader
-            title={<Typography variant="h6">Ventas por Mes</Typography>}
-          />
+          <CardHeader title={<Typography variant="h6">Ventas por Mes</Typography>} />
           <CardContent>
-            {ventasMes.map((v) => (
-              <Typography key={v.mes}>
-                {v.mes}: {v.totalVentas} ventas
-              </Typography>
-            ))}
+            <ResponsiveContainer width="90%" height={500}>
+              <BarChart data={ventasMes}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="mes" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="totalVentas" fill="#c287d7ff" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </Grid>
 
-      {/* Pedidos por estado */}
+      {/* Pedidos por Estado */}
       <Grid item xs={12} md={6}>
         <Card>
-          <CardHeader
-            title={<Typography variant="h6">Pedidos por Estado</Typography>}
-          />
+          <CardHeader title={<Typography variant="h6">Pedidos por Estado</Typography>} />
           <CardContent>
-            {pedidosEstado.map((p) => (
-              <Typography key={p.estado}>
-                {p.estado}: {p.total}
-              </Typography>
-            ))}
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={pedidosEstado}
+                  dataKey="total"
+                  nameKey="estado"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                >
+                  {pedidosEstado.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </Grid>
 
-      {/* Top 3 productos */}
+      {/* Top 3 Productos */}
       <Grid item xs={12} md={6}>
         <Card>
-          <CardHeader
-            title={<Typography variant="h6">Top 3 Productos</Typography>}
-          />
+          <CardHeader title={<Typography variant="h6">Top 3 Productos</Typography>} />
           <CardContent>
-            {topProductos.map((p) => (
-              <Typography key={p.nombre}>
-                {p.nombre}: {p.totalVentas} ventas
-              </Typography>
-            ))}
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart layout="vertical" data={topProductos}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="nombre" type="category" />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="totalVentas" fill="#b30fefff" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </Grid>
 
-      {/* Últimas 3 reseñas */}
-      <Grid item xs={12}>
-        <Card>
-          <CardHeader
-            title={<Typography variant="h6">Últimas 3 Reseñas</Typography>}
-          />
-          <CardContent>
-            {ultimasResenas.map((r, index) => (
-              <Typography key={index}>
-                Usuario {r.usuario_id} ({r.fecha}): {r.comentario}
-              </Typography>
-            ))}
-          </CardContent>
-        </Card>
-      </Grid>
+    {/* Últimas 3 Reseñas */}
+<Grid item xs={12}>
+  <Card>
+    <CardHeader title={<Typography variant="h6">Últimas 3 Reseñas</Typography>} />
+    <CardContent>
+      <List>
+        {ultimasResenas.map((resena, index) => (
+          <ListItem key={index} divider>
+            <ListItemText
+              primary={`Usuario ${resena.usuarioNombre} - ${new Date(resena.fecha).toLocaleDateString()}`}
+              secondary={resena.comentario.length > 100 
+                ? resena.comentario.substring(0, 100) + "..." 
+                : resena.comentario
+              }
+            />
+          </ListItem>
+        ))}
+      </List>
+    </CardContent>
+  </Card>
+</Grid>
     </Grid>
   );
 }
