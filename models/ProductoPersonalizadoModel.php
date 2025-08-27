@@ -162,4 +162,44 @@ public function getAll()
         }
         return true;
     }
+
+
+public function updatePrecio($objeto) {
+    try {
+        $precio = (float) $objeto->precio_adicional;
+        $id = (int) $objeto->id;
+
+        $sql = "UPDATE opciones 
+                SET precio_adicional = $precio 
+                WHERE id = $id";
+
+        $this->enlace->executeSQL_DML($sql);
+
+        return $this->getlistado($id);
+    } catch (Exception $e) {
+        handleException($e);
+    }
+}
+
+
+
+public function getlistado($id) {
+    try {
+        $sql = "SELECT id, criterio_id, nombre, precio_adicional 
+                FROM opciones 
+                WHERE id = $id";
+        return $this->enlace->executeSQL($sql);
+    } catch (Exception $e) {
+        handleException($e);
+    }
+}
+public function getlistados() {
+    try {
+        $sql = "SELECT id, criterio_id, nombre, precio_adicional 
+                FROM opciones ";
+        return $this->enlace->executeSQL($sql);
+    } catch (Exception $e) {
+        handleException($e);
+    }
+}
 }

@@ -1,6 +1,5 @@
 <?php
-//localhost:81/apiproducto/producto
-//localhost:81/apiprisuteria/producto
+//localhost:81/prisuteriapwl/etiquetas
 class etiquetas
 {
     //GET listar
@@ -45,7 +44,23 @@ class etiquetas
         $result = $resenaModel->create($data);
 
         $response->toJSON($result);
+ }
+
+  public function update()
+    {
+        try {
+            $request = new Request();
+            $response = new Response();
+            //Obtener json enviado
+            $inputJSON = $request->getJSON();
+            //Instancia del modelo
+            $producto = new EstiquetasModel();
+            //Acción del modelo a ejecutar
+            $result = $producto->update($inputJSON);
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
     }
-
-
 }

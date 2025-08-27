@@ -9,6 +9,26 @@ class EtiquetasService {
   getAllEtiquetas() {
     return axios.get(BASE_URL);
   }
+    getId(id){
+    return axios.get(BASE_URL+'/'+id);
+  }
+
+  create(etiqueta) {
+    return axios.post(BASE_URL, etiqueta, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  // Actualizar producto (alias para compatibilidad)
+  update(etiqueta) {
+    return axios.put(BASE_URL, etiqueta, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
 
 
 }

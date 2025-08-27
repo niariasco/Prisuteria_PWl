@@ -1,37 +1,74 @@
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import InputLabel from '@mui/material/InputLabel';
-import FormControl from '@mui/material/FormControl';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { useTranslation } from 'react-i18next';
+import { TextField, Autocomplete } from '@mui/material';
+//import { toast } from 'react-hot-toast';
+//import EtiquetasService from '../../../services/EtiquetasService';
 
-SelectEtiquetas.propTypes = {
-  data: PropTypes.array,
-  field: PropTypes.object,
-  error: PropTypes.bool,
-};
+export function SelectEtiquetas({ field, data,  }) { //setData
+  const [options, setOptions] = useState(data || []);
+  const [inputValue, setInputValue] = useState('');
 
-export function SelectEtiquetas({ field, data, error }) {
-    const { t } = useTranslation(); //traduccion 
+  // Mantener sincronizado con cambios en props.data
+  useEffect(() => {
+    setOptions(data);
+  }, [data]);
+
+  
 
   return (
-    <FormControl fullWidth margin="normal" error={error}>
-      <InputLabel id="etiquetas-label">{t('FEtiquetas_ProductoMant')}</InputLabel>
-      <Select
-        {...field}
-        labelId="etiquetas-label"
-        label="Etiquetas"
+    <div>
+      <Autocomplete
         multiple
-        value={field.value || []}
-        defaultValue={[]}
-      >
-        {data &&
-          data.map((etiqueta) => (
-            <MenuItem key={etiqueta.etiquetaId} value={etiqueta.etiquetaId}>
-              {etiqueta.nombrEtiquetas}
-            </MenuItem>
-          ))}
-      </Select>
-    </FormControl>
+        options={options}
+        getOptionLabel={(option) => option.nombrEtiquetas}
+        value={options.filter(opt => (field.value || []).includes(opt.etiquetaId))}
+        onChange={(e, newValue) => field.onChange(newValue.map(v => v.etiquetaId))}
+        inputValue={inputValue}
+        onInputChange={(e, newInputValue) => setInputValue(newInputValue)}
+        renderInput={(params) => <TextField {...params} label="Etiquetas" />}
+        isOptionEqualToValue={(option, value) => option.etiquetaId === value.etiquetaId}
+      />
+      
+    </div>
   );
 }
+
+SelectEtiquetas.propTypes = {
+  field: PropTypes.object.isRequired,
+  data: PropTypes.array.isRequired,
+  setData: PropTypes.func,
+};
+
+/*
+/ Crear nueva etiqueta
+  const handleCreate = async () => {
+    const nombre = inputValue.trim();
+    if (!nombre) return;
+
+    // Verificar que no exista ya
+    if (options.some(opt => opt.nombrEtiquetas.toLowerCase() === nombre.toLowerCase())) {
+      toast.error('La etiqueta ya existe');
+      return;
+    }
+
+    try {
+      const res = await EtiquetasService.createResena({ nombrEtiquetas: nombre });
+      const nuevaEtiqueta = { etiquetaId: res.data.etiquetaId, nombrEtiquetas: nombre };
+
+      // Actualizar lista local de etiquetas
+      const nuevaLista = [...options, nuevaEtiqueta];
+      setOptions(nuevaLista);
+      setData && setData(nuevaLista);
+
+      // Seleccionar automáticamente la nueva etiqueta
+      const nuevoValor = [...(field.value || []), nuevaEtiqueta.etiquetaId];
+      field.onChange(nuevoValor);
+
+      setInputValue(''); // limpiar input
+      toast.success('Etiqueta creada');
+    } catch (err) {
+      console.error(err);
+      toast.error('Error creando etiqueta');
+    }
+  };
+*/

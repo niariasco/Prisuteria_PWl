@@ -190,9 +190,8 @@ function Header() {
   
   // Estados para submenús de mantenimiento
   const [anchorElProductos, setAnchorElProductos] = useState(null);
-  const [anchorElResenas, setAnchorElResenas] = useState(null);
   const [anchorElPromociones, setAnchorElPromociones] = useState(null);
-  const [anchorElOrdenes, setAnchorElOrdenes] = useState(null);
+  //const [anchorElOrdenes, setAnchorElOrdenes] = useState(null);
   const [anchorElUsuarios, setAnchorElUsuarios] = useState(null);
 
   // Contexto de usuario y carrito
@@ -240,9 +239,8 @@ function Header() {
   const handleSubmenuClose = () => {
     setAnchorElSubmenu(null);
     setAnchorElProductos(null);
-    setAnchorElResenas(null);
     setAnchorElPromociones(null);
-    setAnchorElOrdenes(null);
+//    setAnchorElOrdenes(null);
     setAnchorElUsuarios(null);
   };
 
@@ -317,37 +315,17 @@ function Header() {
                       <MenuItem component={Link} to="/productos/actualizar" onClick={handleSubmenuClose}>
                         {t('header.actions.update', 'Actualizar')}
                       </MenuItem>
-                      <MenuItem component={Link} to="/productos/eliminar" onClick={handleSubmenuClose}>
+                      <MenuItem component={Link} to="/productos/criterios" onClick={handleSubmenuClose}>
                         {t('header.actions.delete', 'Actualizar Costo Producto Personalizado')}
                       </MenuItem>
                     </Menu>
                   </MenuItem>
 
                   {/* Reseñas */}
-                  <MenuItem
-                    onMouseEnter={handleOpen(setAnchorElResenas)}
-                    onMouseLeave={handleClose(setAnchorElResenas)}
-                  >
-                    {t('header.nav.reviews', 'Reseñas')}
-                    <Menu
-                      anchorEl={anchorElResenas}
-                      open={Boolean(anchorElResenas)}
-                      onClose={handleClose(setAnchorElResenas)}
-                      anchorOrigin={{ vertical: "top", horizontal: "right" }}
-                      transformOrigin={{ vertical: "top", horizontal: "left" }}
-                      MenuListProps={{ onMouseLeave: handleClose(setAnchorElResenas) }}
-                    >
-                      <MenuItem component={Link} to="/resenas/crear" onClick={handleSubmenuClose}>
-                        {t('header.actions.create', 'Crear')}
-                      </MenuItem>
-                      <MenuItem component={Link} to="/resenas/actualizar" onClick={handleSubmenuClose}>
-                        {t('header.actions.update', 'Actualizar')}
-                      </MenuItem>
-                      <MenuItem component={Link} to="/resenas/eliminar" onClick={handleSubmenuClose}>
-                        {t('header.actions.delete', 'Eliminar')}
-                      </MenuItem>
-                    </Menu>
-                  </MenuItem>
+             
+                         <MenuItem component={Link} to="/dashboard" onClick={handleSubmenuClose}>
+                        {t('Dashboard')}
+                      </MenuItem>   
 
                   {/* Promociones */}
                   <MenuItem
@@ -369,13 +347,10 @@ function Header() {
                       <MenuItem component={Link} to="/promociones/actualizar" onClick={handleSubmenuClose}>
                         {t('header.actions.update', 'Actualizar')}
                       </MenuItem>
-                      <MenuItem component={Link} to="/promociones/eliminar" onClick={handleSubmenuClose}>
-                        {t('header.actions.delete', 'Eliminar')}
-                      </MenuItem>
+
                     </Menu>
                   </MenuItem>
-
-                  {/* Órdenes */}
+                  {/* Órdenes 
                   <MenuItem
                     onMouseEnter={handleOpen(setAnchorElOrdenes)}
                     onMouseLeave={handleClose(setAnchorElOrdenes)}
@@ -395,12 +370,9 @@ function Header() {
                       <MenuItem component={Link} to="/ordenes/actualizar" onClick={handleSubmenuClose}>
                         {t('header.actions.update', 'Actualizar')}
                       </MenuItem>
-                      <MenuItem component={Link} to="/ordenes/eliminar" onClick={handleSubmenuClose}>
-                        {t('header.actions.delete', 'Eliminar')}
-                      </MenuItem>
                     </Menu>
                   </MenuItem>
-
+*/}
                   {/* Usuarios */}
                   <MenuItem
                     onMouseEnter={handleOpen(setAnchorElUsuarios)}
