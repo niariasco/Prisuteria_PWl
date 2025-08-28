@@ -78,154 +78,63 @@ const PagoPedido = () => {
   const [ordenCreada, setOrdenCreada] = useState(null);
 
   // Función auxiliar para calcular precios correctamente - CORREGIDA
-const calcularPreciosProducto = (producto) => {
-  console.log(`🔍 Analizando ${producto.nombre}:`, {
-    precioBase: producto.precio,
-    precioUnitario: producto.precioUnitario,
-    totalConIva: producto.totalConIva,
-    esPersonalizado: producto.esPersonalizado,
-    cantidad: producto.cantidad,
-    todosLosCampos: producto
-  });
-  
-  // CASO ESPECIAL: Para productos personalizados, buscar en las propiedades correctas
-  if (producto.esPersonalizado) {
-    // Si tiene totalConIva definido, usarlo directamente
-    if (producto.totalConIva && Number(producto.totalConIva) > 0) {
-      const totalConIva = Number(producto.totalConIva);
-      const precioUnitarioConIva = totalConIva / (Number(producto.cantidad) || 1);
-      const precioUnitarioSinIva = precioUnitarioConIva / 1.13;
+  const calcularPreciosProducto = (producto) => {
+    if (producto.esPersonalizado) {
+      if (producto.totalConIva && Number(producto.totalConIva) > 0) {
+        const totalConIva = Number(producto.totalConIva);
+        const precioUnitarioConIva = totalConIva / (Number(producto.cantidad) || 1);
+        const precioUnitarioSinIva = precioUnitarioConIva / 1.13;
+        return {
+          precioUnitarioSinIva: Math.round(precioUnitarioSinIva),
+          totalConIva: Math.round(totalConIva),
+          precioUnitarioConIva: Math.round(precioUnitarioConIva)
+        };
+      }
       
-      console.log(`✅ Producto personalizado con totalConIva: ${producto.nombre}`, {
-        totalConIva: Math.round(totalConIva),
-        precioUnitarioConIva: Math.round(precioUnitarioConIva),
-        precioUnitarioSinIva: Math.round(precioUnitarioSinIva)
-      });
-      
-      return {
-        precioUnitarioSinIva: Math.round(precioUnitarioSinIva),
-        totalConIva: Math.round(totalConIva),
-        precioUnitarioConIva: Math.round(precioUnitarioConIva)
-      };
+      if (producto.precioUnitario && Number(producto.precioUnitario) !== Number(producto.precio || 0)) {
+        const precioUnitarioConIva = Number(producto.precioUnitario);
+        const precioUnitarioSinIva = precioUnitarioConIva / 1.13;
+        const totalConIva = precioUnitarioConIva * (Number(producto.cantidad) || 1);
+        return {
+          precioUnitarioSinIva: Math.round(precioUnitarioSinIva),
+          totalConIva: Math.round(totalConIva),
+          precioUnitarioConIva: Math.round(precioUnitarioConIva)
+        };
+      }
     }
     
-    // Si tiene precioUnitario y es diferente al precio base
-    if (producto.precioUnitario && Number(producto.precioUnitario) !== Number(producto.precio || 0)) {
-      const precioUnitarioConIva = Number(producto.precioUnitario);
-      const precioUnitarioSinIva = precioUnitarioConIva / 1.13;
-      const totalConIva = precioUnitarioConIva * (Number(producto.cantidad) || 1);
-      
-      console.log(`✅ Producto personalizado con precioUnitario: ${producto.nombre}`, {
-        precioUnitarioConIva: Math.round(precioUnitarioConIva),
-        totalConIva: Math.round(totalConIva),
-        precioUnitarioSinIva: Math.round(precioUnitarioSinIva)
-      });
-      
-      return {
-        precioUnitarioSinIva: Math.round(precioUnitarioSinIva),
-        totalConIva: Math.round(totalConIva),
-        precioUnitarioConIva: Math.round(precioUnitarioConIva)
-      };
-    }
-  }
-  
-  // CASO NORMAL: Productos no personalizados
-  const precioBase = Number(producto.precioUnitario || producto.precio || 0);
-  const precioUnitarioConIva = precioBase * 1.13;
-  const totalConIva = precioUnitarioConIva * (Number(producto.cantidad) || 1);
-  
-  console.log(`ℹ️ Producto normal: ${producto.nombre}`, {
-    precioBase: Math.round(precioBase),
-    precioUnitarioConIva: Math.round(precioUnitarioConIva),
-    totalConIva: Math.round(totalConIva)
-  });
-  
-  return {
-    precioUnitarioSinIva: Math.round(precioBase),
-    totalConIva: Math.round(totalConIva),
-    precioUnitarioConIva: Math.round(precioUnitarioConIva)
+    const precioBase = Number(producto.precioUnitario || producto.precio || 0);
+    const precioUnitarioConIva = precioBase * 1.13;
+    const totalConIva = precioUnitarioConIva * (Number(producto.cantidad) || 1);
+    
+    return {
+      precioUnitarioSinIva: Math.round(precioBase),
+      totalConIva: Math.round(totalConIva),
+      precioUnitarioConIva: Math.round(precioUnitarioConIva)
+    };
   };
-};
 
   // Cargar datos del pedido
   useEffect(() => {
-    console.log('=== CARGANDO DATOS DEL PEDIDO ===');
-    console.log('PagoPedido - location.state:', location.state);
-    
     let datosPedido = null;
 
-    // Intentar obtener datos del state primero
     if (location.state?.pedidoData) {
-      console.log('✅ Datos obtenidos desde location.state');
       datosPedido = location.state.pedidoData;
-      console.log('📦 Productos desde location.state:', datosPedido.productos);
-      // DEBUG ESPECÍFICO DE PRODUCTOS
-      datosPedido.productos?.forEach((producto, index) => {
-        console.log(`🔍 Producto ${index + 1}:`, {
-          nombre: producto.nombre,
-          esPersonalizado: producto.esPersonalizado,
-          precio: producto.precio,
-          precioUnitario: producto.precioUnitario,
-          precioPersonalizado: producto.precioPersonalizado,
-          totalConIva: producto.totalConIva
-        });
-      });
     } else {
-      // Si no hay datos en state, intentar desde localStorage
-      console.log('⚠️ No hay datos en location.state, intentando localStorage');
       try {
         const datosGuardados = localStorage.getItem('pedidoEnProceso');
         if (datosGuardados) {
           datosPedido = JSON.parse(datosGuardados);
-          console.log('✅ Datos obtenidos desde localStorage');
-          console.log('📦 Productos desde localStorage:', datosPedido.productos);
-          // DEBUG ESPECÍFICO DE PRODUCTOS DESDE LOCALSTORAGE
-          datosPedido.productos?.forEach((producto, index) => {
-            console.log(`🔍 Producto ${index + 1} (localStorage):`, {
-              nombre: producto.nombre,
-              esPersonalizado: producto.esPersonalizado,
-              precio: producto.precio,
-              precioUnitario: producto.precioUnitario,
-              precioPersonalizado: producto.precioPersonalizado,
-              totalConIva: producto.totalConIva
-            });
-          });
         }
       } catch (error) {
-        console.error('❌ Error al leer localStorage:', error);
+        // Silencioso - error manejado abajo
       }
     }
 
     if (datosPedido && datosPedido.productos && datosPedido.productos.length > 0) {
-      console.log('✅ Estableciendo datos del pedido final');
-      console.log('📊 Resumen del pedido:', {
-        total: datosPedido.total,
-        subtotalSinImpuestos: datosPedido.subtotalSinImpuestos,
-        ivaTotal: datosPedido.ivaTotal,
-        cantidadProductos: datosPedido.productos.length
-      });
-      
-      // VERIFICAR SI LOS PRECIOS EN EL PEDIDO COINCIDEN CON LO ESPERADO
-      console.log('💰 Verificación de precios esperados:');
-      datosPedido.productos.forEach(producto => {
-        if (producto.nombre.includes('Trebol negro')) {
-          console.log('🎯 Trebol negro - ¿Debería ser ₡10,283?:', {
-            precioActual: producto.totalConIva || producto.precioUnitario || producto.precio,
-            esPersonalizado: producto.esPersonalizado
-          });
-        }
-        if (producto.nombre.includes('lazo chispita')) {
-          console.log('🎯 Lazo chispita - ¿Debería ser ₡8,814?:', {
-            precioActual: producto.totalConIva || producto.precioUnitario || producto.precio,
-            esPersonalizado: producto.esPersonalizado
-          });
-        }
-      });
-      
       setPedidoData(datosPedido);
       setCargandoDatos(false);
     } else {
-      console.error('❌ No se encontraron datos del pedido, redirigiendo al carrito');
       setTimeout(() => {
         navigate('/cart');
       }, 2000);
@@ -237,19 +146,12 @@ const calcularPreciosProducto = (producto) => {
 
   // Formatear número de tarjeta
   const formatCardNumber = (value) => {
-    // Remover espacios y caracteres no numéricos
     const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    
-    // Limitar a máximo 16 dígitos
     const limitedValue = v.substring(0, 16);
-    
-    // Dividir en grupos de 4 dígitos
     const parts = [];
     for (let i = 0; i < limitedValue.length; i += 4) {
       parts.push(limitedValue.substring(i, i + 4));
     }
-    
-    // Unir con espacios
     return parts.join(' ');
   };
 
@@ -339,7 +241,6 @@ const calcularPreciosProducto = (producto) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Formatear número de tarjeta
     if (name === "numeroTarjeta") {
       const formattedValue = formatCardNumber(value);
       setFormData(prev => ({ ...prev, [name]: formattedValue }));
@@ -347,7 +248,6 @@ const calcularPreciosProducto = (producto) => {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
 
-    // Actualizar cambio si es efectivo
     if (name === "montoEfectivo") {
       const total = parseFloat(ordenCreada?.pedido?.total || pedidoData?.total || 0);
       const pago = parseFloat(value) || 0;
@@ -357,36 +257,26 @@ const calcularPreciosProducto = (producto) => {
 
   // Preparar productos para backend (solo id y cantidad, precio será calculado por backend)
   const mapearProductos = () => {
-  return (pedidoData.productos || []).map((producto) => {
-    const id = producto.productosId || producto.id || producto.productoId;
-    const cantidad = Number(producto.cantidad) || 0;
-    
-    // Usar la función corregida para obtener el precio correcto
-    const precios = calcularPreciosProducto(producto);
-    const precioSinIva = precios.precioUnitarioSinIva;
-    
-    console.log(`Mapeando producto ${producto.nombre}:`, {
-      id,
-      cantidad,
-      precioSinIva,
-      esPersonalizado: producto.esPersonalizado,
-      totalConIva: precios.totalConIva
-    });
-    
-    return { 
-      id, 
-      cantidad, 
-      precio: precioSinIva,
-      esPersonalizado: Boolean(producto.esPersonalizado)
-    };
-  }).filter(p => p.id && p.cantidad > 0 && !isNaN(p.precio));
-};
+    return (pedidoData.productos || []).map((producto) => {
+      const id = producto.productosId || producto.id || producto.productoId;
+      const cantidad = Number(producto.cantidad) || 0;
+      const precios = calcularPreciosProducto(producto);
+      const precioSinIva = precios.precioUnitarioSinIva;
+      
+      return { 
+        id, 
+        cantidad, 
+        precio: precioSinIva,
+        esPersonalizado: Boolean(producto.esPersonalizado)
+      };
+    }).filter(p => p.id && p.cantidad > 0 && !isNaN(p.precio));
+  };
 
   const prepararDatosOrden = () => {
     const productosBackend = mapearProductos();
 
     const subtotal = productosBackend.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
-    const impuestos = parseFloat((subtotal * 0.13).toFixed(2)); // 13% ejemplo
+    const impuestos = parseFloat((subtotal * 0.13).toFixed(2));
     const total = parseFloat((subtotal + impuestos).toFixed(2));
 
     const datosOrden = {
@@ -425,34 +315,22 @@ const calcularPreciosProducto = (producto) => {
       if (!pedidoData?.productos?.length) throw new Error(t('payment.errors.no_products'));
 
       const datosOrden = prepararDatosOrden();
-      console.log("Datos finales a enviar al backend:", datosOrden);
 
-      // Crear la orden en el backend
       const ordenId = await OrderService.crearOrden(datosOrden);
-      console.log("Orden creada exitosamente con ID:", ordenId);
 
-      // Obtener los detalles completos de la orden recién creada
       try {
         const ordenCompleta = await OrderService.getById(ordenId);
-        console.log("Detalles completos de la orden:", ordenCompleta.data);
-        
         setOrdenCreada(ordenCompleta.data);
         setShowFacturaDialog(true);
-
-        // Reiniciar formulario
         setFormData(initialFormData);
-
-        // Actualizar cambio en tiempo real
+        
         const total = parseFloat(ordenCompleta.data.pedido?.total || pedidoData.total || 0);
         const pago = parseFloat(formData.montoEfectivo || 0);
         setCambio(pago >= total ? pago - total : 0);
 
-        // Limpiar datos temporales del pedido
         localStorage.removeItem('pedidoEnProceso');
 
       } catch (error) {
-        console.error("Error al obtener detalles de la orden:", error);
-        // Aún así mostrar el diálogo de éxito con la información básica
         setOrdenCreada({
           id: ordenId,
           pedido: {
@@ -469,9 +347,6 @@ const calcularPreciosProducto = (producto) => {
       }
 
     } catch (error) {
-      console.error("Error al procesar el pago:", error);
-      
-      // Mostrar mensaje de error detallado
       let errorMessage = t('payment.errors.processing_payment');
       
       if (error.message.includes('Error del servidor')) {
@@ -482,17 +357,10 @@ const calcularPreciosProducto = (producto) => {
         errorMessage = error.message;
       }
       
-      // Mostrar alerta con el error
       setMensaje(errorMessage);
       setAlertType("error");
       setOpenSnackbar(true);
       
-      // También mostrar en consola para debugging
-      console.error("Detalles del error:", {
-        message: error.message,
-        response: error.response,
-        request: error.request
-      });
     } finally {
       setLoading(false);
     }
@@ -1031,12 +899,7 @@ const calcularPreciosProducto = (producto) => {
                   </TableHead>
                   <TableBody>
                     {ordenCreada.productos?.map((producto, index) => {
-                      // DEBUG: Mostrar todos los campos del producto en consola
-                      console.log(`🔍 DEBUG Producto ${index} - ${producto.nombre}:`, JSON.stringify(producto, null, 2));
-                      
-                      // Función específica para calcular precio en el modal
                       const calcularPrecioModal = (prod) => {
-                        // Caso 1: Si el producto ya viene con el precio correcto calculado en pedidoData
                         const productoPedido = pedidoData.productos?.find(p => 
                           p.nombre === prod.nombre || 
                           p.id === prod.id || 
@@ -1044,9 +907,6 @@ const calcularPreciosProducto = (producto) => {
                         );
                         
                         if (productoPedido) {
-                          console.log(`📦 Encontrado en pedidoData:`, productoPedido);
-                          
-                          // Si tiene totalConIva, usarlo
                           if (productoPedido.totalConIva && Number(productoPedido.totalConIva) > 0) {
                             const totalConIva = Number(productoPedido.totalConIva);
                             const precioUnitarioConIva = totalConIva / (Number(prod.cantidad) || 1);
@@ -1056,7 +916,6 @@ const calcularPreciosProducto = (producto) => {
                             };
                           }
                           
-                          // Si tiene precioUnitario diferente al precio base (personalizado)
                           if (productoPedido.precioUnitario && 
                               Number(productoPedido.precioUnitario) !== Number(productoPedido.precio || 0)) {
                             const precioUnitarioConIva = Number(productoPedido.precioUnitario);
@@ -1068,7 +927,6 @@ const calcularPreciosProducto = (producto) => {
                           }
                         }
                         
-                        // Fallback: usar datos del producto actual
                         const precios = calcularPreciosProducto(prod);
                         return {
                           precioUnitarioConIva: precios.precioUnitarioConIva,
@@ -1077,11 +935,6 @@ const calcularPreciosProducto = (producto) => {
                       };
                       
                       const preciosModal = calcularPrecioModal(producto);
-                      
-                      console.log(`💰 Precios finales para ${producto.nombre}:`, {
-                        precioUnitarioConIva: preciosModal.precioUnitarioConIva,
-                        totalConIva: preciosModal.totalConIva
-                      });
                       
                       return (
                         <TableRow key={index} sx={{ '&:nth-of-type(odd)': { backgroundColor: '#fafafa' } }}>

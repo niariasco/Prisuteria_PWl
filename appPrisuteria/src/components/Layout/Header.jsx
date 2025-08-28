@@ -191,17 +191,19 @@ function Header() {
   // Estados para submenús de mantenimiento
   const [anchorElProductos, setAnchorElProductos] = useState(null);
   const [anchorElPromociones, setAnchorElPromociones] = useState(null);
-  //const [anchorElOrdenes, setAnchorElOrdenes] = useState(null);
   const [anchorElUsuarios, setAnchorElUsuarios] = useState(null);
 
   // Contexto de usuario y carrito
-  const { user, decodeToken } = useContext(UserContext);
+  const { user, decodeToken, isAdmin } = useContext(UserContext);
   const [userData, setUserData] = useState(decodeToken());
   const { cart, getCountItems } = useCart();
 
   useEffect(() => {
     setUserData(decodeToken());
   }, [user]);
+
+  // Verificar si el usuario es administrador
+  const userIsAdmin = isAdmin();
 
   // Handlers para menú principal
   const handleOpenPrincipalMenu = (event) => {
@@ -240,7 +242,6 @@ function Header() {
     setAnchorElSubmenu(null);
     setAnchorElProductos(null);
     setAnchorElPromociones(null);
-//    setAnchorElOrdenes(null);
     setAnchorElUsuarios(null);
   };
 
@@ -260,11 +261,13 @@ function Header() {
     { name: t('header.user.logout', 'Logout'), link: "/user/logout", login: true },
   ];
 
+  // Filtrar elementos de navegación basado en si el usuario es administrador
   const navItems = [
     { name: t('header.nav.products', 'Productos'), link: "/producto", roles: null },
     { name: t('header.nav.promotions', 'Promociones'), link: "/promocion", roles: null },
     { name: t('header.nav.orders', 'Ordenes'), link: "/orden", roles: null },
-    { name: t('header.nav.maintenance', 'Mantenimientos'), link: "", roles: ['Administrador'] },
+    // Solo mostrar Mantenimientos si el usuario es administrador
+    ...(userIsAdmin ? [{ name: t('header.nav.maintenance', 'Mantenimientos'), link: "", roles: ['Administrador'] }] : []),
   ];
 
   // Booleanos para control de menús
@@ -277,7 +280,7 @@ function Header() {
     <Box sx={{ display: { xs: "none", sm: "block" } }}>
       {navItems &&
         navItems.map((item, index) => {
-          if (item.name === t('header.nav.maintenance', 'Mantenimientos')) {
+          if (item.name === t('header.nav.maintenance', 'Mantenimientos') && userIsAdmin) {
             return (
               <Box key={index} sx={{ display: "inline-block", mx: 1 }}>
                 <Button
@@ -321,11 +324,10 @@ function Header() {
                     </Menu>
                   </MenuItem>
 
-                  {/* Reseñas */}
-             
-                         <MenuItem component={Link} to="/dashboard" onClick={handleSubmenuClose}>
-                        {t('Dashboard')}
-                      </MenuItem>   
+                  {/* Dashboard */}
+                  <MenuItem component={Link} to="/dashboard" onClick={handleSubmenuClose}>
+                    {t('Dashboard')}
+                  </MenuItem>   
 
                   {/* Promociones */}
                   <MenuItem
@@ -347,32 +349,9 @@ function Header() {
                       <MenuItem component={Link} to="/promociones/actualizar" onClick={handleSubmenuClose}>
                         {t('header.actions.update', 'Actualizar')}
                       </MenuItem>
+                    </Menu>
+                  </MenuItem>
 
-                    </Menu>
-                  </MenuItem>
-                  {/* Órdenes 
-                  <MenuItem
-                    onMouseEnter={handleOpen(setAnchorElOrdenes)}
-                    onMouseLeave={handleClose(setAnchorElOrdenes)}
-                  >
-                    {t('header.nav.orders', 'Órdenes')}
-                    <Menu
-                      anchorEl={anchorElOrdenes}
-                      open={Boolean(anchorElOrdenes)}
-                      onClose={handleClose(setAnchorElOrdenes)}
-                      anchorOrigin={{ vertical: "top", horizontal: "right" }}
-                      transformOrigin={{ vertical: "top", horizontal: "left" }}
-                      MenuListProps={{ onMouseLeave: handleClose(setAnchorElOrdenes) }}
-                    >
-                      <MenuItem component={Link} to="/ordenes/crear" onClick={handleSubmenuClose}>
-                        {t('header.actions.create', 'Crear')}
-                      </MenuItem>
-                      <MenuItem component={Link} to="/ordenes/actualizar" onClick={handleSubmenuClose}>
-                        {t('header.actions.update', 'Actualizar')}
-                      </MenuItem>
-                    </Menu>
-                  </MenuItem>
-*/}
                   {/* Usuarios */}
                   <MenuItem
                     onMouseEnter={handleOpen(setAnchorElUsuarios)}
@@ -413,7 +392,7 @@ function Header() {
     </Box>
   );
 
-  // Menu Principal para móvil
+  // Menu Principal para móvil - también filtrado por permisos de administrador
   const menuPrincipalMobile = navItems.map((page, index) => (
     <MenuItem 
       key={index} 
@@ -460,6 +439,11 @@ function Header() {
           <MenuItem>
             <Typography variant="subtitle1" gutterBottom>
               {userData?.email}
+              {userIsAdmin && (
+                <Typography variant="caption" display="block" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+                  {t('header.user.admin', 'Administrador')}
+                </Typography>
+              )}
             </Typography>
           </MenuItem>
         )}
@@ -634,6 +618,5 @@ function Header() {
     </Box>
   );
 }
-
 
 export default Header;
