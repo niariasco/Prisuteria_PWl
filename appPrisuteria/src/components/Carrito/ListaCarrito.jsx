@@ -99,7 +99,7 @@ export function ListaCarrito() {
     addItem(item);
   };
 
-  // Función para manejar el decremento de cantidad - MODIFICADA
+  // Función para manejar el decremento de cantidad - CORREGIDA
   const handleDecreaseQuantity = (item) => {
     const currentQty = getQuantity(item.id);
     
@@ -120,7 +120,7 @@ export function ListaCarrito() {
     }
   };
 
-  // Función modificada para manejar la eliminación de productos con alerta
+  // Función CORREGIDA para manejar la eliminación de productos con alerta
   const handleRemoveItem = (item, removalType = 'manual') => {
     const productName = getProductName(item);
     
@@ -131,8 +131,8 @@ export function ListaCarrito() {
       type: removalType
     });
     
-    // Limpiar la cantidad local
-    setQuantidades(prev => {
+    // Limpiar la cantidad local - CORREGIDO: usar 'quantities' no 'setCantidades'
+    setQuantities(prev => {
       const newQuantities = { ...prev };
       delete newQuantities[item.id];
       return newQuantities;
@@ -218,7 +218,7 @@ export function ListaCarrito() {
           }}
         >
           <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#F06292' }}>
-            {t('cart.customizations.view_details')} ({Object.keys(opcionesPersonalizacion).length})
+            {t('cart.customizations.view_details', 'Ver detalles')} ({Object.keys(opcionesPersonalizacion).length})
           </Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ pt: 2 }}>
