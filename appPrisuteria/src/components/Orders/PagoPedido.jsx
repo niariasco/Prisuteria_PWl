@@ -77,36 +77,155 @@ const PagoPedido = () => {
   const [showFacturaDialog, setShowFacturaDialog] = useState(false);
   const [ordenCreada, setOrdenCreada] = useState(null);
 
+  // Función auxiliar para calcular precios correctamente - CORREGIDA
+const calcularPreciosProducto = (producto) => {
+  console.log(`🔍 Analizando ${producto.nombre}:`, {
+    precioBase: producto.precio,
+    precioUnitario: producto.precioUnitario,
+    totalConIva: producto.totalConIva,
+    esPersonalizado: producto.esPersonalizado,
+    cantidad: producto.cantidad,
+    todosLosCampos: producto
+  });
+  
+  // CASO ESPECIAL: Para productos personalizados, buscar en las propiedades correctas
+  if (producto.esPersonalizado) {
+    // Si tiene totalConIva definido, usarlo directamente
+    if (producto.totalConIva && Number(producto.totalConIva) > 0) {
+      const totalConIva = Number(producto.totalConIva);
+      const precioUnitarioConIva = totalConIva / (Number(producto.cantidad) || 1);
+      const precioUnitarioSinIva = precioUnitarioConIva / 1.13;
+      
+      console.log(`✅ Producto personalizado con totalConIva: ${producto.nombre}`, {
+        totalConIva: Math.round(totalConIva),
+        precioUnitarioConIva: Math.round(precioUnitarioConIva),
+        precioUnitarioSinIva: Math.round(precioUnitarioSinIva)
+      });
+      
+      return {
+        precioUnitarioSinIva: Math.round(precioUnitarioSinIva),
+        totalConIva: Math.round(totalConIva),
+        precioUnitarioConIva: Math.round(precioUnitarioConIva)
+      };
+    }
+    
+    // Si tiene precioUnitario y es diferente al precio base
+    if (producto.precioUnitario && Number(producto.precioUnitario) !== Number(producto.precio || 0)) {
+      const precioUnitarioConIva = Number(producto.precioUnitario);
+      const precioUnitarioSinIva = precioUnitarioConIva / 1.13;
+      const totalConIva = precioUnitarioConIva * (Number(producto.cantidad) || 1);
+      
+      console.log(`✅ Producto personalizado con precioUnitario: ${producto.nombre}`, {
+        precioUnitarioConIva: Math.round(precioUnitarioConIva),
+        totalConIva: Math.round(totalConIva),
+        precioUnitarioSinIva: Math.round(precioUnitarioSinIva)
+      });
+      
+      return {
+        precioUnitarioSinIva: Math.round(precioUnitarioSinIva),
+        totalConIva: Math.round(totalConIva),
+        precioUnitarioConIva: Math.round(precioUnitarioConIva)
+      };
+    }
+  }
+  
+  // CASO NORMAL: Productos no personalizados
+  const precioBase = Number(producto.precioUnitario || producto.precio || 0);
+  const precioUnitarioConIva = precioBase * 1.13;
+  const totalConIva = precioUnitarioConIva * (Number(producto.cantidad) || 1);
+  
+  console.log(`ℹ️ Producto normal: ${producto.nombre}`, {
+    precioBase: Math.round(precioBase),
+    precioUnitarioConIva: Math.round(precioUnitarioConIva),
+    totalConIva: Math.round(totalConIva)
+  });
+  
+  return {
+    precioUnitarioSinIva: Math.round(precioBase),
+    totalConIva: Math.round(totalConIva),
+    precioUnitarioConIva: Math.round(precioUnitarioConIva)
+  };
+};
+
   // Cargar datos del pedido
   useEffect(() => {
+    console.log('=== CARGANDO DATOS DEL PEDIDO ===');
     console.log('PagoPedido - location.state:', location.state);
     
     let datosPedido = null;
 
     // Intentar obtener datos del state primero
     if (location.state?.pedidoData) {
-      console.log('Datos obtenidos desde location.state');
+      console.log('✅ Datos obtenidos desde location.state');
       datosPedido = location.state.pedidoData;
+      console.log('📦 Productos desde location.state:', datosPedido.productos);
+      // DEBUG ESPECÍFICO DE PRODUCTOS
+      datosPedido.productos?.forEach((producto, index) => {
+        console.log(`🔍 Producto ${index + 1}:`, {
+          nombre: producto.nombre,
+          esPersonalizado: producto.esPersonalizado,
+          precio: producto.precio,
+          precioUnitario: producto.precioUnitario,
+          precioPersonalizado: producto.precioPersonalizado,
+          totalConIva: producto.totalConIva
+        });
+      });
     } else {
       // Si no hay datos en state, intentar desde localStorage
-      console.log('Intentando obtener datos desde localStorage');
+      console.log('⚠️ No hay datos en location.state, intentando localStorage');
       try {
         const datosGuardados = localStorage.getItem('pedidoEnProceso');
         if (datosGuardados) {
           datosPedido = JSON.parse(datosGuardados);
-          console.log('Datos obtenidos desde localStorage');
+          console.log('✅ Datos obtenidos desde localStorage');
+          console.log('📦 Productos desde localStorage:', datosPedido.productos);
+          // DEBUG ESPECÍFICO DE PRODUCTOS DESDE LOCALSTORAGE
+          datosPedido.productos?.forEach((producto, index) => {
+            console.log(`🔍 Producto ${index + 1} (localStorage):`, {
+              nombre: producto.nombre,
+              esPersonalizado: producto.esPersonalizado,
+              precio: producto.precio,
+              precioUnitario: producto.precioUnitario,
+              precioPersonalizado: producto.precioPersonalizado,
+              totalConIva: producto.totalConIva
+            });
+          });
         }
       } catch (error) {
-        console.error('Error al leer localStorage:', error);
+        console.error('❌ Error al leer localStorage:', error);
       }
     }
 
     if (datosPedido && datosPedido.productos && datosPedido.productos.length > 0) {
-      console.log('Estableciendo datos del pedido:', datosPedido);
+      console.log('✅ Estableciendo datos del pedido final');
+      console.log('📊 Resumen del pedido:', {
+        total: datosPedido.total,
+        subtotalSinImpuestos: datosPedido.subtotalSinImpuestos,
+        ivaTotal: datosPedido.ivaTotal,
+        cantidadProductos: datosPedido.productos.length
+      });
+      
+      // VERIFICAR SI LOS PRECIOS EN EL PEDIDO COINCIDEN CON LO ESPERADO
+      console.log('💰 Verificación de precios esperados:');
+      datosPedido.productos.forEach(producto => {
+        if (producto.nombre.includes('Trebol negro')) {
+          console.log('🎯 Trebol negro - ¿Debería ser ₡10,283?:', {
+            precioActual: producto.totalConIva || producto.precioUnitario || producto.precio,
+            esPersonalizado: producto.esPersonalizado
+          });
+        }
+        if (producto.nombre.includes('lazo chispita')) {
+          console.log('🎯 Lazo chispita - ¿Debería ser ₡8,814?:', {
+            precioActual: producto.totalConIva || producto.precioUnitario || producto.precio,
+            esPersonalizado: producto.esPersonalizado
+          });
+        }
+      });
+      
       setPedidoData(datosPedido);
       setCargandoDatos(false);
     } else {
-      console.error('No se encontraron datos del pedido, redirigiendo al carrito');
+      console.error('❌ No se encontraron datos del pedido, redirigiendo al carrito');
       setTimeout(() => {
         navigate('/cart');
       }, 2000);
@@ -216,7 +335,6 @@ const PagoPedido = () => {
     return pedidoData.moneda === 'USD' ? '$' : '₡';
   };
 
-
   // Manejar cambios en el formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -239,13 +357,30 @@ const PagoPedido = () => {
 
   // Preparar productos para backend (solo id y cantidad, precio será calculado por backend)
   const mapearProductos = () => {
-    return (pedidoData.productos || []).map((producto) => {
-      const id = producto.productosId || producto.id || producto.productoId;
-      const cantidad = Number(producto.cantidad) || 0;
-      const precio = Number(producto.precioUnitario ?? producto.precio ?? 0);
-      return { id, cantidad, precio };
-    }).filter(p => p.id && p.cantidad > 0 && !isNaN(p.precio));
-  };
+  return (pedidoData.productos || []).map((producto) => {
+    const id = producto.productosId || producto.id || producto.productoId;
+    const cantidad = Number(producto.cantidad) || 0;
+    
+    // Usar la función corregida para obtener el precio correcto
+    const precios = calcularPreciosProducto(producto);
+    const precioSinIva = precios.precioUnitarioSinIva;
+    
+    console.log(`Mapeando producto ${producto.nombre}:`, {
+      id,
+      cantidad,
+      precioSinIva,
+      esPersonalizado: producto.esPersonalizado,
+      totalConIva: precios.totalConIva
+    });
+    
+    return { 
+      id, 
+      cantidad, 
+      precio: precioSinIva,
+      esPersonalizado: Boolean(producto.esPersonalizado)
+    };
+  }).filter(p => p.id && p.cantidad > 0 && !isNaN(p.precio));
+};
 
   const prepararDatosOrden = () => {
     const productosBackend = mapearProductos();
@@ -363,7 +498,6 @@ const PagoPedido = () => {
     }
   };
 
-
   // Ver detalle de la orden (desde el modal)
   const verDetalleOrden = () => {
     setShowFacturaDialog(false);
@@ -454,36 +588,39 @@ const PagoPedido = () => {
                   {t('payment.order_summary.products')} ({pedidoData.productos?.length || 0}):
                 </Typography>
                 
-                {pedidoData.productos?.map((producto, index) => (
-                  <Box key={index} sx={{ mb: 1, p: 2, backgroundColor: '#f8f9fa', borderRadius: 2, border: '1px solid #e9ecef' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                          {producto.nombre}
+                {pedidoData.productos?.map((producto, index) => {
+                  const precios = calcularPreciosProducto(producto);
+                  return (
+                    <Box key={index} sx={{ mb: 1, p: 2, backgroundColor: '#f8f9fa', borderRadius: 2, border: '1px solid #e9ecef' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                            {producto.nombre}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {t('payment.order_summary.quantity')}: {producto.cantidad}
+                          </Typography>
+                          {producto.esPersonalizado && (
+                            <Chip 
+                              label={t('payment.order_summary.customized')} 
+                              size="small"
+                              sx={{
+                                backgroundColor: '#E3F2FD',
+                                color: '#1976D2',
+                                fontSize: '0.7rem',
+                                height: '20px',
+                                mt: 0.5
+                              }}
+                            />
+                          )}
+                        </Box>
+                        <Typography variant="body2" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                          {currencySymbol} {Math.round(precios.totalConIva).toLocaleString()}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {t('payment.order_summary.quantity')}: {producto.cantidad}
-                        </Typography>
-                        {producto.esPersonalizado && (
-                          <Chip 
-                            label={t('payment.order_summary.customized')} 
-                            size="small"
-                            sx={{
-                              backgroundColor: '#E3F2FD',
-                              color: '#1976D2',
-                              fontSize: '0.7rem',
-                              height: '20px',
-                              mt: 0.5
-                            }}
-                          />
-                        )}
                       </Box>
-                      <Typography variant="body2" color="primary.main" sx={{ fontWeight: 'bold' }}>
-                        {currencySymbol} {Math.round(producto.totalConIva || (producto.precioUnitario * producto.cantidad) || (producto.precio * producto.cantidad)).toLocaleString()}
-                      </Typography>
                     </Box>
-                  </Box>
-                ))}
+                  );
+                })}
 
                 <Divider sx={{ my: 2 }} />
 
@@ -780,14 +917,14 @@ const PagoPedido = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <Business sx={{ mr: 1, color: '#1976d2' }} />
                       <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                        {t('payment.success_modal.company_info.name')}
+                        Prisutería Accesorios
                       </Typography>
                     </Box>
                     <Typography variant="body2" color="text.secondary">
-                      {t('payment.success_modal.company_info.address')}
+                      Heredia, Cubujuquí, Costa Rica
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {t('payment.success_modal.company_info.contact')}
+                      Tel: +506 7191-4947 | Email: prisuteriaacesorioscr@gmail.com
                     </Typography>
                   </Grid>
                   <Grid item>
@@ -893,37 +1030,91 @@ const PagoPedido = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {ordenCreada.productos?.map((producto, index) => (
-                      <TableRow key={index} sx={{ '&:nth-of-type(odd)': { backgroundColor: '#fafafa' } }}>
-                        <TableCell>
-                          <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                              {producto.nombre}
-                            </Typography>
-                            {producto.esPersonalizado && (
-                              <Chip 
-                                label={t('payment.order_summary.customized')} 
-                                size="small"
-                                sx={{
-                                  backgroundColor: '#E3F2FD',
-                                  color: '#1976D2',
-                                  fontSize: '0.7rem',
-                                  height: '20px',
-                                  mt: 0.5
-                                }}
-                              />
-                            )}
-                          </Box>
-                        </TableCell>
-                        <TableCell align="center">{producto.cantidad}</TableCell>
-                        <TableCell align="right">
-                          {currencySymbol} {Math.round(producto.precioUnitario || producto.precio || 0).toLocaleString()}
-                        </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                          {currencySymbol} {Math.round(producto.totalConIva || (producto.precioUnitario || producto.precio) * producto.cantidad).toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {ordenCreada.productos?.map((producto, index) => {
+                      // DEBUG: Mostrar todos los campos del producto en consola
+                      console.log(`🔍 DEBUG Producto ${index} - ${producto.nombre}:`, JSON.stringify(producto, null, 2));
+                      
+                      // Función específica para calcular precio en el modal
+                      const calcularPrecioModal = (prod) => {
+                        // Caso 1: Si el producto ya viene con el precio correcto calculado en pedidoData
+                        const productoPedido = pedidoData.productos?.find(p => 
+                          p.nombre === prod.nombre || 
+                          p.id === prod.id || 
+                          p.productosId === prod.productosId
+                        );
+                        
+                        if (productoPedido) {
+                          console.log(`📦 Encontrado en pedidoData:`, productoPedido);
+                          
+                          // Si tiene totalConIva, usarlo
+                          if (productoPedido.totalConIva && Number(productoPedido.totalConIva) > 0) {
+                            const totalConIva = Number(productoPedido.totalConIva);
+                            const precioUnitarioConIva = totalConIva / (Number(prod.cantidad) || 1);
+                            return {
+                              precioUnitarioConIva: Math.round(precioUnitarioConIva),
+                              totalConIva: Math.round(totalConIva)
+                            };
+                          }
+                          
+                          // Si tiene precioUnitario diferente al precio base (personalizado)
+                          if (productoPedido.precioUnitario && 
+                              Number(productoPedido.precioUnitario) !== Number(productoPedido.precio || 0)) {
+                            const precioUnitarioConIva = Number(productoPedido.precioUnitario);
+                            const totalConIva = precioUnitarioConIva * (Number(prod.cantidad) || 1);
+                            return {
+                              precioUnitarioConIva: Math.round(precioUnitarioConIva),
+                              totalConIva: Math.round(totalConIva)
+                            };
+                          }
+                        }
+                        
+                        // Fallback: usar datos del producto actual
+                        const precios = calcularPreciosProducto(prod);
+                        return {
+                          precioUnitarioConIva: precios.precioUnitarioConIva,
+                          totalConIva: precios.totalConIva
+                        };
+                      };
+                      
+                      const preciosModal = calcularPrecioModal(producto);
+                      
+                      console.log(`💰 Precios finales para ${producto.nombre}:`, {
+                        precioUnitarioConIva: preciosModal.precioUnitarioConIva,
+                        totalConIva: preciosModal.totalConIva
+                      });
+                      
+                      return (
+                        <TableRow key={index} sx={{ '&:nth-of-type(odd)': { backgroundColor: '#fafafa' } }}>
+                          <TableCell>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                {producto.nombre}
+                              </Typography>
+                              {producto.esPersonalizado && (
+                                <Chip 
+                                  label={t('payment.order_summary.customized')} 
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: '#E3F2FD',
+                                    color: '#1976D2',
+                                    fontSize: '0.7rem',
+                                    height: '20px',
+                                    mt: 0.5
+                                  }}
+                                />
+                              )}
+                            </Box>
+                          </TableCell>
+                          <TableCell align="center">{producto.cantidad}</TableCell>
+                          <TableCell align="right">
+                            {currencySymbol} {preciosModal.precioUnitarioConIva.toLocaleString()}
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                            {currencySymbol} {preciosModal.totalConIva.toLocaleString()}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </TableContainer>

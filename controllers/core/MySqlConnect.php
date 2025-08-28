@@ -2,7 +2,7 @@
 
 use Psr\Log\LoggerInterface;
 class MySqlConnect {
-	private $result;
+	private $result = [];
 	private $sql;
 	private $username;
 	private $password;
@@ -40,7 +40,7 @@ class MySqlConnect {
 	 */
 	//
 	public function executeSQL($sql,$resultType="obj") {
-		$lista = NULL;
+		$lista = []; // Initialize as an empty array
 		try {
 			$this->connect();	
 			if ($result = $this->link->query ( $sql )) {
@@ -60,8 +60,6 @@ class MySqlConnect {
 							$lista [] = mysqli_fetch_object ( $result );
 							break;
 					}
-					
-					
 				}
 			} else {
 				handleException($this->link->error);
