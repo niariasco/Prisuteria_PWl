@@ -23,10 +23,6 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Snackbar
 } from '@mui/material';
 import {
@@ -39,15 +35,13 @@ import {
   Add,
   Remove,
   Delete,
-  ExpandMore,
-  Warning
+  ExpandMore
 } from '@mui/icons-material';
 import { useCart } from '../../hooks/useCart';
 import { UserContext } from '../../context/UserContext';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import UsuarioDetalleService from '../../services/UsuariosDetalleService.js';
-import ProductoService from '../../services/ProductoService.js'; // Para verificar stock
 
 export function RegistrarPedido() {
   const { cart, getCountItems, clearCart, removeItem, updateQuantity } = useCart();
@@ -73,11 +67,6 @@ export function RegistrarPedido() {
   const [usuarioDetalleActual, setUsuarioDetalleActual] = useState(null);
   const [loadingUsuarioDetalle, setLoadingUsuarioDetalle] = useState(false);
   const [errorUsuarioDetalle, setErrorUsuarioDetalle] = useState(null);
-
-  // Estados para validaciones
-  const [erroresStock, setErroresStock] = useState([]);
-  const [validandoStock, setValidandoStock] = useState(false);
-  const [dialogConfirmacion, setDialogConfirmacion] = useState(false);
 
   // Estados para cantidades locales (para actualizaciones en tiempo real)
   const [cantidadesLocales, setCantidadesLocales] = useState({});
@@ -350,55 +339,6 @@ export function RegistrarPedido() {
     return precio * (IVA_PERCENTAGE / 100);
   };
 
-  // Función para validar stock
-  const validarStock = async () => {
-    setValidandoStock(true);
-    setErroresStock([]);
-    
-    const errores = [];
-    const validItems = cart?.filter(item => item && item.id && item.nombre) || [];
-
-    try {
-      for (const item of validItems) {
-        // Solo validar stock para productos normales, no personalizados
-        if (!tienePersonalizaciones(item)) {
-          const cantidadSolicitada = getCantidadActual(item.id);
-          
-          if (cantidadSolicitada > 0) {
-            try {
-              const response = await ProductoService.getProductoById(item.id);
-              const productoActual = response.data || response;
-              
-              const stockDisponible = parseInt(productoActual.stock || 0);
-              
-              if (stockDisponible < cantidadSolicitada) {
-                errores.push({
-                  producto: getProductName(item),
-                  cantidadSolicitada,
-                  stockDisponible
-                });
-              }
-            } catch (error) {
-              console.error(`Error validando stock para producto ${item.id}:`, error);
-              errores.push({
-                producto: getProductName(item),
-                cantidadSolicitada: getCantidadActual(item.id),
-                error: t('registrar_pedido.stock_errors.could_not_verify', 'No se pudo verificar el stock')
-              });
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error general validando stock:', error);
-    }
-    
-    setErroresStock(errores);
-    setValidandoStock(false);
-    
-    return errores.length === 0;
-  };
-
   // Función para cargar los datos del usuario
   const cargarUsuarioDetalleActual = async () => {
     if (!userData || !userData.usuarioId) {
@@ -613,28 +553,7 @@ export function RegistrarPedido() {
 
     console.log('Validaciones básicas completadas'); // Debug
 
-    // Validar stock
-    try {
-      const stockValido = await validarStock();
-      console.log('Resultado de validación de stock:', stockValido); // Debug
-      
-      if (!stockValido) {
-        setDialogConfirmacion(true);
-        return;
-      }
-
-      // Si llegamos aquí, todo está bien
-      proceedToPayment();
-    } catch (error) {
-      console.error('Error en validación de stock:', error);
-      alert(t('registrar_pedido.validation.inventory_error', 'Error al validar el inventario. Por favor intente nuevamente.'));
-    }
-  };
-
-  // Función para proceder con el pedido a pesar de errores de stock
-  const proceedWithOrder = () => {
-    console.log('Procediendo con el pedido a pesar de errores de stock'); // Debug
-    setDialogConfirmacion(false);
+    // Proceder directamente al pago sin validar stock
     proceedToPayment();
   };
 
@@ -652,21 +571,6 @@ export function RegistrarPedido() {
       {errorUsuarioDetalle && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {errorUsuarioDetalle}
-        </Alert>
-      )}
-
-      {/* Mostrar errores de stock */}
-      {erroresStock.length > 0 && (
-        <Alert severity="warning" sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            <Warning sx={{ mr: 1 }} />
-            {t('registrar_pedido.stock_errors.title', 'Problemas de inventario detectados:')}
-          </Typography>
-          {erroresStock.map((error, index) => (
-            <Typography key={index} variant="body2">
-              • {error.producto}: {t('registrar_pedido.stock_errors.requested', 'Solicitado')} {error.cantidadSolicitada}, {t('registrar_pedido.stock_errors.available', 'Disponible')}: {error.stockDisponible || error.error}
-            </Typography>
-          ))}
         </Alert>
       )}
 
@@ -1008,26 +912,6 @@ export function RegistrarPedido() {
                   </Card>
                 );
               })}
-
-              {/* Botón para validar stock */}
-              <Box sx={{ textAlign: 'center', mt: 3 }}>
-                <Button
-                  variant="outlined"
-                  onClick={validarStock}
-                  disabled={validandoStock}
-                  startIcon={validandoStock ? <CircularProgress size={20} /> : <CheckCircle />}
-                  sx={{
-                    borderColor: '#F06292',
-                    color: '#F06292',
-                    '&:hover': {
-                      borderColor: '#E91E63',
-                      backgroundColor: 'rgba(240, 98, 146, 0.1)',
-                    }
-                  }}
-                >
-                  {validandoStock ? t('registrar_pedido.order_detail.validating', 'Validando Inventario...') : t('registrar_pedido.order_detail.validate_stock', 'Validar Disponibilidad')}
-                </Button>
-              </Box>
             </CardContent>
           </Card>
         </Grid>
@@ -1144,44 +1028,6 @@ export function RegistrarPedido() {
           </Card>
         </Grid>
       </Grid>
-
-      {/* Dialog de confirmación para errores de stock */}
-      <Dialog
-        open={dialogConfirmacion}
-        onClose={() => setDialogConfirmacion(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle sx={{ color: '#F06292', fontWeight: 'bold' }}>
-          <Warning sx={{ mr: 1 }} />
-          {t('registrar_pedido.stock_errors.dialog_title', 'Confirmar Pedido con Problemas de Inventario')}
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {t('registrar_pedido.stock_errors.dialog_message', 'Se detectaron problemas de inventario para algunos productos. ¿Desea continuar con el pedido?')}
-          </Typography>
-          <Box sx={{ backgroundColor: '#fff3cd', p: 2, borderRadius: 1, border: '1px solid #ffeaa7' }}>
-            {erroresStock.map((error, index) => (
-              <Typography key={index} variant="body2" sx={{ mb: 1 }}>
-                • <strong>{error.producto}:</strong> {t('registrar_pedido.stock_errors.requested', 'Solicitado')} {error.cantidadSolicitada}, 
-                {t('registrar_pedido.stock_errors.available', 'Disponible')}: {error.stockDisponible || error.error}
-              </Typography>
-            ))}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogConfirmacion(false)} color="inherit">
-            {t('registrar_pedido.buttons.cancel', 'Cancelar')}
-          </Button>
-          <Button 
-            onClick={proceedWithOrder} 
-            variant="contained"
-            sx={{ backgroundColor: '#F06292', '&:hover': { backgroundColor: '#E91E63' } }}
-          >
-            {t('registrar_pedido.buttons.continue_payment', 'Continuar al Pago')}
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Snackbar para notificaciones */}
       <Snackbar
