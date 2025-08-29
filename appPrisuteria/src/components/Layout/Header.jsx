@@ -190,7 +190,7 @@ function Header() {
   // Estados para submenús de mantenimiento
   const [anchorElProductos, setAnchorElProductos] = useState(null);
   const [anchorElPromociones, setAnchorElPromociones] = useState(null);
-  const [anchorElUsuarios, setAnchorElUsuarios] = useState(null);
+  //const [anchorElUsuarios, setAnchorElUsuarios] = useState(null);
 
   // Contexto de usuario y carrito
   const { user, decodeToken, isAdmin, canUseCart, getCartRestrictionMessage } = useContext(UserContext);
@@ -244,7 +244,7 @@ function Header() {
     setAnchorElSubmenu(null);
     setAnchorElProductos(null);
     setAnchorElPromociones(null);
-    setAnchorElUsuarios(null);
+  //  setAnchorElUsuarios(null);
   };
 
   // Handlers genéricos para submenús
@@ -362,7 +362,7 @@ function Header() {
                     </Menu>
                   </MenuItem>
 
-                  {/* Usuarios */}
+                  {/* Usuarios
                   <MenuItem
                     onMouseEnter={handleOpen(setAnchorElUsuarios)}
                     onMouseLeave={handleClose(setAnchorElUsuarios)}
@@ -387,6 +387,7 @@ function Header() {
                       </MenuItem>
                     </Menu>
                   </MenuItem>
+ */}
                 </Menu>
               </Box>
             );
