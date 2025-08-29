@@ -34,6 +34,7 @@ import {
   Star as StarIcon,
   AdminPanelSettings as AdminIcon,
   Person as PersonIcon,
+  Visibility as VisibilityIcon, // Nuevo icono para ver detalle
 } from '@mui/icons-material';
 
 // Flechas personalizadas para Slider
@@ -319,6 +320,22 @@ export function ListaCartasPromocion({ isShopping }) {
                         {formatearFecha(item.fecha_inicio, i18n.language)} – {formatearFecha(item.fecha_fin, i18n.language)}
                       </Typography>
                     </CardContent>
+                    
+                    {/* NUEVO: CardActions con botón para ver detalle */}
+                    <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
+                      <IconButton 
+                        component={Link} 
+                        to={`/promocion/${item.id}`}
+                        sx={{ 
+                          backgroundColor: '#2196F3', 
+                          color: 'white',
+                          '&:hover': { backgroundColor: '#1976D2' }
+                        }}
+                        title={t('promotions_page.view_detail', 'Ver detalle')}
+                      >
+                        <VisibilityIcon />
+                      </IconButton>
+                    </CardActions>
                   </Card>
                 </Box>
               );
@@ -459,6 +476,22 @@ export function ListaCartasPromocion({ isShopping }) {
                       {formatearFecha(item.fecha_inicio, i18n.language)} – {formatearFecha(item.fecha_fin, i18n.language)}
                     </Typography>
                   </CardContent>
+                  
+                  {/* NUEVO: CardActions también en el historial */}
+                  <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
+                    <IconButton 
+                      component={Link} 
+                      to={`/promocion/${item.id}`}
+                      sx={{ 
+                        backgroundColor: '#2196F3', 
+                        color: 'white',
+                        '&:hover': { backgroundColor: '#1976D2' }
+                      }}
+                      title={t('promotions_page.view_detail', 'Ver detalle')}
+                    >
+                      <VisibilityIcon />
+                    </IconButton>
+                  </CardActions>
                 </Card>
               </Box>
             ))}

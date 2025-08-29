@@ -6,7 +6,7 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
-import { Menu, MenuItem, FormControl, Select  } from "@mui/material";
+import { Menu, MenuItem, FormControl, Select } from "@mui/material";
 import { Link } from "react-router-dom";
 import Badge from "@mui/material/Badge";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -20,7 +20,6 @@ import { useCart } from "../../hooks/useCart";
 import { UserContext } from "../../context/UserContext";
 import { useTranslation } from 'react-i18next';
 
-
 const LanguageSelector = () => {
   const { i18n } = useTranslation();
   
@@ -30,16 +29,16 @@ const LanguageSelector = () => {
       name: 'Español', 
       flag: '🇪🇸',
       shortName: 'ES',
-    color: '#FF69B4', // rosado fuerte  
-    bgColor: 'linear-gradient(135deg, #FF69B4 0%, #E6A8D7 100%)' // rosado a lila claro
+      color: '#FF69B4', // rosado fuerte  
+      bgColor: 'linear-gradient(135deg, #FF69B4 0%, #E6A8D7 100%)' // rosado a lila claro
     },
     { 
       code: 'en', 
       name: 'English', 
       flag: '🇺🇸',
       shortName: 'EN',
- color: '#DA70D6', // lila  
-    bgColor: 'linear-gradient(135deg, #DA70D6 0%, #FFC0CB 100%)' // lila a rosado claro
+      color: '#DA70D6', // lila  
+      bgColor: 'linear-gradient(135deg, #DA70D6 0%, #FFC0CB 100%)' // lila a rosado claro
     }
   ];
 
@@ -47,7 +46,7 @@ const LanguageSelector = () => {
 
   const handleLanguageChange = (event) => {
     const selectedLanguage = event.target.value;
-    localStorage.setItem('lang', selectedLanguage);//
+    localStorage.setItem('lang', selectedLanguage);
     i18n.changeLanguage(selectedLanguage);
   };
 
@@ -106,7 +105,7 @@ const LanguageSelector = () => {
           MenuProps={{
             PaperProps: {
               sx: {
-                bgcolor: '#2C3E50', // Fondo oscuro como en la imagen
+                bgcolor: '#2C3E50',
                 borderRadius: '12px',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
                 border: '1px solid rgba(255,255,255,0.1)',
@@ -180,7 +179,7 @@ const LanguageSelector = () => {
 
 // Componente Header principal
 function Header() {
-  const { t } = useTranslation(); // Hook de traducción para el header
+  const { t } = useTranslation();
   
   // Estados para manejo de menús
   const [anchorElSubmenu, setAnchorElSubmenu] = useState(null);
@@ -194,7 +193,7 @@ function Header() {
   const [anchorElUsuarios, setAnchorElUsuarios] = useState(null);
 
   // Contexto de usuario y carrito
-  const { user, decodeToken, isAdmin } = useContext(UserContext);
+  const { user, decodeToken, isAdmin, canUseCart, getCartRestrictionMessage } = useContext(UserContext);
   const [userData, setUserData] = useState(decodeToken());
   const { cart, getCountItems } = useCart();
 
@@ -204,6 +203,9 @@ function Header() {
 
   // Verificar si el usuario es administrador
   const userIsAdmin = isAdmin();
+  
+  // Verificar si el usuario puede usar el carrito
+  const userCanUseCart = canUseCart();
 
   // Handlers para menú principal
   const handleOpenPrincipalMenu = (event) => {
@@ -252,6 +254,14 @@ function Header() {
 
   const handleClose = (setter) => () => {
     setter(null);
+  };
+
+  // Handler para carrito restringido
+  const handleCartClick = (event) => {
+    if (!userCanUseCart) {
+      event.preventDefault();
+      alert(getCartRestrictionMessage());
+    }
   };
 
   // Configuración de elementos del menú (con traducciones)
@@ -444,6 +454,11 @@ function Header() {
                   {t('header.user.admin', 'Administrador')}
                 </Typography>
               )}
+              {userCanUseCart && (
+                <Typography variant="caption" display="block" sx={{ color: 'success.main', fontWeight: 'bold' }}>
+                  {t('header.user.client', 'Cliente')}
+                </Typography>
+              )}
             </Typography>
           </MenuItem>
         )}
@@ -490,14 +505,16 @@ function Header() {
       open={isMobileOpcionesMenuOpen}
       onClose={handleOpcionesMenuClose}
     >
-      <MenuItem onClick={handleOpcionesMenuClose}>
-        <IconButton size="large" color="inherit" component={Link} to="/cart">
-          <Badge badgeContent={getCountItems(cart)} color="error">
-            <ShoppingCartIcon />
-          </Badge>
-        </IconButton>
-        <p>{t('header.mobile.shopping', 'Compras')}</p>
-      </MenuItem>
+      {userCanUseCart && (
+        <MenuItem onClick={handleOpcionesMenuClose}>
+          <IconButton size="large" color="inherit" component={Link} to="/cart">
+            <Badge badgeContent={getCountItems(cart)} color="error">
+              <ShoppingCartIcon />
+            </Badge>
+          </IconButton>
+          <p>{t('header.mobile.shopping', 'Compras')}</p>
+        </MenuItem>
+      )}
       <MenuItem onClick={handleOpcionesMenuClose}>
         <IconButton size="large" color="inherit">
           <Badge badgeContent={17} color="error">
@@ -576,19 +593,23 @@ function Header() {
 
           {/* Opciones para desktop */}
           <Box sx={{ display: { xs: "none", md: "flex" } }}>
-            <Tooltip title={t('header.tooltip.cart', 'Ver carrito de compras')}>
-              <IconButton 
-                size="large" 
-                color="inherit"
-                component={Link}
-                to="/cart"
-                aria-label={t('header.tooltip.cart', 'Ver carrito de compras')}
-              >
-                <Badge badgeContent={getCountItems(cart)} color="error">
-                  <ShoppingCartIcon />
-                </Badge>
-              </IconButton>
-            </Tooltip>
+            {/* Solo mostrar carrito si el usuario puede usarlo */}
+            {userCanUseCart && (
+              <Tooltip title={t('header.tooltip.cart', 'Ver carrito de compras')}>
+                <IconButton 
+                  size="large" 
+                  color="inherit"
+                  component={Link}
+                  to="/cart"
+                  aria-label={t('header.tooltip.cart', 'Ver carrito de compras')}
+                  onClick={handleCartClick}
+                >
+                  <Badge badgeContent={getCountItems(cart)} color="error">
+                    <ShoppingCartIcon />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
+            )}
             <IconButton size="large" color="inherit">
               <Badge badgeContent={17} color="error">
                 <NotificationsIcon />

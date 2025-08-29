@@ -27,7 +27,7 @@ export function DetalleOrder() {
         setLoaded(true);
       })
       .catch((err) => {
-        setError(err.message || t('order_detail.error', { message: 'Error al cargar orden' }));
+        setError(err.message || t('order_detail.error', 'Error al cargar orden'));
       });
   }, [id, t]);
 
@@ -36,12 +36,73 @@ export function DetalleOrder() {
 
   const { pedido, productos = [], personalizados = [] } = orden || {};
 
-  const subtotalCalculado =
-    (productos || []).reduce((acc, p) => acc + parseFloat(p.subtotal || 0), 0) +
-    (personalizados || []).reduce((acc, p) => acc + (p.total_personalizado || 0), 0);
+  // Extraer datos con múltiples fuentes posibles
+  const ordenId = pedido?.id || pedido?.ordenesId || orden?.id || id;
+  const fechaOrden = pedido?.fecha || pedido?.created_at || orden?.fecha;
+  const clienteNombre = pedido?.nombre_usuario || pedido?.cliente?.nombre || orden?.cliente?.nombre || 'N/A';
+  const clienteEmail = pedido?.cliente?.email || orden?.cliente?.email;
+  const direccionEnvio = pedido?.direccion_envio || orden?.direccion_envio || 'N/A';
+  const metodoPago = pedido?.metodo_pago || orden?.metodo_pago || 'N/A';
+  const estadoOrden = pedido?.estado || orden?.estado;
+
+  // Función para calcular precios correctamente como en PagoPedido
+  const calcularPreciosProducto = (producto) => {
+    if (producto.esPersonalizado) {
+      if (producto.totalConIva && Number(producto.totalConIva) > 0) {
+        const totalConIva = Number(producto.totalConIva);
+        const precioUnitarioConIva = totalConIva / (Number(producto.cantidad) || 1);
+        const precioUnitarioSinIva = precioUnitarioConIva / 1.13;
+        return {
+          precioUnitarioSinIva: Math.round(precioUnitarioSinIva),
+          totalConIva: Math.round(totalConIva),
+          precioUnitarioConIva: Math.round(precioUnitarioConIva)
+        };
+      }
+      
+      if (producto.precioUnitario && Number(producto.precioUnitario) !== Number(producto.precio || 0)) {
+        const precioUnitarioConIva = Number(producto.precioUnitario);
+        const precioUnitarioSinIva = precioUnitarioConIva / 1.13;
+        const totalConIva = precioUnitarioConIva * (Number(producto.cantidad) || 1);
+        return {
+          precioUnitarioSinIva: Math.round(precioUnitarioSinIva),
+          totalConIva: Math.round(totalConIva),
+          precioUnitarioConIva: Math.round(precioUnitarioConIva)
+        };
+      }
+    }
+    
+    const precioBase = Number(producto.precio_unitario || producto.precio || 0);
+    const precioUnitarioConIva = precioBase * 1.13;
+    const totalConIva = precioUnitarioConIva * (Number(producto.cantidad) || 1);
+    
+    return {
+      precioUnitarioSinIva: Math.round(precioBase),
+      totalConIva: Math.round(totalConIva),
+      precioUnitarioConIva: Math.round(precioUnitarioConIva)
+    };
+  };
+
+  // Calcular totales correctamente
+  let subtotalCalculado = 0;
+
+  // Sumar productos regulares con cálculo correcto
+  productos.forEach(producto => {
+    const precios = calcularPreciosProducto(producto);
+    subtotalCalculado += precios.precioUnitarioSinIva * (Number(producto.cantidad) || 1);
+  });
+
+  // Sumar productos personalizados
+  personalizados.forEach(producto => {
+    subtotalCalculado += parseFloat(producto.total_personalizado || 0) / 1.13; // Convertir a sin IVA
+  });
 
   const impuestosCalculados = subtotalCalculado * 0.13;
   const totalCalculado = subtotalCalculado + impuestosCalculados;
+
+  // Usar totales de la orden si existen, sino los calculados
+  const subtotalFinal = pedido?.subtotal || subtotalCalculado;
+  const impuestosFinal = pedido?.impuestos || impuestosCalculados;
+  const totalFinal = pedido?.total || totalCalculado;
 
   // Función para traducir estados de orden
   const translateOrderState = (state) => {
@@ -55,18 +116,34 @@ export function DetalleOrder() {
   return (
     <Container maxWidth="md" sx={{ mt: 6 }}>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#d83b6a' }}>
-        {t('order_detail.invoice_title', 'Factura - Orden #{{orderNumber}}', { orderNumber: pedido?.ordenesId })}
+        {t('order_detail.invoice_title', 'Factura - Orden #{{orderNumber}}', { orderNumber: ordenId })}
       </Typography>
 
       <Typography variant="body1" gutterBottom>
-        <strong>{t('order_detail.date', 'Fecha')}:</strong> {pedido?.fecha ? new Date(pedido.fecha).toLocaleString() : t('order_detail.not_available', 'N/A')}
+        <strong>{t('order_detail.date', 'Fecha')}:</strong> {fechaOrden ? new Date(fechaOrden).toLocaleString('es-ES', {
+          day: '2-digit',
+          month: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) : t('order_detail.not_available', 'N/A')}
       </Typography>
       <Typography variant="body1" gutterBottom>
-        <strong>{t('order_detail.customer', 'Cliente')}:</strong> {pedido?.nombre_usuario || t('order_detail.not_available', 'N/A')}
+        <strong>{t('order_detail.customer', 'Cliente')}:</strong> {clienteNombre}
       </Typography>
+      {clienteEmail && (
+        <Typography variant="body1" gutterBottom>
+          <strong>Email:</strong> {clienteEmail}
+        </Typography>
+      )}
       <Typography variant="body1" gutterBottom>
-        <strong>{t('order_detail.address', 'Dirección')}:</strong> {pedido?.direccion_envio || t('order_detail.not_available', 'N/A')}
+        <strong>{t('order_detail.address', 'Dirección')}:</strong> {direccionEnvio}
       </Typography>
+      {estadoOrden && (
+        <Typography variant="body1" gutterBottom>
+          <strong>{t('order_detail.status', 'Estado')}:</strong> {translateOrderState(estadoOrden)}
+        </Typography>
+      )}
 
       <Typography variant="h6" sx={{ mt: 4, color: '#ce9fc4' }}>
         {t('order_detail.products', 'Productos')}
@@ -81,27 +158,48 @@ export function DetalleOrder() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {(productos || []).map((p, idx) => (
-            <TableRow key={idx}>
-              <TableCell>{p.nombre}</TableCell>
-              <TableCell>{p.cantidad}</TableCell>
-              <TableCell>
-                {p.precio_original && p.precio_original > p.precio_unitario ? (
-                  <>
-                    <span style={{ textDecoration: 'line-through', color: 'gray', marginRight: 6 }}>
-                      ₡{parseFloat(p.precio_original).toLocaleString()}
+          {(productos || []).map((p, idx) => {
+            const precios = calcularPreciosProducto(p);
+            const cantidad = parseInt(p.cantidad || 0);
+            const precioOriginal = parseFloat(p.precio_original || 0);
+            
+            return (
+              <TableRow key={idx}>
+                <TableCell>
+                  {p.nombre}
+                  {p.esPersonalizado && (
+                    <span style={{ 
+                      backgroundColor: '#E3F2FD', 
+                      color: '#1976D2', 
+                      fontSize: '0.7rem',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      marginLeft: '8px',
+                      fontWeight: 'bold'
+                    }}>
+                      Personalizado
                     </span>
-                    <span style={{ color: '#d83b6a', fontWeight: 'bold' }}>
-                      ₡{parseFloat(p.precio_unitario).toLocaleString()}
-                    </span>
-                  </>
-                ) : (
-                  `₡${parseFloat(p.precio_unitario || 0).toLocaleString()}`
-                )}
-              </TableCell>
-              <TableCell>₡{parseFloat(p.subtotal || 0).toLocaleString()}</TableCell>
-            </TableRow>
-          ))}
+                  )}
+                </TableCell>
+                <TableCell>{cantidad}</TableCell>
+                <TableCell>
+                  {precioOriginal && precioOriginal * 1.13 > precios.precioUnitarioConIva ? (
+                    <>
+                      <span style={{ textDecoration: 'line-through', color: 'gray', marginRight: 6 }}>
+                        ₡{Math.round(precioOriginal * 1.13).toLocaleString()}
+                      </span>
+                      <span style={{ color: '#d83b6a', fontWeight: 'bold' }}>
+                        ₡{precios.precioUnitarioConIva.toLocaleString()}
+                      </span>
+                    </>
+                  ) : (
+                    `₡${precios.precioUnitarioConIva.toLocaleString()}`
+                  )}
+                </TableCell>
+                <TableCell>₡{precios.totalConIva.toLocaleString()}</TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
 
@@ -134,16 +232,16 @@ export function DetalleOrder() {
         {t('order_detail.summary', 'Resumen')}
       </Typography>
       <Typography variant="body1">
-        {t('order_detail.subtotal', 'Subtotal')}: ₡{subtotalCalculado.toLocaleString()}
+        {t('order_detail.subtotal', 'Subtotal')}: ₡{Math.round(subtotalFinal).toLocaleString()}
       </Typography>
       <Typography variant="body1">
-        {t('order_detail.taxes', 'Impuestos')}: ₡{impuestosCalculados.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        {t('order_detail.taxes', 'Impuestos')}: ₡{Math.round(impuestosFinal).toLocaleString()}
       </Typography>
       <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-        {t('order_detail.total', 'Total')}: ₡{totalCalculado.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        {t('order_detail.total', 'Total')}: ₡{Math.round(totalFinal).toLocaleString()}
       </Typography>
       <Typography variant="body1">
-        {t('order_detail.payment_method', 'Método de Pago')}: {pedido?.metodo_pago || t('order_detail.not_available', 'N/A')}
+        {t('order_detail.payment_method', 'Método de Pago')}: {metodoPago}
       </Typography>
 
       <Button

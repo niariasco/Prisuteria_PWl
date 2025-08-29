@@ -285,7 +285,7 @@ const PagoPedido = () => {
       impuestos,
       total,
       direccion_envio: pedidoData.direccionEnvio || "No especificada",
-      estado: 'Pendiente',
+      estado: 'Pagado', // CAMBIADO: de 'Pendiente' a 'Pagado'
       metodo_pago: (metodoPago === "efectivo") ? t('payment.payment_methods.cash') : "Tarjeta",
       productos: productosBackend
     };
@@ -340,7 +340,8 @@ const PagoPedido = () => {
             metodo_pago: datosOrden.metodo_pago,
             direccion_envio: datosOrden.direccion_envio
           },
-          productos: pedidoData.productos
+          productos: pedidoData.productos,
+          estado: 'Pagado' // AGREGADO: asegurar que el estado sea "Pagado"
         });
         setShowFacturaDialog(true);
         setFormData(initialFormData);
@@ -815,7 +816,7 @@ const PagoPedido = () => {
                       <strong>{t('payment.success_modal.order_number')}:</strong> #{ordenCreada.id}
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>{t('payment.success_modal.date')}:</strong> {new Date(ordenCreada.fecha).toLocaleDateString('es-ES', {
+                      <strong>{t('payment.success_modal.date')}:</strong> {new Date(ordenCreada.fecha || Date.now()).toLocaleDateString('es-ES', {
                         day: '2-digit',
                         month: '2-digit',
                         year: 'numeric',
@@ -826,7 +827,7 @@ const PagoPedido = () => {
                     <Typography variant="body2" sx={{ mb: 1 }}>
                       <strong>{t('payment.success_modal.status')}:</strong> 
                       <Chip 
-                        label={t('payment.success_modal.confirmed')} 
+                        label={ordenCreada.estado || 'Pagado'} 
                         color="success" 
                         size="small" 
                         sx={{ ml: 1 }}
@@ -842,16 +843,16 @@ const PagoPedido = () => {
                       {t('payment.success_modal.client_info')}
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>{t('payment.success_modal.client')}:</strong> {ordenCreada.cliente?.nombre || t('payment.success_modal.registered_client')}
+                      <strong>{t('payment.success_modal.client')}:</strong> {pedidoData.cliente?.nombre || t('payment.success_modal.registered_client')}
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>{t('payment.order_summary.email')}:</strong> {ordenCreada.cliente?.email || 'cliente@email.com'}
+                      <strong>{t('payment.order_summary.email')}:</strong> {pedidoData.cliente?.email || 'cliente@email.com'}
                     </Typography>
                     <Typography variant="body2" sx={{ display: 'flex', alignItems: 'flex-start' }}>
                       <LocationOn sx={{ mr: 0.5, fontSize: 16, mt: 0.2 }} />
                       <span>
                         <strong>{t('payment.order_summary.address')}:</strong><br />
-                        {ordenCreada.direccionEnvio}
+                        {pedidoData.direccionEnvio}
                       </span>
                     </Typography>
                   </Box>
@@ -861,20 +862,20 @@ const PagoPedido = () => {
               {/* Método de pago */}
               <Box sx={{ p: 2, backgroundColor: 'white', borderRadius: 2, border: '1px solid #e0e0e0', mb: 3 }}>
                 <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2, color: '#1976d2' }}>
-                  {ordenCreada.metodoPago === 'Efectivo' ? <AttachMoney sx={{ mr: 1 }} /> : <CreditCard sx={{ mr: 1 }} />}
+                  {metodoPago === 'efectivo' ? <AttachMoney sx={{ mr: 1 }} /> : <CreditCard sx={{ mr: 1 }} />}
                   {t('payment.success_modal.payment_method')}
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>{t('payment.success_modal.type')}:</strong> {ordenCreada.metodoPago}
+                      <strong>{t('payment.success_modal.type')}:</strong> {(metodoPago === "efectivo") ? t('payment.payment_methods.cash') : "Tarjeta"}
                     </Typography>
                   </Grid>
-                  {ordenCreada.cambio > 0 && (
+                  {cambio > 0 && (
                     <Grid item xs={12} md={6}>
                       <Box sx={{ p: 2, backgroundColor: '#e8f5e8', borderRadius: 2, border: '1px solid #4caf50' }}>
                         <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
-                          {t('payment.success_modal.change')}: {currencySymbol} {ordenCreada.cambio.toLocaleString()}
+                          {t('payment.success_modal.change')}: {currencySymbol} {cambio.toLocaleString()}
                         </Typography>
                       </Box>
                     </Grid>
@@ -898,7 +899,7 @@ const PagoPedido = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {ordenCreada.productos?.map((producto, index) => {
+                    {(ordenCreada.productos || pedidoData.productos)?.map((producto, index) => {
                       const calcularPrecioModal = (prod) => {
                         const productoPedido = pedidoData.productos?.find(p => 
                           p.nombre === prod.nombre || 
@@ -981,13 +982,13 @@ const PagoPedido = () => {
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                         <Typography variant="body2">{t('payment.order_summary.subtotal')}:</Typography>
                         <Typography variant="body2">
-                          {currencySymbol} {Math.round(ordenCreada.subtotalSinImpuestos || 0).toLocaleString()}
+                          {currencySymbol} {Math.round(pedidoData.subtotalSinImpuestos || 0).toLocaleString()}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                         <Typography variant="body2">{t('payment.order_summary.tax')}:</Typography>
                         <Typography variant="body2">
-                          {currencySymbol} {Math.round(ordenCreada.ivaTotal || 0).toLocaleString()}
+                          {currencySymbol} {Math.round(pedidoData.ivaTotal || 0).toLocaleString()}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -1000,7 +1001,7 @@ const PagoPedido = () => {
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{t('payment.order_summary.total')}:</Typography>
                         <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                          {currencySymbol} {Math.round(ordenCreada.total || 0).toLocaleString()}
+                          {currencySymbol} {Math.round(pedidoData.total || 0).toLocaleString()}
                         </Typography>
                       </Box>
                     </Box>
@@ -1072,4 +1073,4 @@ const PagoPedido = () => {
   );
 };
 
-export default PagoPedido;
+export default PagoPedido

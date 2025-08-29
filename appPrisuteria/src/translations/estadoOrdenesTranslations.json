@@ -15,8 +15,9 @@
       "In Transit": "En Tránsito",
       "Confirmado": "Confirmado",
       "Confirmed": "Confirmado",
-      "Pagado": "Pagado",
-      "Paid": "Pagado",
+      "Pagado": "Pago Orden completa",
+      "Paid": "Pago Orden completa",
+      "Pago Orden completa": "Pago Orden completa",
       "Preparando": "Preparando",
       "Preparing": "Preparando"
     },
@@ -35,8 +36,9 @@
       "In Transit": "In Transit",
       "Confirmado": "Confirmed",
       "Confirmed": "Confirmed",
-      "Pagado": "Paid",
-      "Paid": "Paid",
+      "Pagado": "Order Complete Payment",
+      "Paid": "Order Complete Payment",
+      "Pago Orden completa": "Order Complete Payment",
       "Preparando": "Preparing",
       "Preparing": "Preparing"
     }
